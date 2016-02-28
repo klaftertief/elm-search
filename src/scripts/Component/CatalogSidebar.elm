@@ -1,4 +1,4 @@
-module Component.CatalogSidebar where
+module Component.CatalogSidebar (..) where
 
 import Effects as Fx exposing (Effects)
 import Html exposing (..)
@@ -6,14 +6,15 @@ import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 
 
-type alias Model = ()
+type alias Model =
+  ()
 
 
 
 -- INIT
 
 
-init : (Model, Effects Action)
+init : ( Model, Effects Action )
 init =
   ( ()
   , Fx.none
@@ -24,10 +25,11 @@ init =
 -- UPDATE
 
 
-type Action = Act
+type Action
+  = Act
 
 
-update : Action -> Model -> (Model, Effects Action)
+update : Action -> Model -> ( Model, Effects Action )
 update action model =
   case action of
     Act ->
@@ -40,14 +42,17 @@ update action model =
 -- VIEW
 
 
-(=>) = (,)
+(=>) =
+  (,)
 
 
 view : Signal.Address Action -> Model -> Html
 view addr model =
-  div [class "catalog-sidebar"]
+  div
+    [ class "catalog-sidebar" ]
     [ h2 [] [ text "Resources" ]
-    , ul []
+    , ul
+        []
         [ li [] [ a [ href "https://github.com/elm-lang/elm-package/blob/master/README.md" ] [ text "Using Packages" ] ]
         , li [] [ a [ href "/help/design-guidelines" ] [ text "API Design Guidelines" ] ]
         , li [] [ a [ href "/help/documentation-format" ] [ text "Write great docs" ] ]
@@ -56,7 +61,8 @@ view addr model =
         , li [] [ a [ href "http://elm-lang.org" ] [ text "Elm Website" ] ]
         ]
     , h2 [] [ text "Popular Packages" ]
-    , ul []
+    , ul
+        []
         [ pkgBlock "General" generalPackages
         , pkgBlock "Rendering" renderingPackages
         , pkgBlock "Effects" effectsPackages
@@ -64,28 +70,30 @@ view addr model =
     ]
 
 
-pkgBlock : String -> List (String, String) -> Html
+pkgBlock : String -> List ( String, String ) -> Html
 pkgBlock title pkgs =
-  li []
+  li
+    []
     [ text title
     , ul [] (List.map pkgBlockItem pkgs)
     ]
 
 
-pkgBlockItem : (String, String) -> Html
-pkgBlockItem (user, project) =
-  li []
+pkgBlockItem : ( String, String ) -> Html
+pkgBlockItem ( user, project ) =
+  li
+    []
     [ a [ href ("/packages/" ++ user ++ "/" ++ project ++ "/latest") ] [ text project ]
     ]
 
 
-generalPackages : List (String, String)
+generalPackages : List ( String, String )
 generalPackages =
   [ "elm-lang" => "core"
   ]
 
 
-renderingPackages : List (String, String)
+renderingPackages : List ( String, String )
 renderingPackages =
   [ "evancz" => "elm-html"
   , "evancz" => "elm-svg"
@@ -94,7 +102,7 @@ renderingPackages =
   ]
 
 
-effectsPackages : List (String, String)
+effectsPackages : List ( String, String )
 effectsPackages =
   [ "evancz" => "elm-http"
   , "evancz" => "start-app"

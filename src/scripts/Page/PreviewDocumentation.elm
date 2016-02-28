@@ -1,4 +1,4 @@
-module Page.PreviewDocumentation where
+module Page.PreviewDocumentation (..) where
 
 import Effects as Fx exposing (Effects)
 import Html exposing (..)
@@ -6,12 +6,10 @@ import Html.Attributes exposing (..)
 import Json.Decode as Json
 import StartApp
 import Task
-
 import Component.Header as Header
 import Component.PackagePreview as Preview
 import Docs.Package as Docs
 import Route
-
 
 
 -- WIRES
@@ -36,8 +34,6 @@ port worker =
 
 
 port uploads : Signal String
-
-
 docsUploads : Signal Action
 docsUploads =
   let
@@ -57,22 +53,22 @@ docsUploads =
 
 
 type alias Model =
-    { header : Header.Model
-    , preview : Preview.Model
-    }
+  { header : Header.Model
+  , preview : Preview.Model
+  }
 
 
 
 -- INIT
 
 
-init : (Model, Effects Action)
+init : ( Model, Effects Action )
 init =
   let
-    (header, headerFx) =
+    ( header, headerFx ) =
       Header.init Route.Help
 
-    (preview, previewFx) =
+    ( preview, previewFx ) =
       Preview.init
   in
     ( Model header preview
@@ -88,20 +84,20 @@ init =
 
 
 type Action
-    = UpdatePreview Preview.Action
+  = UpdatePreview Preview.Action
 
 
-update : Action -> Model -> (Model, Effects Action)
+update : Action -> Model -> ( Model, Effects Action )
 update action model =
   case action of
     UpdatePreview act ->
-        let
-          (newPreview, fx) =
-            Preview.update act model.preview
-        in
-          ( { model | preview = newPreview }
-          , Fx.map UpdatePreview fx
-          )
+      let
+        ( newPreview, fx ) =
+          Preview.update act model.preview
+      in
+        ( { model | preview = newPreview }
+        , Fx.map UpdatePreview fx
+        )
 
 
 
@@ -110,6 +106,7 @@ update action model =
 
 view : Signal.Address Action -> Model -> Html
 view addr model =
-  Header.view addr model.header
+  Header.view
+    addr
+    model.header
     (Preview.view (Signal.forwardTo addr UpdatePreview) model.preview)
-

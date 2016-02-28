@@ -80,8 +80,12 @@ queryMailbox : Signal.Mailbox Action
 queryMailbox =
   Signal.mailbox (Query "")
 
+
 querySignal : Signal.Signal Action
-querySignal = Signal.Time.settledAfter 300 queryMailbox.signal
+querySignal =
+  Signal.Time.settledAfter 300 queryMailbox.signal
+
+
 
 -- UPDATE
 

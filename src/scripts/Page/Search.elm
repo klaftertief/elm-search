@@ -1,19 +1,18 @@
-module Page.Search where
+module Page.Search (..) where
 
 import Effects as Fx exposing (Effects)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import StartApp
 import Task
-
 import Component.CatalogSidebar as Sidebar
 import Component.Header as Header
 import Component.Search as Search
 import Route
 
 
-
 -- WIRES
+
 
 app =
   StartApp.start
@@ -22,6 +21,7 @@ app =
     , update = update
     , inputs = [ Signal.map UpdateSearch Search.querySignal ]
     }
+
 
 main =
   app.html
@@ -37,6 +37,7 @@ port worker =
 
 
 type alias Model =
+  Search.Model
     { header : Header.Model
     , search : Search.Model
     , sidebar : Sidebar.Model
@@ -47,16 +48,16 @@ type alias Model =
 -- INIT
 
 
-init : (Model, Effects Action)
+init : ( Model, Effects Action )
 init =
   let
-    (header, headerFx) =
+    ( header, headerFx ) =
       Header.init (Route.Packages Nothing)
 
-    (search, searchFx) =
+    ( search, searchFx ) =
       Search.init
 
-    (sidebar, sidebarFx) =
+    ( sidebar, sidebarFx ) =
       Sidebar.init
   in
     ( Model header search sidebar
@@ -73,30 +74,30 @@ init =
 
 
 type Action
-    = UpdateSearch Search.Action
-    | UpdateSidebar Sidebar.Action
+  = UpdateSearch Search.Action
+  | UpdateSidebar Sidebar.Action
 
 
-update : Action -> Model -> (Model, Effects Action)
+update : Action -> Model -> ( Model, Effects Action )
 update action model =
   case action of
     UpdateSearch act ->
-        let
-          (newSearch, fx) =
-            Search.update act model.search
-        in
-          ( { model | search = newSearch }
-          , Fx.map UpdateSearch fx
-          )
+      let
+        ( newSearch, fx ) =
+          Search.update act model.search
+      in
+        ( { model | search = newSearch }
+        , Fx.map UpdateSearch fx
+        )
 
     UpdateSidebar act ->
-        let
-          (newSidebar, fx) =
-            Sidebar.update act model.sidebar
-        in
-          ( { model | sidebar = newSidebar }
-          , Fx.map UpdateSidebar fx
-          )
+      let
+        ( newSidebar, fx ) =
+          Sidebar.update act model.sidebar
+      in
+        ( { model | sidebar = newSidebar }
+        , Fx.map UpdateSidebar fx
+        )
 
 
 
@@ -105,9 +106,9 @@ update action model =
 
 view : Signal.Address Action -> Model -> Html
 view addr model =
-  Header.view addr model.header
+  Header.view
+    addr
+    model.header
     [ Search.view (Signal.forwardTo addr UpdateSearch) model.search
     , Sidebar.view (Signal.forwardTo addr UpdateSidebar) model.sidebar
     ]
-
-

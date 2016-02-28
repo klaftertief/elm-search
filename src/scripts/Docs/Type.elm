@@ -1,4 +1,4 @@
-module Docs.Type where
+module Docs.Type (..) where
 
 import Char
 import Dict
@@ -7,34 +7,35 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Set
 import String
-
 import Docs.Name as Name
 import Utils.Code as Code exposing (arrow, colon, padded, space)
-
 
 
 -- MODEL
 
 
 type Type
-    = Function (List Type) Type
-    | Var String
-    | Apply Name.Canonical (List Type)
-    | Tuple (List Type)
-    | Record (List (String, Type)) (Maybe String)
+  = Function (List Type) Type
+  | Var String
+  | Apply Name.Canonical (List Type)
+  | Tuple (List Type)
+  | Record (List ( String, Type )) (Maybe String)
 
 
 type alias Tag =
-    { tag : String
-    , args : List Type
-    }
+  { tag : String
+  , args : List Type
+  }
 
 
 
 -- TYPE TO FLAT HTML
 
 
-type Context = Func | App | Other
+type Context
+  = Func
+  | App
+  | Other
 
 
 toHtml : Name.Dictionary -> Context -> Type -> List Html
@@ -43,50 +44,60 @@ toHtml nameDict context tipe =
     go ctx t =
       toHtml nameDict ctx t
   in
-  case tipe of
-    Function args result ->
+    case tipe of
+      Function args result ->
         let
           maybeAddParens =
             case context of
-              Func -> Code.addParens
-              App -> Code.addParens
-              Other -> identity
+              Func ->
+                Code.addParens
+
+              App ->
+                Code.addParens
+
+              Other ->
+                identity
 
           argsHtml =
             List.concatMap (\arg -> go Func arg ++ padded arrow) args
         in
           maybeAddParens (argsHtml ++ go Func result)
 
-    Var name ->
+      Var name ->
         [ text name ]
 
-    Apply name [] ->
+      Apply name [] ->
         [ Name.toLink nameDict name ]
 
-    Apply name args ->
+      Apply name args ->
         let
           maybeAddParens =
             case context of
-              Func -> identity
-              App -> Code.addParens
-              Other -> identity
+              Func ->
+                identity
+
+              App ->
+                Code.addParens
+
+              Other ->
+                identity
 
           argsHtml =
             List.concatMap (\arg -> space :: go App arg) args
         in
           maybeAddParens (Name.toLink nameDict name :: argsHtml)
 
-    Tuple args ->
-      List.map (go Other) args
-        |> List.intersperse [text ", "]
-        |> List.concat
-        |> Code.addParens
+      Tuple args ->
+        List.map (go Other) args
+          |> List.intersperse [ text ", " ]
+          |> List.concat
+          |> Code.addParens
 
-    Record fields ext ->
+      Record fields ext ->
         let
           fieldsHtml =
             List.map (fieldToHtml nameDict) fields
-              |> List.intersperse [text ", "]
+              |> List.intersperse [ text ", " ]
               |> List.concat
 
           recordInsides =
@@ -97,60 +108,73 @@ toHtml nameDict context tipe =
               Just extName ->
                 text extName :: text " | " :: fieldsHtml
         in
-          text "{ " :: recordInsides ++ [text " }"]
+          text "{ " :: recordInsides ++ [ text " }" ]
+
 
 
 -- TODO: avoid the duplication which only exists because of the links with basePath
+
+
 toHtmlWithBasePath : String -> Name.Dictionary -> Context -> Type -> List Html
 toHtmlWithBasePath basePath nameDict context tipe =
   let
     go ctx t =
       toHtmlWithBasePath basePath nameDict ctx t
   in
-  case tipe of
-    Function args result ->
+    case tipe of
+      Function args result ->
         let
           maybeAddParens =
             case context of
-              Func -> Code.addParens
-              App -> Code.addParens
-              Other -> identity
+              Func ->
+                Code.addParens
+
+              App ->
+                Code.addParens
+
+              Other ->
+                identity
 
           argsHtml =
             List.concatMap (\arg -> go Func arg ++ padded arrow) args
         in
           maybeAddParens (argsHtml ++ go Func result)
 
-    Var name ->
+      Var name ->
         [ text name ]
 
-    Apply name [] ->
+      Apply name [] ->
         [ Name.toBaseLink basePath nameDict name ]
 
-    Apply name args ->
+      Apply name args ->
         let
           maybeAddParens =
             case context of
-              Func -> identity
-              App -> Code.addParens
-              Other -> identity
+              Func ->
+                identity
+
+              App ->
+                Code.addParens
+
+              Other ->
+                identity
 
           argsHtml =
             List.concatMap (\arg -> space :: go App arg) args
         in
           maybeAddParens (Name.toBaseLink basePath nameDict name :: argsHtml)
 
-    Tuple args ->
-      List.map (go Other) args
-        |> List.intersperse [text ", "]
-        |> List.concat
-        |> Code.addParens
+      Tuple args ->
+        List.map (go Other) args
+          |> List.intersperse [ text ", " ]
+          |> List.concat
+          |> Code.addParens
 
-    Record fields ext ->
+      Record fields ext ->
         let
           fieldsHtml =
             List.map (fieldToHtml nameDict) fields
-              |> List.intersperse [text ", "]
+              |> List.intersperse [ text ", " ]
               |> List.concat
 
           recordInsides =
@@ -161,11 +185,11 @@ toHtmlWithBasePath basePath nameDict context tipe =
               Just extName ->
                 text extName :: text " | " :: fieldsHtml
         in
-          text "{ " :: recordInsides ++ [text " }"]
+          text "{ " :: recordInsides ++ [ text " }" ]
 
 
-fieldToHtml : Name.Dictionary -> (String, Type) -> List Html
-fieldToHtml nameDict (field, tipe) =
+fieldToHtml : Name.Dictionary -> ( String, Type ) -> List Html
+fieldToHtml nameDict ( field, tipe ) =
   text field :: space :: colon :: space :: toHtml nameDict Other tipe
 
 
@@ -177,57 +201,67 @@ length : Context -> Type -> Int
 length context tipe =
   case tipe of
     Function args result ->
-        let
-          parens =
-            case context of
-              Func -> 2
-              App -> 2
-              Other -> 0
+      let
+        parens =
+          case context of
+            Func ->
+              2
 
-          argLengths =
-            List.map (\t -> 4 + length Func t) args
-        in
-          parens + List.sum argLengths + length Func result
+            App ->
+              2
+
+            Other ->
+              0
+
+        argLengths =
+          List.map (\t -> 4 + length Func t) args
+      in
+        parens + List.sum argLengths + length Func result
 
     Var name ->
-        String.length name
+      String.length name
 
-    Apply {name} [] ->
-        String.length name
+    Apply { name } [] ->
+      String.length name
 
-    Apply {name} args ->
-        let
-          parens =
-            case context of
-              Func -> 0
-              App -> 2
-              Other -> 0
+    Apply { name } args ->
+      let
+        parens =
+          case context of
+            Func ->
+              0
 
-          argsLength =
-            List.sum (List.map (\t -> 1 + length App t) args)
-        in
-          parens + String.length name + argsLength
+            App ->
+              2
+
+            Other ->
+              0
+
+        argsLength =
+          List.sum (List.map (\t -> 1 + length App t) args)
+      in
+        parens + String.length name + argsLength
 
     Tuple args ->
-        List.sum (List.map (\t -> 2 + length Other t) args)
+      List.sum (List.map (\t -> 2 + length Other t) args)
 
     Record fields ext ->
-        let
-          fieldLength (field, tipe) =
-            String.length field + 3 + length Other tipe
+      let
+        fieldLength ( field, tipe ) =
+          String.length field + 3 + length Other tipe
 
-          recordLength =
-            2 + List.sum (List.map (\ft -> 2 + fieldLength ft) fields)
+        recordLength =
+          2 + List.sum (List.map (\ft -> 2 + fieldLength ft) fields)
 
-          extLength =
-            case ext of
-              Nothing ->
-                0
+        extLength =
+          case ext of
+            Nothing ->
+              0
 
-              Just extName ->
-                2 + String.length extName
-        in
-          recordLength + extLength
+            Just extName ->
+              2 + String.length extName
+      in
+        recordLength + extLength
 
 
 
@@ -244,11 +278,13 @@ The number of the arguments in needle functions don't have to match the number o
 distance : Type -> Type -> Int
 distance needle hay =
   let
-    defaultPenalty = 10
+    defaultPenalty =
+      10
 
     argsLengthPenalty needleList hayList =
       let
-        argsLengthDiff = List.length needleList - List.length hayList
+        argsLengthDiff =
+          List.length needleList - List.length hayList
       in
         if argsLengthDiff > 0 then
           argsLengthDiff * defaultPenalty
@@ -256,32 +292,32 @@ distance needle hay =
           argsLengthDiff * -1
         else
           0
-
   in
-    case (needle, hay) of
+    case ( needle, hay ) of
       -- Don't compare the result types explicitely to support incomplete search queries
-      (Function argsNeedle resultNeedle, Function argsHay resultHay) ->
+      ( Function argsNeedle resultNeedle, Function argsHay resultHay ) ->
         List.sum
           (List.map2
             distance
-            (List.append argsNeedle [resultNeedle])
-            (List.append argsHay [resultHay])
+            (List.append argsNeedle [ resultNeedle ])
+            (List.append argsHay [ resultHay ])
           )
-        + argsLengthPenalty argsNeedle argsHay
+          + argsLengthPenalty argsNeedle argsHay
 
-      (Var nameNeedle, Var nameHay) ->
-          compareVarsWithPenalty defaultPenalty nameNeedle nameHay
+      ( Var nameNeedle, Var nameHay ) ->
+        compareVarsWithPenalty defaultPenalty nameNeedle nameHay
 
-      (Apply canonicalNeedle argsNeedle, Apply canonicalHay argsHay) ->
-            compareNamesWithPenalty 2 canonicalNeedle.home canonicalHay.home
-            + compareNamesWithPenalty 2 canonicalNeedle.name canonicalHay.name
-            + List.sum (List.map2 distance argsNeedle argsHay)
-            + argsLengthPenalty argsNeedle argsHay
+      ( Apply canonicalNeedle argsNeedle, Apply canonicalHay argsHay ) ->
+        compareNamesWithPenalty 2 canonicalNeedle.home canonicalHay.home
+          + compareNamesWithPenalty 2 canonicalNeedle.name canonicalHay.name
+          + List.sum (List.map2 distance argsNeedle argsHay)
+          + argsLengthPenalty argsNeedle argsHay
 
-      (Tuple argsNeedle, Tuple argsHay) ->
-          List.sum (List.map2 distance argsNeedle argsHay)
+      ( Tuple argsNeedle, Tuple argsHay ) ->
+        List.sum (List.map2 distance argsNeedle argsHay)
 
-      _ -> 100
+      _ ->
+        100
 
 
 compareVarsWithPenalty : Int -> String -> String -> Int
@@ -302,8 +338,8 @@ compareNamesWithPenalty penalty nameA nameB =
     penalty
 
 
-
-type alias Mapping = Dict.Dict String String
+type alias Mapping =
+  Dict.Dict String String
 
 
 defaultMapping : Mapping
@@ -317,10 +353,17 @@ defaultMapping =
 nextMappingValue : Mapping -> String
 nextMappingValue mapping =
   let
-    base = (Dict.size mapping) - (Dict.size defaultMapping)
-    code = (base % 26) + (Char.toCode 'a')
-    string = String.fromChar (Char.fromCode code)
-    times = (base // 26) + 1
+    base =
+      (Dict.size mapping) - (Dict.size defaultMapping)
+
+    code =
+      (base % 26) + (Char.toCode 'a')
+
+    string =
+      String.fromChar (Char.fromCode code)
+
+    times =
+      (base // 26) + 1
   in
     String.repeat times string
 
@@ -339,18 +382,19 @@ updateMapping tipe mapping =
   in
     case tipe of
       Function args result ->
-        List.foldl updateMapping mapping (List.append args [result])
+        List.foldl updateMapping mapping (List.append args [ result ])
 
-      Var name -> updateMappingFor name
+      Var name ->
+        updateMappingFor name
 
       Apply name args ->
-          List.foldl updateMapping mapping args
+        List.foldl updateMapping mapping args
 
       Tuple args ->
-          List.foldl updateMapping mapping args
+        List.foldl updateMapping mapping args
 
       Record fields ext ->
-          List.foldl updateMapping mapping (List.map (\ (_, t) -> t) fields)
+        List.foldl updateMapping mapping (List.map (\( _, t ) -> t) fields)
 
 
 normalize : Type -> Type
@@ -361,28 +405,32 @@ normalize tipe =
 normalizeWithMapping : Mapping -> Type -> Type
 normalizeWithMapping mapping tipe =
   let
-    normalize' = normalizeWithMapping mapping
+    normalize' =
+      normalizeWithMapping mapping
   in
     case tipe of
       Function args result ->
-          Function
-            (List.map normalize' args)
-            (normalize' result)
+        Function
+          (List.map normalize' args)
+          (normalize' result)
 
       Var name ->
-          let
-            name' =
-              case Dict.get name mapping of
-                Just n -> n
-                Nothing -> name
-          in
-            Var name'
+        let
+          name' =
+            case Dict.get name mapping of
+              Just n ->
+                n
+
+              Nothing ->
+                name
+        in
+          Var name'
 
       Apply name args ->
-          Apply name (List.map normalize' args)
+        Apply name (List.map normalize' args)
 
       Tuple args ->
-          Tuple (List.map normalize' args)
+        Tuple (List.map normalize' args)
 
       Record fields ext ->
-          Record (List.map (\ (k, v) -> (k, normalize' v)) fields) ext
+        Record (List.map (\( k, v ) -> ( k, normalize' v )) fields) ext

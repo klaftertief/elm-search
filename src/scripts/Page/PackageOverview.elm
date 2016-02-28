@@ -1,24 +1,20 @@
-module Page.PackageOverview where
+module Page.PackageOverview (..) where
 
 import Effects as Fx exposing (Effects)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import StartApp
 import Task
-
 import Component.Header as Header
 import Component.PackageOverview as Overview
 import Page.Context as Ctx
 import Route
 
 
-
 -- WIRES
 
 
 port context : Ctx.OverviewContext
-
-
 app =
   StartApp.start
     { init = init
@@ -42,22 +38,22 @@ port worker =
 
 
 type alias Model =
-    { header : Header.Model
-    , overview : Overview.Model
-    }
+  { header : Header.Model
+  , overview : Overview.Model
+  }
 
 
 
 -- INIT
 
 
-init : (Model, Effects Action)
+init : ( Model, Effects Action )
 init =
   let
-    (header, headerFx) =
+    ( header, headerFx ) =
       Header.init (Route.fromOverviewContext context)
 
-    (overview, moduleFx) =
+    ( overview, moduleFx ) =
       Overview.init context
   in
     ( Model header overview
@@ -73,20 +69,20 @@ init =
 
 
 type Action
-    = UpdateOverview Overview.Action
+  = UpdateOverview Overview.Action
 
 
-update : Action -> Model -> (Model, Effects Action)
+update : Action -> Model -> ( Model, Effects Action )
 update action model =
   case action of
     UpdateOverview act ->
-        let
-          (newDocs, fx) =
-            Overview.update act model.overview
-        in
-          ( { model | overview = newDocs }
-          , Fx.map UpdateOverview fx
-          )
+      let
+        ( newDocs, fx ) =
+          Overview.update act model.overview
+      in
+        ( { model | overview = newDocs }
+        , Fx.map UpdateOverview fx
+        )
 
 
 
@@ -95,8 +91,8 @@ update action model =
 
 view : Signal.Address Action -> Model -> Html
 view addr model =
-  Header.view addr model.header
+  Header.view
+    addr
+    model.header
     [ Overview.view (Signal.forwardTo addr UpdateOverview) model.overview
     ]
-
-

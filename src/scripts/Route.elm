@@ -1,23 +1,23 @@
-module Route where
+module Route (..) where
 
 import Page.Context as Ctx
 
 
 type Route
-    = Help
-    | Packages (Maybe UserRoute)
+  = Help
+  | Packages (Maybe UserRoute)
 
 
-type UserRoute =
-    User String (Maybe PackageRoute)
+type UserRoute
+  = User String (Maybe PackageRoute)
 
 
-type PackageRoute =
-    Package String (Maybe VersionRoute)
+type PackageRoute
+  = Package String (Maybe VersionRoute)
 
 
-type VersionRoute =
-    Version String (List String) (Maybe String)
+type VersionRoute
+  = Version String (List String) (Maybe String)
 
 
 fromOverviewContext : Ctx.OverviewContext -> Route

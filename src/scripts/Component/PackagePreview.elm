@@ -1,4 +1,4 @@
-module Component.PackagePreview where
+module Component.PackagePreview (..) where
 
 import Dict
 import Effects as Fx
@@ -6,24 +6,22 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Json.Decode as Json exposing ((:=))
-
 import Component.PackageDocs as PDocs
 import Docs.Package as Docs
 import Utils.Markdown as Markdown
 import Utils.Path as Path
 
 
-
 -- MODEL
 
 
 type Model
-    = AwaitingFile
-    | BadFile (Maybe String)
-    | GoodFile (Dict.Dict String Docs.Module) PDocs.Model
+  = AwaitingFile
+  | BadFile (Maybe String)
+  | GoodFile (Dict.Dict String Docs.Module) PDocs.Model
 
 
-init : (Model, Fx.Effects Action)
+init : ( Model, Fx.Effects Action )
 init =
   ( AwaitingFile
   , Fx.none
@@ -35,44 +33,45 @@ init =
 
 
 type Action
-    = NoOp
-    | Fail (Maybe String)
-    | LoadDocs (Dict.Dict String Docs.Module)
-    | SwitchTo String
+  = NoOp
+  | Fail (Maybe String)
+  | LoadDocs (Dict.Dict String Docs.Module)
+  | SwitchTo String
 
 
 update : Action -> Model -> ( Model, Fx.Effects Action )
 update action model =
-  flip (,) Fx.none <|
-  case action of
-    NoOp ->
-      model
-
-    Fail maybeMsg ->
-      BadFile maybeMsg
-
-    LoadDocs docs ->
-      case List.head (Dict.keys docs) of
-        Nothing ->
-          BadFile (Just "The JSON you uploaded does not have any modules in it!")
-
-        Just moduleName ->
-          GoodFile docs (docsForModule moduleName docs)
-
-    SwitchTo moduleName ->
-      case model of
-        GoodFile docs _ ->
-          GoodFile docs (docsForModule moduleName docs)
-
-        _ ->
+  flip (,) Fx.none
+    <| case action of
+        NoOp ->
           model
+
+        Fail maybeMsg ->
+          BadFile maybeMsg
+
+        LoadDocs docs ->
+          case List.head (Dict.keys docs) of
+            Nothing ->
+              BadFile (Just "The JSON you uploaded does not have any modules in it!")
+
+            Just moduleName ->
+              GoodFile docs (docsForModule moduleName docs)
+
+        SwitchTo moduleName ->
+          case model of
+            GoodFile docs _ ->
+              GoodFile docs (docsForModule moduleName docs)
+
+            _ ->
+              model
 
 
 
 -- VIEW
 
 
-(=>) = (,)
+(=>) =
+  (,)
 
 
 view : Signal.Address Action -> Model -> List Html
@@ -112,10 +111,11 @@ view address model =
 
 viewSidebar : Signal.Address Action -> List String -> Html
 viewSidebar address modulesNames =
-  div [ class "pkg-nav" ]
+  div
+    [ class "pkg-nav" ]
     [ ul
-      [ class "pkg-nav-value" ]
-      (moduleLinks address modulesNames)
+        [ class "pkg-nav-value" ]
+        (moduleLinks address modulesNames)
     ]
 
 
@@ -177,7 +177,8 @@ instructions md =
 
 
 long : String
-long = """
+long =
+  """
 
 # Preview your Docs
 
@@ -194,7 +195,8 @@ That will create a file called `documentation.json`. Give me that file.
 
 
 short : String
-short = """
+short =
+  """
 
 # Preview your Docs
 

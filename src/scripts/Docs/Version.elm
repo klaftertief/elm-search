@@ -1,22 +1,12 @@
-module Docs.Version
-    ( Version
-    , Dictionary
-    , MinorPatch
-    , decoder
-    , filterInteresting
-    , realMax
-    , toDict
-    , fromStringList
-    , vsnToString
-    )
-    where
+module Docs.Version (Version, Dictionary, MinorPatch, decoder, filterInteresting, realMax, toDict, fromStringList, vsnToString) where
 
 import Dict
 import Json.Decode as Json exposing (..)
 import String
 
 
-type alias Version = (Int, Int, Int)
+type alias Version =
+  ( Int, Int, Int )
 
 
 
@@ -31,21 +21,21 @@ decoder =
 fromString : String -> Result String Version
 fromString str =
   case all (List.map String.toInt (String.split "." str)) of
-    Ok [major, minor, patch] ->
-        Ok (major, minor, patch)
+    Ok [ major, minor, patch ] ->
+      Ok ( major, minor, patch )
 
     _ ->
-        Err (str ++ " is not a valid Elm version")
+      Err (str ++ " is not a valid Elm version")
 
 
 all : List (Result x a) -> Result x (List a)
 all list =
   case list of
     [] ->
-        Ok []
+      Ok []
 
     x :: xs ->
-        Result.map2 (::) x (all xs)
+      Result.map2 (::) x (all xs)
 
 
 fromStringList : List String -> Result String (List Version)
@@ -60,19 +50,18 @@ fromStringList versions =
 realMax : String -> List String -> Maybe String
 realMax rawVsn allRawVsns =
   case Result.map2 (,) (fromString rawVsn) (fromStringList allRawVsns) of
-    Ok (version, allVersions) ->
+    Ok ( version, allVersions ) ->
       let
         maxVersion =
           List.foldl max version allVersions
       in
         if version == maxVersion then
-            Nothing
-
+          Nothing
         else
-            Just (vsnToString maxVersion)
+          Just (vsnToString maxVersion)
 
     _ ->
-        Nothing
+      Nothing
 
 
 
@@ -80,7 +69,7 @@ realMax rawVsn allRawVsns =
 
 
 vsnToString : Version -> String
-vsnToString (major, minor, patch) =
+vsnToString ( major, minor, patch ) =
   toString major ++ "." ++ toString minor ++ "." ++ toString patch
 
 
@@ -94,12 +83,12 @@ filterInteresting versions =
 
 
 toLatest : Int -> MinorPatch -> Version
-toLatest major {latest} =
+toLatest major { latest } =
   let
-    (minor, patch) =
+    ( minor, patch ) =
       latest
   in
-    (major, minor, patch)
+    ( major, minor, patch )
 
 
 
@@ -110,10 +99,9 @@ type alias Dictionary =
   Dict.Dict Int MinorPatch
 
 
-
 type alias MinorPatch =
-  { latest : (Int, Int)
-  , others : List (Int, Int)
+  { latest : ( Int, Int )
+  , others : List ( Int, Int )
   }
 
 
@@ -123,17 +111,17 @@ toDict versions =
 
 
 toDictHelp : Version -> Dictionary -> Dictionary
-toDictHelp (major, minor, patch) dict =
+toDictHelp ( major, minor, patch ) dict =
   let
     current =
-      (minor, patch)
+      ( minor, patch )
 
     update maybeMinorPatch =
       case maybeMinorPatch of
         Nothing ->
           Just (MinorPatch current [])
 
-        Just {latest, others} ->
+        Just { latest, others } ->
           Just (MinorPatch (max latest current) (insert (min latest current) others))
   in
     Dict.update major update dict
@@ -143,11 +131,10 @@ insert : comparable -> List comparable -> List comparable
 insert y list =
   case list of
     [] ->
-      [y]
+      [ y ]
 
     x :: xs ->
       if y > x then
         x :: insert y xs
-
       else
         y :: list

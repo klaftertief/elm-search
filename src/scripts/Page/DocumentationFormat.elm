@@ -1,11 +1,9 @@
-module Page.DocumentationFormat where
+module Page.DocumentationFormat (..) where
 
 import Effects as Fx
 import StartApp
 import Task
-
 import Component.Blog as Blog
-
 
 
 -- WIRES
@@ -34,7 +32,8 @@ port worker =
 
 
 content : String
-content = """
+content =
+  """
 
 # Documentation Format
 

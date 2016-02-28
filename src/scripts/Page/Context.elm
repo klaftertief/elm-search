@@ -1,4 +1,4 @@
-module Page.Context where
+module Page.Context (..) where
 
 import Http
 import Task
@@ -14,12 +14,12 @@ type alias OverviewContext =
 
 
 type alias VersionContext =
-    { user : String
-    , project : String
-    , version : String
-    , allVersions : List String
-    , moduleName : Maybe String
-    }
+  { user : String
+  , project : String
+  , version : String
+  , allVersions : List String
+  , moduleName : Maybe String
+  }
 
 
 getReadme : VersionContext -> Task.Task Http.Error String
@@ -33,5 +33,5 @@ getDocs context =
 
 
 pathTo : VersionContext -> String -> String
-pathTo {user,project,version} file =
+pathTo { user, project, version } file =
   "https://crossorigin.me/http://package.elm-lang.org/packages" </> user </> project </> version </> file

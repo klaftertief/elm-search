@@ -1,11 +1,4 @@
-module Docs.Package
-  ( Package
-  , Module
-  , encodePackage
-  , decodePackage
-  , decodeModule
-  )
-  where
+module Docs.Package (Package, Module, encodePackage, decodePackage, decodeModule) where
 
 import Dict
 import Json.Decode as Json exposing ((:=))
@@ -14,23 +7,23 @@ import Docs.Name as Name
 import Docs.Entry as Entry
 
 
-
 -- TYPES
 
 
 type alias Package =
-    Dict.Dict String Module
+  Dict.Dict String Module
 
 
 type alias Module =
-    { name : String
-    , comment : String
-    , entries : Dict.Dict String (Entry.Model String)
-    }
+  { name : String
+  , comment : String
+  , entries : Dict.Dict String (Entry.Model String)
+  }
 
 
 
 -- ENCODERS
+
 
 encodePackage : Package -> Encode.Value
 encodePackage package =
@@ -42,20 +35,23 @@ encodePackage package =
 encodeModule : Module -> Encode.Value
 encodeModule modul =
   Encode.object
-    [ ("name", Encode.string modul.name)
-    , ("comment", Encode.string modul.comment)
-    , ("aliases", Encode.list [])
-    , ("types", Encode.list [])
-    , ("values"
+    [ ( "name", Encode.string modul.name )
+    , ( "comment", Encode.string modul.comment )
+    , ( "aliases", Encode.list [] )
+    , ( "types", Encode.list [] )
+    , ( "values"
       , Dict.values modul.entries
-        |> List.filter
-          (\entry ->
-            case entry.info of
-              Entry.Value tipe fixity -> True
-              _ -> False
-          )
-        |> List.map Entry.encode
-        |> Encode.list
+          |> List.filter
+              (\entry ->
+                case entry.info of
+                  Entry.Value tipe fixity ->
+                    True
+
+                  _ ->
+                    False
+              )
+          |> List.map Entry.encode
+          |> Encode.list
       )
     ]
 
@@ -75,7 +71,8 @@ decodeModule =
     make name comment values unions aliases =
       Module name comment (dictBy .name (values ++ unions ++ aliases))
   in
-    Json.object5 make
+    Json.object5
+      make
       ("name" := Json.string)
       ("comment" := Json.string)
       ("aliases" := Json.list (entry alias))
@@ -85,7 +82,7 @@ decodeModule =
 
 dictBy : (a -> comparable) -> List a -> Dict.Dict comparable a
 dictBy f list =
-  Dict.fromList (List.map (\x -> (f x, x)) list)
+  Dict.fromList (List.map (\x -> ( f x, x )) list)
 
 
 
@@ -94,7 +91,8 @@ dictBy f list =
 
 entry : Json.Decoder (Entry.Info String) -> Json.Decoder (Entry.Model String)
 entry decodeInfo =
-  Json.object3 Entry.Model
+  Json.object3
+    Entry.Model
     ("name" := Json.string)
     decodeInfo
     ("comment" := Json.string)
@@ -106,14 +104,16 @@ entry decodeInfo =
 
 value : Json.Decoder (Entry.Info String)
 value =
-  Json.object2 Entry.Value
+  Json.object2
+    Entry.Value
     ("type" := tipe)
     (Json.maybe fixity)
 
 
 fixity : Json.Decoder Entry.Fixity
 fixity =
-  Json.object2 Entry.Fixity
+  Json.object2
+    Entry.Fixity
     ("precedence" := Json.int)
     ("associativity" := Json.string)
 
@@ -124,7 +124,8 @@ fixity =
 
 union : Json.Decoder (Entry.Info String)
 union =
-  Json.object2 (\vars tags -> Entry.Union { vars = vars, tags = tags })
+  Json.object2
+    (\vars tags -> Entry.Union { vars = vars, tags = tags })
     ("args" := Json.list Json.string)
     ("cases" := Json.list tag)
 
@@ -140,7 +141,8 @@ tag =
 
 alias : Json.Decoder (Entry.Info String)
 alias =
-  Json.object2 (\vars tipe -> Entry.Alias { vars = vars, tipe = tipe })
+  Json.object2
+    (\vars tipe -> Entry.Alias { vars = vars, tipe = tipe })
     ("args" := Json.list Json.string)
     ("type" := tipe)
 
@@ -152,5 +154,3 @@ alias =
 tipe : Json.Decoder String
 tipe =
   Json.string
-
-

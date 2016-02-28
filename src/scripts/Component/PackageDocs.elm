@@ -1,4 +1,4 @@
-module Component.PackageDocs where
+module Component.PackageDocs (..) where
 
 import Dict
 import Effects as Fx exposing (Effects)
@@ -9,7 +9,6 @@ import Regex
 import Set
 import String
 import Task
-
 import Docs.Entry as Entry
 import Docs.Name as Name
 import Docs.Package as Docs
@@ -20,16 +19,15 @@ import Parse.Type as Type
 import Utils.Markdown as Markdown
 
 
-
 -- MODEL
 
 
 type Model
-    = Loading
-    | Failed Http.Error
-    | Readme String
-    | RawDocs (Info String)
-    | ParsedDocs (Info Type.Type)
+  = Loading
+  | Failed Http.Error
+  | Readme String
+  | RawDocs (Info String)
+  | ParsedDocs (Info Type.Type)
 
 
 type alias Info tipe =
@@ -40,14 +38,15 @@ type alias Info tipe =
 
 
 type Chunk tipe
-    = Markdown String
-    | Entry (Entry.Model tipe)
+  = Markdown String
+  | Entry (Entry.Model tipe)
+
 
 
 -- INIT
 
 
-init : Ctx.VersionContext -> (Model, Effects Action)
+init : Ctx.VersionContext -> ( Model, Effects Action )
 init context =
   ( Loading
   , getContext context
@@ -59,58 +58,58 @@ init context =
 
 
 type Action
-    = LoadDocs String Docs.Package
-    | LoadParsedDocs (List (Chunk Type.Type))
-    | LoadReadme String
-    | Fail Http.Error
-    | NoOp
+  = LoadDocs String Docs.Package
+  | LoadParsedDocs (List (Chunk Type.Type))
+  | LoadReadme String
+  | Fail Http.Error
+  | NoOp
 
 
-update : Action -> Model -> (Model, Effects Action)
+update : Action -> Model -> ( Model, Effects Action )
 update action model =
   case action of
     NoOp ->
-        ( model
-        , Fx.none
-        )
+      ( model
+      , Fx.none
+      )
 
     Fail httpError ->
-        ( Failed httpError
-        , Fx.none
-        )
+      ( Failed httpError
+      , Fx.none
+      )
 
     LoadReadme readme ->
-        ( Readme readme
-        , Fx.none
-        )
+      ( Readme readme
+      , Fx.none
+      )
 
     LoadDocs moduleName docs ->
-        case Dict.get moduleName docs of
-          Just moduleDocs ->
-              let
-                chunks =
-                  toChunks moduleDocs
-              in
-                ( RawDocs (Info moduleName (toNameDict docs) chunks)
-                , delayedTypeParse chunks
-                )
+      case Dict.get moduleName docs of
+        Just moduleDocs ->
+          let
+            chunks =
+              toChunks moduleDocs
+          in
+            ( RawDocs (Info moduleName (toNameDict docs) chunks)
+            , delayedTypeParse chunks
+            )
 
-          Nothing ->
-              ( Failed (Http.UnexpectedPayload ("Could not find module '" ++ moduleName ++ "'"))
-              , Fx.none
-              )
+        Nothing ->
+          ( Failed (Http.UnexpectedPayload ("Could not find module '" ++ moduleName ++ "'"))
+          , Fx.none
+          )
 
     LoadParsedDocs newChunks ->
-        case model of
-          RawDocs info ->
-              ( ParsedDocs { info | chunks = newChunks }
-              , jumpToHash
-              )
+      case model of
+        RawDocs info ->
+          ( ParsedDocs { info | chunks = newChunks }
+          , jumpToHash
+          )
 
-          _ ->
-              ( Failed (Http.UnexpectedPayload ("Something went wrong parsing types."))
-              , Fx.none
-              )
+        _ ->
+          ( Failed (Http.UnexpectedPayload ("Something went wrong parsing types."))
+          , Fx.none
+          )
 
 
 toNameDict : Docs.Package -> Name.Dictionary
@@ -140,9 +139,10 @@ getContext context =
 
 delayedTypeParse : List (Chunk String) -> Effects Action
 delayedTypeParse chunks =
-  Fx.task <|
-    Task.succeed () `Task.andThen` \_ ->
-        Task.succeed (LoadParsedDocs (List.map (chunkMap stringToType) chunks))
+  Fx.task
+    <| Task.succeed ()
+    `Task.andThen` \_ ->
+                    Task.succeed (LoadParsedDocs (List.map (chunkMap stringToType) chunks))
 
 
 chunkMap : (a -> b) -> Chunk a -> Chunk b
@@ -176,44 +176,44 @@ jumpToHash =
 -- VIEW
 
 
-(=>) = (,)
+(=>) =
+  (,)
 
 
 view : Signal.Address Action -> Model -> Html
 view addr model =
-  div [ class "entry-list" ] <|
-    case model of
-      Loading ->
-          [ p [] [text "Loading..."]
+  div [ class "entry-list" ]
+    <| case model of
+        Loading ->
+          [ p [] [ text "Loading..." ]
           ]
 
-      Failed httpError ->
-          [ p [] [text "Documentation did not load."]
-          , p [] [text (toString httpError)]
+        Failed httpError ->
+          [ p [] [ text "Documentation did not load." ]
+          , p [] [ text (toString httpError) ]
           ]
 
-      Readme readme ->
+        Readme readme ->
           [ Markdown.block readme
           ]
 
-      RawDocs {name,chunks} ->
-          h1 [class "entry-list-title"] [text name]
-          :: List.map (viewChunk Entry.stringView) chunks
+        RawDocs { name, chunks } ->
+          h1 [ class "entry-list-title" ] [ text name ]
+            :: List.map (viewChunk Entry.stringView) chunks
 
-      ParsedDocs {name,nameDict,chunks} ->
-          h1 [class "entry-list-title"] [text name]
-          :: List.map (viewChunk (Entry.typeView nameDict)) chunks
+        ParsedDocs { name, nameDict, chunks } ->
+          h1 [ class "entry-list-title" ] [ text name ]
+            :: List.map (viewChunk (Entry.typeView nameDict)) chunks
 
 
 viewChunk : (Entry.Model tipe -> Html) -> Chunk tipe -> Html
 viewChunk entryView chunk =
   case chunk of
     Markdown md ->
-        span [class "markdown-entry"] [ Markdown.block md ]
+      span [ class "markdown-entry" ] [ Markdown.block md ]
 
     Entry entry ->
-        entryView entry
-
+      entryView entry
 
 
 
@@ -224,56 +224,56 @@ toChunks : Docs.Module -> List (Chunk String)
 toChunks moduleDocs =
   case String.split "\n@docs " moduleDocs.comment of
     [] ->
-        Debug.crash "Expecting some documented functions in this module!"
+      Debug.crash "Expecting some documented functions in this module!"
 
     firstChunk :: rest ->
-        Markdown firstChunk
+      Markdown firstChunk
         :: List.concatMap (subChunks moduleDocs) rest
 
 
 subChunks : Docs.Module -> String -> List (Chunk String)
 subChunks moduleDocs postDocs =
-    subChunksHelp moduleDocs (String.split "," postDocs)
+  subChunksHelp moduleDocs (String.split "," postDocs)
 
 
 subChunksHelp : Docs.Module -> List String -> List (Chunk String)
 subChunksHelp moduleDocs parts =
   case parts of
     [] ->
-        []
+      []
 
     rawPart :: remainingParts ->
-        let
-          part =
-            String.trim rawPart
-
-        in
-          case isValue part of
-            Just valueName ->
-              toEntry moduleDocs valueName
+      let
+        part =
+          String.trim rawPart
+      in
+        case isValue part of
+          Just valueName ->
+            toEntry moduleDocs valueName
               :: subChunksHelp moduleDocs remainingParts
 
-            Nothing ->
-              let
-                trimmedPart =
-                  String.trimLeft rawPart
-              in
-                case String.words trimmedPart of
-                  [] ->
+          Nothing ->
+            let
+              trimmedPart =
+                String.trimLeft rawPart
+            in
+              case String.words trimmedPart of
+                [] ->
+                  [ Markdown (String.join "," parts) ]
+
+                token :: _ ->
+                  case isValue token of
+                    Just valueName ->
+                      [ toEntry moduleDocs valueName
+                      , trimmedPart
+                          :: remainingParts
+                          |> String.join ","
+                          |> String.dropLeft (String.length token)
+                          |> Markdown
+                      ]
+
+                    Nothing ->
                       [ Markdown (String.join "," parts) ]
-
-                  token :: _ ->
-                      case isValue token of
-                        Just valueName ->
-                          [ toEntry moduleDocs valueName
-                          , trimmedPart :: remainingParts
-                              |> String.join ","
-                              |> String.dropLeft (String.length token)
-                              |> Markdown
-                          ]
-
-                        Nothing ->
-                          [ Markdown (String.join "," parts) ]
 
 
 var : Regex.Regex
@@ -290,20 +290,17 @@ isValue : String -> Maybe String
 isValue str =
   if Regex.contains var str then
     Just str
-
   else if Regex.contains operator str then
     Just (String.dropLeft 1 (String.dropRight 1 str))
-
   else
     Nothing
-
 
 
 toEntry : Docs.Module -> String -> Chunk String
 toEntry moduleDocs name =
   case Dict.get name moduleDocs.entries of
     Nothing ->
-        Debug.crash ("docs have been corrupted, could not find " ++ name)
+      Debug.crash ("docs have been corrupted, could not find " ++ name)
 
     Just entry ->
-        Entry entry
+      Entry entry
