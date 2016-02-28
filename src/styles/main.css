@@ -1,0 +1,43 @@
+html {
+  font-size: 18px;
+}
+
+body {
+  font-size: 1rem;
+  font-family: Source Sans Pro, Trebuchet MS, Lucida Grande, Bitstream Vera Sans, Helvetica Neue, sans-serif;
+  background-color: #fff;
+  color: #293c4b;
+  display: flex;
+  margin: 0;
+  padding: 0;
+}
+
+header {
+  width: 10vw;
+  min-width: 8rem;
+  padding: 0.5rem;
+}
+
+h1 {
+  font-size: 1rem;
+  margin: 0 0 1rem 0;
+  font-weight: normal;
+}
+
+img {
+  display: block;
+  width: 50px;
+  margin: 0 auto;
+}
+
+main {
+  width: 80vw;
+  padding: 0.5rem;
+}
+
+input {
+  display: block;
+  width: 100%;
+  font-size: 1rem;
+  font-family: Source Sans Pro, sans-serif;
+}
