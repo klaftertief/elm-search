@@ -1,6 +1,5 @@
 module Docs.Entry (..) where
 
-import Effects as Fx exposing (Effects)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Json.Encode as Encode
@@ -63,15 +62,6 @@ encodeInfo info =
 
     _ ->
       Encode.string "TODO"
-
-
-
--- UPDATE
-
-
-update : a -> Model tipe -> ( Model tipe, Effects a )
-update action model =
-  ( model, Fx.none )
 
 
 
@@ -155,13 +145,11 @@ stringView model =
         Value tipe _ ->
           [ nameToLink model.name :: padded colon ++ [ text tipe ] ]
 
-        Union { vars, tags } ->
-          unionAnnotation (\t -> [ text t ]) model.name vars tags
+        Union _ ->
+          [ [ text "Union annotation not supported" ] ]
 
-        Alias { vars, tipe } ->
-          [ aliasNameLine model.name vars
-          , [ text "    ", text tipe ]
-          ]
+        Alias _ ->
+          [ [ text "Alias annotation not supported" ] ]
   in
     div
       [ class "docs-entry", id model.name ]
@@ -206,11 +194,11 @@ typeViewSearch basePath ({ home, name } as canonical) nameDict model =
         Value tipe _ ->
           valueAnnotationSearch path canonical nameDict model.name tipe
 
-        Union { vars, tags } ->
-          unionAnnotation (Type.toHtml nameDict Type.App) model.name vars tags
+        Union _ ->
+          [ [ text "Union annotation not supported" ] ]
 
-        Alias { vars, tipe } ->
-          aliasAnnotation nameDict model.name vars tipe
+        Alias _ ->
+          [ [ text "Alias annotation not supported" ] ]
 
     description =
       Maybe.withDefault
@@ -241,11 +229,11 @@ typeView nameDict model =
         Value tipe _ ->
           valueAnnotation nameDict model.name tipe
 
-        Union { vars, tags } ->
-          unionAnnotation (Type.toHtml nameDict Type.App) model.name vars tags
+        Union _ ->
+          [ [ text "Union annotation not supported" ] ]
 
-        Alias { vars, tipe } ->
-          aliasAnnotation nameDict model.name vars tipe
+        Alias _ ->
+          [ [ text "Alias annotation not supported" ] ]
   in
     div
       [ class "docs-entry", id model.name ]
@@ -286,7 +274,6 @@ operator =
 
 
 -- VALUE ANNOTATIONS
--- TODO: DRY this up with the existing "normal" typeView, mainly with regard to support absolute links via the basePath od the Context.
 
 
 valueAnnotationSearch : String -> Name.Canonical -> Name.Dictionary -> String -> Type -> List (List Html)
@@ -339,78 +326,3 @@ longFunctionAnnotationSearch basePath nameDict args result =
         :: List.repeat (List.length args) [ text "    ", arrow, space ]
   in
     List.map2 (++) starters tipeHtml
-
-
-
--- UNION ANNOTATIONS
-
-
-unionAnnotation : (tipe -> List Html) -> String -> List String -> List (Tag tipe) -> List (List Html)
-unionAnnotation tipeToHtml name vars tags =
-  let
-    nameLine =
-      [ keyword "type"
-      , space
-      , nameToLink name
-      , text (String.concat (List.map ((++) " ") vars))
-      ]
-
-    tagLines =
-      List.map2
-        (::)
-        (text "    = " :: List.repeat (List.length tags - 1) (text "    | "))
-        (List.map (viewTag tipeToHtml) tags)
-  in
-    nameLine :: tagLines
-
-
-viewTag : (tipe -> List Html) -> Tag tipe -> List Html
-viewTag tipeToHtml { tag, args } =
-  text tag :: List.concatMap ((::) space) (List.map tipeToHtml args)
-
-
-
--- ALIAS ANNOTATIONS
-
-
-aliasAnnotation : Name.Dictionary -> String -> List String -> Type -> List (List Html)
-aliasAnnotation nameDict name vars tipe =
-  let
-    typeLines =
-      case tipe of
-        Type.Record fields ext ->
-          let
-            ( firstLine, starters ) =
-              case ext of
-                Nothing ->
-                  ( []
-                  , text "    { " :: List.repeat (List.length fields) (text "    , ")
-                  )
-
-                Just extName ->
-                  ( [ [ text "    { ", text extName, text " |" ] ]
-                  , text "      | " :: List.repeat (List.length fields) (text "      , ")
-                  )
-          in
-            firstLine
-              ++ List.map2 (::) starters (List.map (Type.fieldToHtml nameDict) fields)
-              ++ [ [ text "    }" ] ]
-
-        _ ->
-          [ text "    " :: Type.toHtml nameDict Type.Other tipe ]
-  in
-    aliasNameLine name vars :: typeLines
-
-
-aliasNameLine : String -> List String -> List Html
-aliasNameLine name vars =
-  [ keyword "type"
-  , space
-  , keyword "alias"
-  , space
-  , nameToLink name
-  , text (String.concat (List.map ((++) " ") vars))
-  , space
-  , equals
-  , space
-  ]

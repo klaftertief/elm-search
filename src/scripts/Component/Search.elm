@@ -534,7 +534,7 @@ searchResultsChunks { packageDict } weightedChunks =
           div
             []
             [ Entry.typeViewSearch package name (nameDict packageDict package) entry
-            , div [ class "searchDebug" ] [ text (toString distance) ]
+              --, div [ class "searchDebug" ] [ text (toString distance) ]
             ]
         )
 
