@@ -265,58 +265,6 @@ length context tipe =
 -- SEARCH
 
 
-{-| Calculate a numerical distance between a query Type (needle) and a target Type (hay). The order of the arguments are significant. The arguments should get `normalize`d (see below) before passed in.
-A calculated distance of `0` means that the types are the same.
-
-The function calls itself recursively and checks if the passed types are of the same general structure. If the base types do not match it returns with a maximum penalty. If they match it compares the names of the type and if applicable the child types recursively.
-
-The number of the arguments in needle functions don't have to match the number of the arguments in hay functions. This is to support "incomplete" searches. Comparisons with needle functions with too many arguments get a havy penalty, though.
--}
-distance : Type -> Type -> Int
-distance needle hay =
-  let
-    defaultPenalty =
-      10
-
-    argsLengthPenalty needleList hayList =
-      let
-        argsLengthDiff =
-          List.length needleList - List.length hayList
-      in
-        if argsLengthDiff > 0 then
-          argsLengthDiff * defaultPenalty
-        else if argsLengthDiff < 0 then
-          argsLengthDiff * -1
-        else
-          0
-  in
-    case ( needle, hay ) of
-      -- Don't compare the result types explicitely to support incomplete search queries
-      ( Function argsNeedle resultNeedle, Function argsHay resultHay ) ->
-        List.sum
-          (List.map2
-            distance
-            (List.append argsNeedle [ resultNeedle ])
-            (List.append argsHay [ resultHay ])
-          )
-          + argsLengthPenalty argsNeedle argsHay
-
-      ( Var nameNeedle, Var nameHay ) ->
-        compareVarsWithPenalty defaultPenalty nameNeedle nameHay
-
-      ( Apply canonicalNeedle argsNeedle, Apply canonicalHay argsHay ) ->
-        compareNamesWithPenalty 2 canonicalNeedle.home canonicalHay.home
-          + compareNamesWithPenalty 2 canonicalNeedle.name canonicalHay.name
-          + List.sum (List.map2 distance argsNeedle argsHay)
-          + argsLengthPenalty argsNeedle argsHay
-
-      ( Tuple argsNeedle, Tuple argsHay ) ->
-        List.sum (List.map2 distance argsNeedle argsHay)
-
-      _ ->
-        100
-
-
 noPenalty : Float
 noPenalty =
   0
@@ -342,8 +290,8 @@ maxPenalty =
   1
 
 
-distanceF : Type -> Type -> Float
-distanceF needle hay =
+distance : Type -> Type -> Float
+distance needle hay =
   case ( needle, hay ) of
     {- Compare two functions `Function (List Type) Type`
     Functions get parsed like `a -> b` ~> `Function ([Var "a"]) (Var "b")`
@@ -359,7 +307,7 @@ distanceF needle hay =
           case ( argsN, argsH ) of
             -- Compare `a -> r` and `b -> s`
             ( [ Var n ], [ Var h ] ) ->
-              distanceNameF n h
+              distanceName n h
 
             -- Compare `a -> r` and `b -> c -> s`
             -- This is the important special case.
@@ -368,46 +316,46 @@ distanceF needle hay =
 
             -- The default case
             _ ->
-              distanceListF argsN argsH
+              distanceList argsN argsH
 
         resultDistance =
-          distanceF resultN resultH
+          distance resultN resultH
       in
         (argsDistance + resultDistance) / 2
 
     -- Var String
     -- `a` ~> `Var "a"`
     ( Var nameN, Var nameH ) ->
-      distanceNameF nameN nameH
+      distanceName nameN nameH
 
     ( Var nameN, Apply canonicalH _ ) ->
-      distanceVarApplyF nameN canonicalH
+      distanceVarApply nameN canonicalH
 
     ( Apply canonicalN _, Var nameH ) ->
-      distanceVarApplyF nameH canonicalN
+      distanceVarApply nameH canonicalN
 
     -- `Apply Name.Canonical (List Type)`
     -- `Foo.Bar a b` ~> `Apply { home = "Foo", name = "Bar" } ([Var "a", Var "b"])`
     ( Apply canonicalN argsN, Apply canonicalH argsH ) ->
       case ( argsN, argsH ) of
         ( [], [] ) ->
-          distanceCanonicalF canonicalN canonicalH
+          distanceCanonical canonicalN canonicalH
 
         ( [], hd :: tl ) ->
-          --distanceCanonicalF canonicalN canonicalH
+          --distanceCanonical canonicalN canonicalH
           -- TODO: should we do this only for some specific types like `Maybe` and `Result`?
           -- TODO: check if this is a nice implementation (with regard to `min` and `+ lowPenalty`)
           min maxPenalty
-            <| distanceF needle (Maybe.withDefault hd (List.head (List.reverse tl)))
+            <| distance needle (Maybe.withDefault hd (List.head (List.reverse tl)))
             + lowPenalty
 
         _ ->
-          (distanceCanonicalF canonicalN canonicalH + distanceListF argsN argsH) / 2
+          (distanceCanonical canonicalN canonicalH + distanceList argsN argsH) / 2
 
     -- Tuple (List Type)
     -- `(a,b)` ~> `Tuple ([Var "a",Var "b"])`
     ( Tuple argsN, Tuple argsH ) ->
-      distanceListF argsN argsH
+      distanceList argsN argsH
 
     -- TODO: Record (List ( String, Type )) (Maybe String)
     {- The incomparable case
@@ -417,8 +365,8 @@ distanceF needle hay =
       maxPenalty
 
 
-distanceListF : List Type -> List Type -> Float
-distanceListF needle hay =
+distanceList : List Type -> List Type -> Float
+distanceList needle hay =
   let
     needelLength =
       List.length needle
@@ -435,24 +383,24 @@ distanceListF needle hay =
     diffLength =
       maxLength - sharedLength
   in
-    List.map2 distanceF needle hay
+    List.map2 distance needle hay
       |> List.sum
       |> (flip (+)) (toFloat diffLength * maxPenalty)
       |> (flip (/)) (toFloat maxLength)
 
 
-distanceNameF : String -> String -> Float
-distanceNameF needle hay =
+distanceName : String -> String -> Float
+distanceName needle hay =
   if needle == hay then
     noPenalty
   else
     maxPenalty
 
 
-distanceCanonicalF : Name.Canonical -> Name.Canonical -> Float
-distanceCanonicalF needle hay =
+distanceCanonical : Name.Canonical -> Name.Canonical -> Float
+distanceCanonical needle hay =
   -- TODO: Also take `.home` into account.
-  --distanceNameF needle.name hay.name
+  --distanceName needle.name hay.name
   if needle.name == hay.name then
     noPenalty
   else if String.contains needle.name hay.name then
@@ -461,8 +409,8 @@ distanceCanonicalF needle hay =
     maxPenalty
 
 
-distanceVarApplyF : String -> Name.Canonical -> Float
-distanceVarApplyF varName applyName =
+distanceVarApply : String -> Name.Canonical -> Float
+distanceVarApply varName applyName =
   let
     maybeReservedVarTypeList =
       Dict.get varName reserverdVars

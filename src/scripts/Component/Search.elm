@@ -507,13 +507,13 @@ viewSearchResults addr ({ query, chunks } as info) =
       case queryType of
         Type.Var string ->
           chunks
-            |> List.map (\chunk -> ( toFloat <| Entry.nameDistance query chunk.entry, chunk ))
-            |> List.filter (\( distance, _ ) -> distance < 10)
+            |> List.map (\chunk -> ( Entry.nameDistance query chunk.entry, chunk ))
+            |> List.filter (\( distance, _ ) -> distance <= Type.lowPenalty)
 
         _ ->
           chunks
-            |> List.map (\chunk -> ( Entry.typeDistanceF queryType chunk.entryNormalized, chunk ))
-            |> List.filter (\( distance, _ ) -> distance < Type.lowPenalty)
+            |> List.map (\chunk -> ( Entry.typeDistance queryType chunk.entryNormalized, chunk ))
+            |> List.filter (\( distance, _ ) -> distance <= Type.lowPenalty)
   in
     if List.length filteredChunks == 0 then
       div
@@ -534,7 +534,7 @@ searchResultsChunks { packageDict } weightedChunks =
           div
             []
             [ Entry.typeViewSearch package name (nameDict packageDict package) entry
-              --, div [ class "searchDebug" ] [ text (toString distance) ]
+            , div [ class "searchDebug" ] [ text (toString distance) ]
             ]
         )
 

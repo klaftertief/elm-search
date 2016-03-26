@@ -1,7 +1,6 @@
 module Parse.Combinators (..) where
 
 import Char
-import String
 import Native.Parse
 
 

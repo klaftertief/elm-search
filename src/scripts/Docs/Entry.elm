@@ -94,43 +94,33 @@ tagMap func tag =
 -- FILTER
 
 
-nameDistance : String -> Model Type -> Int
+nameDistance : String -> Model Type -> Float
 nameDistance query model =
   case model.info of
     Value tipe _ ->
       if query == model.name then
-        0
+        Type.noPenalty
       else if String.contains query model.name then
-        1
+        Type.lowPenalty
       else
-        10
+        Type.maxPenalty
 
     _ ->
-      100
+      Type.maxPenalty
 
 
 
 -- Only find `Value` entries, no `Union` or `Alias`
 
 
-typeDistance : Type -> Model Type -> Int
+typeDistance : Type -> Model Type -> Float
 typeDistance queryType model =
   case model.info of
     Value tipe _ ->
       Type.distance queryType tipe
 
     _ ->
-      100
-
-
-typeDistanceF : Type -> Model Type -> Float
-typeDistanceF queryType model =
-  case model.info of
-    Value tipe _ ->
-      Type.distanceF queryType tipe
-
-    _ ->
-      1
+      Type.maxPenalty
 
 
 
