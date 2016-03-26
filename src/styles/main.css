@@ -1,5 +1,9 @@
+* {
+  box-sizing: border-box;
+}
+
 html {
-  font-size: 18px;
+  font-size: 16px;
 }
 
 body {
@@ -7,32 +11,22 @@ body {
   font-family: Source Sans Pro, Trebuchet MS, Lucida Grande, Bitstream Vera Sans, Helvetica Neue, sans-serif;
   background-color: #fff;
   color: #293c4b;
-  display: flex;
   margin: 0;
-  padding: 0;
+  padding: 1rem;
 }
 
-header {
-  width: 10vw;
-  min-width: 8rem;
+#app {
+  margin-top: 2rem;
+}
+
+.search-input {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
   padding: 0.5rem;
-}
-
-h1 {
-  font-size: 1rem;
-  margin: 0 0 1rem 0;
-  font-weight: normal;
-}
-
-img {
-  display: block;
-  width: 50px;
-  margin: 0 auto;
-}
-
-main {
-  width: 80vw;
-  padding: 0.5rem;
+  background-color: #ddd;
+  border-bottom: 1px solid #ccc;
 }
 
 input {
@@ -40,4 +34,7 @@ input {
   width: 100%;
   font-size: 1rem;
   font-family: Source Sans Pro, sans-serif;
+  border: 1px solid #ccc;
+  border-radius: 0.25rem;
+  padding: 0.25rem;
 }

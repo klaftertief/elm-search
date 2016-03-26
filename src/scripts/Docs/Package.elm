@@ -3,7 +3,6 @@ module Docs.Package (Package, Module, encodePackage, decodePackage, decodeModule
 import Dict
 import Json.Decode as Json exposing ((:=))
 import Json.Encode as Encode
-import Docs.Name as Name
 import Docs.Entry as Entry
 
 

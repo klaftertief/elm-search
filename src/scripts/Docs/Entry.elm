@@ -133,6 +133,16 @@ typeDistance queryType model =
       100
 
 
+typeDistanceF : Type -> Model Type -> Float
+typeDistanceF queryType model =
+  case model.info of
+    Value tipe _ ->
+      Type.distanceF queryType tipe
+
+    _ ->
+      1
+
+
 
 -- STRING VIEW
 
@@ -164,6 +174,7 @@ stringView model =
 -- TYPE VIEW
 
 
+(=>) : a -> b -> ( a, b )
 (=>) =
   (,)
 
@@ -173,10 +184,22 @@ stringView model =
 
 
 typeViewSearch : String -> Name.Canonical -> Name.Dictionary -> Model Type -> Html
-typeViewSearch basePath canonical nameDict model =
+typeViewSearch basePath ({ home, name } as canonical) nameDict model =
   let
     path =
       "http://package.elm-lang.org/packages/" ++ basePath
+
+    modulePath =
+      path
+        ++ "/"
+        ++ String.map
+            (\c ->
+              if c == '.' then
+                '-'
+              else
+                c
+            )
+            home
 
     annotation =
       case model.info of
@@ -195,16 +218,17 @@ typeViewSearch basePath canonical nameDict model =
         (List.head (String.split "\n\n" model.docs))
   in
     div
-      [ class "docs-entry" ]
+      [ class "searchResult" ]
       [ annotationBlock annotation
-      , div [] [ Markdown.block description ]
-      , span
-          []
+      , div [ class "searchDescription" ] [ Markdown.block description ]
+      , div
+          [ class "searchMeta" ]
           [ a
-              [ href path
-              , style [ "color" => "#bbb" ]
-              ]
+              [ href path, class "searchPackage" ]
               [ text basePath ]
+          , a
+              [ href modulePath, class "searchModule" ]
+              [ text canonical.home ]
           ]
       ]
 
@@ -233,8 +257,14 @@ typeView nameDict model =
 annotationBlock : List (List Html) -> Html
 annotationBlock bits =
   div
-    [ class "docs-annotation" ]
-    (List.concat (List.intersperse [ text "\n" ] bits))
+    [ class "searchAnnotation" ]
+    [ pre
+        []
+        [ code
+            []
+            (List.concat (List.intersperse [ text "\n" ] bits))
+        ]
+    ]
 
 
 nameToLink : String -> Html

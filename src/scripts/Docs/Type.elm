@@ -1,11 +1,8 @@
 module Docs.Type (..) where
 
 import Char
-import Dict
-import Effects as Fx exposing (Effects)
+import Dict exposing (Dict)
 import Html exposing (..)
-import Html.Attributes exposing (..)
-import Set
 import String
 import Docs.Name as Name
 import Utils.Code as Code exposing (arrow, colon, padded, space)
@@ -320,6 +317,167 @@ distance needle hay =
         100
 
 
+noPenalty : Float
+noPenalty =
+  0
+
+
+lowPenalty : Float
+lowPenalty =
+  0.25
+
+
+mediumPenalty : Float
+mediumPenalty =
+  0.5
+
+
+highPenalty : Float
+highPenalty =
+  0.75
+
+
+maxPenalty : Float
+maxPenalty =
+  1
+
+
+distanceF : Type -> Type -> Float
+distanceF needle hay =
+  case ( needle, hay ) of
+    {- Compare two functions `Function (List Type) Type`
+    Functions get parsed like `a -> b` ~> `Function ([Var "a"]) (Var "b")`
+    TODO: support three different comparisons
+      - strict: length of arguments have to match
+      - from beginning: concat args and result and compare the list
+      - from end: concat args and result and compare the reversed list
+    TODO: add some kind of mapping for vars in fuzzy calculations
+    -}
+    ( Function argsN resultN, Function argsH resultH ) ->
+      let
+        argsDistance =
+          case ( argsN, argsH ) of
+            -- Compare `a -> r` and `b -> s`
+            ( [ Var n ], [ Var h ] ) ->
+              distanceNameF n h
+
+            -- Compare `a -> r` and `b -> c -> s`
+            -- This is the important special case.
+            ( [ Var n ], _ ) ->
+              mediumPenalty
+
+            -- The default case
+            _ ->
+              distanceListF argsN argsH
+
+        resultDistance =
+          distanceF resultN resultH
+      in
+        (argsDistance + resultDistance) / 2
+
+    -- Var String
+    -- `a` ~> `Var "a"`
+    ( Var nameN, Var nameH ) ->
+      distanceNameF nameN nameH
+
+    ( Var nameN, Apply canonicalH _ ) ->
+      distanceVarApplyF nameN canonicalH
+
+    ( Apply canonicalN _, Var nameH ) ->
+      distanceVarApplyF nameH canonicalN
+
+    -- `Apply Name.Canonical (List Type)`
+    -- `Foo.Bar a b` ~> `Apply { home = "Foo", name = "Bar" } ([Var "a", Var "b"])`
+    ( Apply canonicalN argsN, Apply canonicalH argsH ) ->
+      case ( argsN, argsH ) of
+        ( [], [] ) ->
+          distanceCanonicalF canonicalN canonicalH
+
+        ( [], hd :: tl ) ->
+          --distanceCanonicalF canonicalN canonicalH
+          -- TODO: should we do this only for some specific types like `Maybe` and `Result`?
+          -- TODO: check if this is a nice implementation (with regard to `min` and `+ lowPenalty`)
+          min maxPenalty
+            <| distanceF needle (Maybe.withDefault hd (List.head (List.reverse tl)))
+            + lowPenalty
+
+        _ ->
+          (distanceCanonicalF canonicalN canonicalH + distanceListF argsN argsH) / 2
+
+    -- Tuple (List Type)
+    -- `(a,b)` ~> `Tuple ([Var "a",Var "b"])`
+    ( Tuple argsN, Tuple argsH ) ->
+      distanceListF argsN argsH
+
+    -- TODO: Record (List ( String, Type )) (Maybe String)
+    {- The incomparable case
+    TODO: Find and add special cases
+    -}
+    _ ->
+      maxPenalty
+
+
+distanceListF : List Type -> List Type -> Float
+distanceListF needle hay =
+  let
+    needelLength =
+      List.length needle
+
+    hayLength =
+      List.length hay
+
+    sharedLength =
+      min needelLength hayLength
+
+    maxLength =
+      max needelLength hayLength
+
+    diffLength =
+      maxLength - sharedLength
+  in
+    List.map2 distanceF needle hay
+      |> List.sum
+      |> (flip (+)) (toFloat diffLength * maxPenalty)
+      |> (flip (/)) (toFloat maxLength)
+
+
+distanceNameF : String -> String -> Float
+distanceNameF needle hay =
+  if needle == hay then
+    noPenalty
+  else
+    maxPenalty
+
+
+distanceCanonicalF : Name.Canonical -> Name.Canonical -> Float
+distanceCanonicalF needle hay =
+  -- TODO: Also take `.home` into account.
+  --distanceNameF needle.name hay.name
+  if needle.name == hay.name then
+    noPenalty
+  else if String.contains needle.name hay.name then
+    mediumPenalty
+  else
+    maxPenalty
+
+
+distanceVarApplyF : String -> Name.Canonical -> Float
+distanceVarApplyF varName applyName =
+  let
+    maybeReservedVarTypeList =
+      Dict.get varName reserverdVars
+  in
+    case maybeReservedVarTypeList of
+      Just typeList ->
+        if List.any ((==) applyName.name) typeList then
+          lowPenalty
+        else
+          maxPenalty
+
+      Nothing ->
+        mediumPenalty
+
+
 compareVarsWithPenalty : Int -> String -> String -> Int
 compareVarsWithPenalty penalty nameA nameB =
   if nameA == nameB then
@@ -338,16 +496,28 @@ compareNamesWithPenalty penalty nameA nameB =
     penalty
 
 
+isReservedVar : String -> Bool
+isReservedVar name =
+  Dict.member name reserverdVars
+
+
+reserverdVars : Dict String (List String)
+reserverdVars =
+  Dict.empty
+    |> Dict.insert "number" [ "Float", "Int" ]
+    |> Dict.insert "comparable" [ "Float", "Int", "Char", "String" ]
+    |> Dict.insert "appendable" [ "String", "List" ]
+
+
 type alias Mapping =
-  Dict.Dict String String
+  Dict String String
 
 
 defaultMapping : Mapping
 defaultMapping =
-  Dict.empty
-    |> Dict.insert "number" "number"
-    |> Dict.insert "comparable" "comparable"
-    |> Dict.insert "appendable" "appendable"
+  Dict.keys reserverdVars
+    |> List.map (\v -> ( v, v ))
+    |> Dict.fromList
 
 
 nextMappingValue : Mapping -> String

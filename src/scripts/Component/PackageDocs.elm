@@ -176,6 +176,7 @@ jumpToHash =
 -- VIEW
 
 
+(=>) : a -> b -> ( a, b )
 (=>) =
   (,)
 

@@ -1,1 +1,3 @@
 elm-stuff
+/bin/*
+node_modules/

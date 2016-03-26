@@ -7,9 +7,6 @@ import Task
 import Component.Search as Search
 
 
--- WIRES
-
-
 app : StartApp.App Model
 app =
   StartApp.start

@@ -9,6 +9,8 @@ import Http
 import Json.Decode as Json
 import Set
 import String
+import Svg
+import Svg.Attributes as SvgA
 import Task
 import Component.PackageDocs as PDocs
 import Docs.Summary as Summary
@@ -22,6 +24,13 @@ import Utils.Path exposing ((</>))
 import Signal
 import Signal.Time
 import Storage
+import Html.CssHelpers
+import Style.Shared exposing (..)
+
+
+ns =
+  Html.CssHelpers.namespace cssNamespace.name
+
 
 
 -- MODEL
@@ -73,6 +82,7 @@ init : ( Model, Effects Action )
 init =
   ( Loading
   , getPackageInfo
+    --, Fx.none
   )
 
 
@@ -83,7 +93,7 @@ queryMailbox =
 
 querySignal : Signal.Signal Action
 querySignal =
-  Signal.Time.settledAfter 300 queryMailbox.signal
+  Signal.Time.settledAfter 800 queryMailbox.signal
 
 
 
@@ -175,7 +185,7 @@ update action model =
             )
 
           _ ->
-            ( Docs (Info (Dict.singleton pkgName pkgInfo) chunks [] "")
+            ( Docs (Info (Dict.singleton pkgName pkgInfo) chunks [] "(a -> b -> b) -> b -> List a -> b")
             , Fx.none
             )
 
@@ -209,10 +219,10 @@ getPackageInfo : Effects Action
 getPackageInfo =
   let
     getAll =
-      Http.get Summary.decoder "https://crossorigin.me/http://package.elm-lang.org/all-packages"
+      Http.get Summary.decoder "/packages/all-packages.json"
 
     getNew =
-      Http.get (Json.list Json.string) "https://crossorigin.me/http://package.elm-lang.org/new-packages"
+      Http.get (Json.list Json.string) "/packages/new-packages.json"
   in
     Task.map2 (,) getAll getNew
       |> Task.map Load
@@ -273,11 +283,14 @@ getDocs summary =
 
 view : Signal.Address Action -> Model -> Html
 view addr model =
-  div [ class "search" ]
-    <| case model of
+  div
+    [ class "searchApp" ]
+    --<| (viewLogo addr model)
+    --::
+    <|
+      case model of
         Loading ->
-          [ p [] [ text "Loading list of packages..." ]
-          ]
+          [ p [] [ text "Loading list of packages..." ] ]
 
         Failed httpError ->
           [ p [] [ text "Package summary did not load." ]
@@ -297,14 +310,117 @@ view addr model =
           ]
 
 
+viewLogo : Signal.Address Action -> Model -> Html
+viewLogo address model =
+  let
+    orange =
+      "#F0AD00"
+
+    blue =
+      "#60B5CC"
+
+    green =
+      "#7FD13B"
+
+    grey =
+      "#5A6378"
+
+    halfHypothenuse =
+      128 / (sqrt 2)
+  in
+    div
+      [ class "logo"
+      , style
+          [ ( "padding", "64px 0 32px 0" )
+          , ( "text-align", "center" )
+          ]
+      ]
+      [ Svg.svg
+          [ SvgA.width "384", SvgA.height "384", SvgA.viewBox "-64 0 384 384" ]
+          [ Svg.g
+              [ SvgA.stroke "#fff"
+              , SvgA.strokeWidth "1"
+              , SvgA.strokeLinejoin "round"
+              ]
+              [ Svg.polygon
+                  [ SvgA.points "0,0 0,128 64,64"
+                  , SvgA.fill grey
+                  , SvgA.transform "translate(0 64) rotate(-45)"
+                  ]
+                  []
+              , Svg.polygon
+                  [ SvgA.points "64,0 128,64 128,0"
+                  , SvgA.fill blue
+                  , SvgA.transform "translate(-64 64) rotate(-45 64 0)"
+                  ]
+                  []
+              , Svg.polygon
+                  [ SvgA.points "0,128 128,128 64,64"
+                  , SvgA.fill blue
+                  , SvgA.transform ("rotate(90 64 64) translate(64 -" ++ toString halfHypothenuse ++ ")")
+                  ]
+                  []
+              , Svg.polygon
+                  [ SvgA.points "32,32 64,64 96,32"
+                  , SvgA.fill orange
+                  , SvgA.transform "translate(-96 32) rotate(-90 96 32)"
+                  ]
+                  []
+              , Svg.polygon
+                  [ SvgA.points "0,0 32,32 96,32 64,0"
+                  , SvgA.fill green
+                  , SvgA.transform ("scale(1 -1) translate(" ++ toString (halfHypothenuse / 2) ++ " -256) rotate(45)")
+                  ]
+                  []
+              , Svg.polygon
+                  [ SvgA.points "96,96 128,128 128,64"
+                  , SvgA.fill orange
+                  , SvgA.transform ("translate(0 128) rotate(225 96 128)")
+                  ]
+                  []
+                {- , Svg.polygon
+                [ SvgA.points "64,64 96,96 128,64 96,32"
+                , SvgA.fill green
+                , SvgA.transform "translate(0 160) rotate(45 96 64)"
+                ]
+                []
+                -}
+                {- , Svg.circle
+                [ SvgA.cx "0"
+                , SvgA.cy "64"
+                , SvgA.r "4"
+                , SvgA.strokeWidth "0"
+                ]
+                []
+                -}
+              ]
+          ]
+      ]
+
+
+
+{-
+<path d="M 0 0 L 0 128 L 64 64 Z"/>
+<path d="M 0 128 L 128 128 L 64 64 Z"/>
+<path d="M 0 0 L 32 32 L 96 32 L 64 0 Z"/>
+<path d="M 32 32 L 64 64 L 96 32 Z"/>
+<path d="M 64 64 L 96 96 L 128 64 L 96 32 Z"/>
+<path d="M 96 96 L 128 128 L 128 64 Z"/>
+<path d="M 64 0 L 128 64 L 128 0 Z"/>
+-}
+
+
 viewSearchInput : Signal.Address Action -> Info -> Html
 viewSearchInput addr info =
-  input
-    [ placeholder "Search function by name or type"
-    , value info.query
-    , on "input" targetValue (Signal.message queryMailbox.address << Query)
+  div
+    [ ns.class [ SearchInput ] ]
+    [ input
+        [ placeholder "Search function by name or type signature"
+        , value info.query
+        , on "input" targetValue (Signal.message queryMailbox.address << Query)
+        ]
+        []
     ]
-    []
 
 
 viewSearchIntro : Signal.Address Action -> Info -> Html
@@ -387,16 +503,17 @@ viewSearchResults addr ({ query, chunks } as info) =
       Type.normalize (PDocs.stringToType query)
 
     filteredChunks =
+      -- TODO: we should not need the two different cases, I guess.
       case queryType of
         Type.Var string ->
           chunks
-            |> List.map (\chunk -> ( Entry.nameDistance query chunk.entry, chunk ))
+            |> List.map (\chunk -> ( toFloat <| Entry.nameDistance query chunk.entry, chunk ))
             |> List.filter (\( distance, _ ) -> distance < 10)
 
         _ ->
           chunks
-            |> List.map (\chunk -> ( Entry.typeDistance queryType chunk.entryNormalized, chunk ))
-            |> List.filter (\( distance, _ ) -> distance < 10)
+            |> List.map (\chunk -> ( Entry.typeDistanceF queryType chunk.entryNormalized, chunk ))
+            |> List.filter (\( distance, _ ) -> distance < Type.lowPenalty)
   in
     if List.length filteredChunks == 0 then
       div
@@ -408,11 +525,18 @@ viewSearchResults addr ({ query, chunks } as info) =
       div [] (searchResultsChunks info filteredChunks)
 
 
-searchResultsChunks : Info -> List ( Int, Chunk ) -> List Html
+searchResultsChunks : Info -> List ( comparable, Chunk ) -> List Html
 searchResultsChunks { packageDict } weightedChunks =
   weightedChunks
     |> List.sortBy (\( distance, _ ) -> distance)
-    |> List.map (\( _, { package, name, entry } ) -> Entry.typeViewSearch package name (nameDict packageDict package) entry)
+    |> List.map
+        (\( distance, { package, name, entry } ) ->
+          div
+            []
+            [ Entry.typeViewSearch package name (nameDict packageDict package) entry
+            , div [ class "searchDebug" ] [ text (toString distance) ]
+            ]
+        )
 
 
 
