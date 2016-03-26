@@ -13,7 +13,6 @@ import Docs.Entry as Entry
 import Docs.Name as Name
 import Docs.Package as Docs
 import Docs.Type as Type
-import Native.Jump
 import Page.Context as Ctx
 import Parse.Type as Type
 import Utils.Markdown as Markdown
@@ -103,7 +102,7 @@ update action model =
       case model of
         RawDocs info ->
           ( ParsedDocs { info | chunks = newChunks }
-          , jumpToHash
+          , Fx.none
           )
 
         _ ->
@@ -163,13 +162,6 @@ stringToType str =
 
     Err _ ->
       Type.Var str
-
-
-jumpToHash : Effects Action
-jumpToHash =
-  Native.Jump.jump
-    |> Task.map (always NoOp)
-    |> Fx.task
 
 
 
