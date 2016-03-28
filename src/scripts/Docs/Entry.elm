@@ -92,6 +92,7 @@ tagMap func tag =
 
 
 -- FILTER
+-- Only find `Value` entries, no `Union` or `Alias`
 
 
 nameDistance : String -> Model Type -> Float
@@ -107,10 +108,6 @@ nameDistance query model =
 
     _ ->
       Type.maxPenalty
-
-
-
--- Only find `Value` entries, no `Union` or `Alias`
 
 
 typeDistance : Type -> Model Type -> Float

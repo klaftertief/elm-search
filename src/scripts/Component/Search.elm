@@ -503,7 +503,6 @@ viewSearchResults addr ({ query, chunks } as info) =
       Type.normalize (PDocs.stringToType query)
 
     filteredChunks =
-      -- TODO: we should not need the two different cases, I guess.
       case queryType of
         Type.Var string ->
           chunks
