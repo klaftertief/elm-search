@@ -303,6 +303,7 @@ distance needle hay =
     -}
     ( Function argsN resultN, Function argsH resultH ) ->
       let
+        -- Handle special cases with singleton `Var` Type args
         argsDistance =
           case ( argsN, argsH ) of
             -- Compare `a -> r` and `b -> s`
@@ -323,11 +324,12 @@ distance needle hay =
       in
         (argsDistance + resultDistance) / 2
 
-    -- Var String
+    -- `Var String`
     -- `a` ~> `Var "a"`
     ( Var nameN, Var nameH ) ->
       distanceName nameN nameH
 
+    -- Special cases for comparisons like `number` - `Float`
     ( Var nameN, Apply canonicalH _ ) ->
       distanceVarApply nameN canonicalH
 
@@ -337,20 +339,7 @@ distance needle hay =
     -- `Apply Name.Canonical (List Type)`
     -- `Foo.Bar a b` ~> `Apply { home = "Foo", name = "Bar" } ([Var "a", Var "b"])`
     ( Apply canonicalN argsN, Apply canonicalH argsH ) ->
-      case ( argsN, argsH ) of
-        ( [], [] ) ->
-          distanceCanonical canonicalN canonicalH
-
-        ( [], hd :: tl ) ->
-          --distanceCanonical canonicalN canonicalH
-          -- TODO: should we do this only for some specific types like `Maybe` and `Result`?
-          -- TODO: check if this is a nice implementation (with regard to `min` and `+ lowPenalty`)
-          min maxPenalty
-            <| distance needle (Maybe.withDefault hd (List.head (List.reverse tl)))
-            + lowPenalty
-
-        _ ->
-          (distanceCanonical canonicalN canonicalH + distanceList argsN argsH) / 2
+      distanceApply ( canonicalN, argsN ) ( canonicalH, argsH )
 
     -- Tuple (List Type)
     -- `(a,b)` ~> `Tuple ([Var "a",Var "b"])`
@@ -426,27 +415,24 @@ distanceVarApply varName applyName =
         mediumPenalty
 
 
-compareVarsWithPenalty : Int -> String -> String -> Int
-compareVarsWithPenalty penalty nameA nameB =
-  if nameA == nameB then
-    0
-  else
-    penalty
+distanceApply : ( Name.Canonical, List Type ) -> ( Name.Canonical, List Type ) -> Float
+distanceApply ( canonicalN, argsN ) ( canonicalH, argsH ) =
+  case ( argsN, argsH ) of
+    ( [], [] ) ->
+      distanceCanonical canonicalN canonicalH
 
+    ( [], hd :: tl ) ->
+      --distanceCanonical canonicalN canonicalH
+      -- TODO: should we do this only for some specific types like `Maybe` and `Result`?
+      -- TODO: check if this is a nice implementation (with regard to `min` and `+ lowPenalty`)
+      min maxPenalty
+        <| distance
+            (Apply canonicalN argsN)
+            (Maybe.withDefault hd (List.head (List.reverse tl)))
+        + lowPenalty
 
-compareNamesWithPenalty : Int -> String -> String -> Int
-compareNamesWithPenalty penalty nameA nameB =
-  if nameA == nameB then
-    0
-  else if String.contains nameA nameB then
-    1
-  else
-    penalty
-
-
-isReservedVar : String -> Bool
-isReservedVar name =
-  Dict.member name reserverdVars
+    _ ->
+      (distanceCanonical canonicalN canonicalH + distanceList argsN argsH) / 2
 
 
 reserverdVars : Dict String (List String)
