@@ -129,7 +129,22 @@ functionSuite =
         , Description
             "fuzzy Function args"
             "a -> Int"
-            "a -> b -> Int"
+            "String -> Int"
+            0.25
+        , Description
+            "fuzzy Function args"
+            "String -> Int"
+            "a -> Int"
+            0.25
+        , Description
+            "fuzzy Function result"
+            "String -> a"
+            "String -> Int"
+            0.25
+        , Description
+            "fuzzy Function result"
+            "String -> Int"
+            "String -> a"
             0.25
         , Description
             "fuzzy Function args"
@@ -137,25 +152,15 @@ functionSuite =
             "Int -> Int -> Int"
             0.25
         , Description
-            "fuzzy Function args"
+            "TODO: fuzzy Function args"
             "a -> Int"
-            "String -> Int"
-            0.25
+            "a -> b -> Int"
+            666
         , Description
-            "fuzzy Function args"
-            "String -> Int"
+            "TODO: fuzzy Function args"
             "a -> Int"
-            0.25
-        , Description
-            "fuzzy Function result"
-            "String -> a"
-            "String -> Int"
-            0.25
-        , Description
-            "fuzzy Function result"
-            "String -> Int"
-            "String -> a"
-            0.25
+            "b -> c -> Int"
+            666
         , Description
             "TODO: ??? fuzzy Function args Apply result"
             "a -> b -> Int"
@@ -260,10 +265,10 @@ type alias Description =
 
 descriptionToTest : Description -> Test
 descriptionToTest { title, needle, hay, expected } =
-  test title
+  test (title ++ "; needle: " ++ needle ++ "; hay: " ++ hay)
     <| assertEqual
         expected
-        (Type.distanceF
+        (Type.distance
           (Docs.stringToType needle)
           (Docs.stringToType hay)
         )
