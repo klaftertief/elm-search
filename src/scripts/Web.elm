@@ -1,4 +1,4 @@
-module Page.Search (..) where
+module Web (..) where
 
 import Effects as Fx exposing (Effects)
 import Html exposing (..)
