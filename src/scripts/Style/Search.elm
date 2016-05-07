@@ -76,7 +76,18 @@ css =
                 , borderRadius (rem' 0.125)
                 , padding (rem' 0.25)
                 ]
-              --, div [ left zero ]
+            , button
+                [ position absolute
+                , right (rem' 0.75)
+                , top (rem' 0.5)
+                , height (rem' 1.875)
+                , boxSizing borderBox
+                , backgroundColor transparent
+                , border zero
+                , fontSize (rem' 1.5)
+                , lineHeight (pct 100)
+                , color (hex titleHighlightColor)
+                ]
             ]
         ]
     , (.)

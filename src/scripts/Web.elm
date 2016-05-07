@@ -1,27 +1,16 @@
-module Web (..) where
+module Web exposing (..)
 
-import Effects exposing (Effects)
-import Html exposing (Html)
-import StartApp
-import Task exposing (Task)
+-- where
+
+import Html.App as Html
 import Component.Search as Search
 
 
-app : StartApp.App Search.Model
-app =
-  StartApp.start
+main : Program Never
+main =
+  Html.program
     { init = Search.init
     , view = Search.view
     , update = Search.update
-    , inputs = [ Search.querySignal ]
+    , subscriptions = \_ -> Sub.none
     }
-
-
-main : Signal Html
-main =
-  app.html
-
-
-port worker : Signal (Task Effects.Never ())
-port worker =
-  app.tasks

@@ -1,4 +1,6 @@
-module Parse.Type (parse) where
+module Parse.Type exposing (parse)
+
+-- where
 
 import Char
 import String

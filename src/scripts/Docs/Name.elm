@@ -1,4 +1,6 @@
-module Docs.Name (..) where
+module Docs.Name exposing (..)
+
+-- where
 
 import Dict
 import Html exposing (..)
@@ -36,7 +38,7 @@ basePathTo basePath ({ home, name } as canonical) =
   basePath ++ "/" ++ pathTo canonical
 
 
-toLink : Dictionary -> Canonical -> Html
+toLink : Dictionary -> Canonical -> Html msg
 toLink dict ({ home, name } as canonical) =
   case Maybe.map (Set.member name) (Dict.get home dict) of
     Just True ->
@@ -50,7 +52,7 @@ toLink dict ({ home, name } as canonical) =
       text name
 
 
-toBaseLink : String -> Dictionary -> Canonical -> Html
+toBaseLink : String -> Dictionary -> Canonical -> Html msg
 toBaseLink basePath dict ({ home, name } as canonical) =
   case Maybe.map (Set.member name) (Dict.get home dict) of
     Just True ->

@@ -1,0 +1,18 @@
+{
+  "name": "elm-search",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "devDependencies": {
+    "elm": "^0.17.0-alpha2"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "elm": "elm"
+  },
+  "author": "",
+  "license": "ISC"
+}

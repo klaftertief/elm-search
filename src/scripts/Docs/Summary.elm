@@ -1,4 +1,6 @@
-module Docs.Summary (Summary, decoder) where
+module Docs.Summary exposing (Summary, decoder)
+
+-- where
 
 import Docs.Version as Vsn
 import Json.Decode exposing (..)

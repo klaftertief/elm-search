@@ -1,4 +1,6 @@
-module Component.PackageDocs (..) where
+module Component.PackageDocs exposing (..)
+
+-- where
 
 import Dict
 import Regex

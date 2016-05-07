@@ -1,4 +1,6 @@
-module Docs.Type (..) where
+module Docs.Type exposing (..)
+
+-- where
 
 import Char
 import Dict exposing (Dict)
@@ -35,7 +37,7 @@ type Context
   | Other
 
 
-toHtml : Name.Dictionary -> Context -> Type -> List Html
+toHtml : Name.Dictionary -> Context -> Type -> List (Html msg)
 toHtml nameDict context tipe =
   let
     go ctx t =
@@ -112,7 +114,7 @@ toHtml nameDict context tipe =
 -- TODO: avoid the duplication which only exists because of the links with basePath
 
 
-toHtmlWithBasePath : String -> Name.Dictionary -> Context -> Type -> List Html
+toHtmlWithBasePath : String -> Name.Dictionary -> Context -> Type -> List (Html msg)
 toHtmlWithBasePath basePath nameDict context tipe =
   let
     go ctx t =
@@ -185,7 +187,7 @@ toHtmlWithBasePath basePath nameDict context tipe =
           text "{ " :: recordInsides ++ [ text " }" ]
 
 
-fieldToHtml : Name.Dictionary -> ( String, Type ) -> List Html
+fieldToHtml : Name.Dictionary -> ( String, Type ) -> List (Html msg)
 fieldToHtml nameDict ( field, tipe ) =
   text field :: space :: colon :: space :: toHtml nameDict Other tipe
 
@@ -294,12 +296,12 @@ distance : Type -> Type -> Float
 distance needle hay =
   case ( needle, hay ) of
     {- Compare two functions `Function (List Type) Type`
-    Functions get parsed like `a -> b` ~> `Function ([Var "a"]) (Var "b")`
-    TODO: support three different comparisons
-      - strict: length of arguments have to match
-      - from beginning: concat args and result and compare the list
-      - from end: concat args and result and compare the reversed list
-    TODO: add some kind of mapping for vars in fuzzy calculations
+       Functions get parsed like `a -> b` ~> `Function ([Var "a"]) (Var "b")`
+       TODO: support three different comparisons
+         - strict: length of arguments have to match
+         - from beginning: concat args and result and compare the list
+         - from end: concat args and result and compare the reversed list
+       TODO: add some kind of mapping for vars in fuzzy calculations
     -}
     ( Function argsN resultN, Function argsH resultH ) ->
       let
@@ -348,7 +350,7 @@ distance needle hay =
 
     -- TODO: Record (List ( String, Type )) (Maybe String)
     {- The incomparable case
-    TODO: Find and add special cases
+       TODO: Find and add special cases
     -}
     _ ->
       maxPenalty

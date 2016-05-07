@@ -1,4 +1,6 @@
-module Parse.Combinators (..) where
+module Parse.Combinators exposing (..)
+
+-- where
 
 import Char
 import Native.Parse
@@ -61,15 +63,15 @@ string =
 
 
 {- -
-int : Parser Int
-int =
-  Debug.crash "TODO"
+   int : Parser Int
+   int =
+     Debug.crash "TODO"
 
 
-float : Parser Float
-float =
-  Debug.crash "TODO"
--
+   float : Parser Float
+   float =
+     Debug.crash "TODO"
+   -
 -}
 -- COMBINATORS
 

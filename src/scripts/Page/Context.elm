@@ -1,4 +1,6 @@
-module Page.Context (..) where
+module Page.Context exposing (..)
+
+-- where
 
 import Http
 import Task
@@ -34,4 +36,4 @@ getDocs context =
 
 pathTo : VersionContext -> String -> String
 pathTo { user, project, version } file =
-  "https://crossorigin.me/http://package.elm-lang.org/packages" </> user </> project </> version </> file
+  "/packages" </> user </> project </> version </> file

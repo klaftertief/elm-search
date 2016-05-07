@@ -2,24 +2,22 @@
 
 # Add binaries of local npm packages to the PATH
 PATH := $(PWD)/bin:$(PWD)/node_modules/.bin:$(PATH)
-SHELL := /bin/bash
+# SHELL := /bin/bash
 
-ELM_ENTRY = src/scripts/Page/Search.elm
+ELM_ENTRY = src/scripts/Web.elm
 ELM_FILES = $(shell find src -type f -name '*.elm')
 
 ELM_STYLE_ENTRY = src/scripts/Stylesheets.elm
 
 NODE_BIN_DIRECTORY = node_modules/.bin
 
-DEVD_VERSION = 0.3
-MODD_VERSION = 0.2
+DEVD_VERSION = 0.5
+MODD_VERSION = 0.3
 ELM_TEST_VERSION = 0.16
 OS := $(shell uname)
 
 BUILD_DIR = ../elm-search-dist
-INSTALL_TARGETS = src bin \
-									bin/modd modd.conf \
-									bin/devd
+INSTALL_TARGETS = bin bin/modd bin/devd node_modules
 COMPILE_TARGETS = scripts styles html
 TEST_TARGETS = tests/TestRunner.elm
 
@@ -36,7 +34,7 @@ all: $(COMPILE_TARGETS) ## Compiles project files
 install: $(INSTALL_TARGETS) ## Installs prerequisites and generates file/folder structure
 
 server: ## Runs a local server for development
-	bin/devd  -l -a -p 8888 -w $(BUILD_DIR) $(BUILD_DIR)/ /packages/=../elm-packages-proxy/
+	bin/devd  -l -a -p 8888 -w $(BUILD_DIR) $(BUILD_DIR)/ # /packages/=../elm-package-docs/dist/packages
 
 
 watch: ## Watches files for changes, runs a local dev server and triggers live reload
@@ -68,7 +66,7 @@ bin/devd:
 
 bin/modd:
 	curl ${MODD_URL} -L -o $@.tgz
-	tar -xzf $@.tgz -C bin/ --strip 3
+	tar -xzf $@.tgz -C bin/ --strip 1
 	rm $@.tgz
 
 node_modules:
@@ -78,7 +76,7 @@ styles:
 	mkdir -p $(BUILD_DIR)/styles && elm-css $(ELM_STYLE_ENTRY) -o $(BUILD_DIR)/styles
 
 scripts: $(ELM_FILES)
-	$(NODE_BIN_DIRECTORY)/elm make $(ELM_ENTRY) --yes --warn --output $(BUILD_DIR)/scripts/search.js
+	$(NODE_BIN_DIRECTORY)/elm-make $(ELM_ENTRY) --yes --warn --output $(BUILD_DIR)/scripts/search.js
 
 html:
 	mkdir -p $(BUILD_DIR) && cp src/index.html $(BUILD_DIR)/index.html

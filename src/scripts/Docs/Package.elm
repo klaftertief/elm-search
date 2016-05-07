@@ -1,4 +1,6 @@
-module Docs.Package (Package, Module, encodePackage, decodePackage, decodeModule) where
+module Docs.Package exposing (Package, Module, encodePackage, decodePackage, decodeModule)
+
+-- where
 
 import Dict
 import Json.Decode as Json exposing ((:=))

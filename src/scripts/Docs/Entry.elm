@@ -1,4 +1,6 @@
-module Docs.Entry (..) where
+module Docs.Entry exposing (..)
+
+-- where
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
@@ -102,7 +104,7 @@ nameDistance query model =
       if query == model.name then
         Type.noPenalty
       else if String.contains query model.name then
-        Type.lowPenalty
+        Type.mediumPenalty * (1 - (toFloat (String.length query) / toFloat (String.length model.name)))
       else
         Type.maxPenalty
 
@@ -124,7 +126,7 @@ typeDistance queryType model =
 -- STRING VIEW
 
 
-stringView : Model String -> Html
+stringView : Model String -> Html msg
 stringView model =
   let
     annotation =
@@ -158,7 +160,7 @@ stringView model =
 -- TODO: DRY this up with the existing "normal" typeView, mainly with regard to support absolute links via the basePath od the Context.
 
 
-typeViewSearch : String -> Name.Canonical -> Name.Dictionary -> Model Type -> Html
+typeViewSearch : String -> Name.Canonical -> Name.Dictionary -> Model Type -> Html msg
 typeViewSearch basePath ({ home, name } as canonical) nameDict model =
   let
     path =
@@ -208,7 +210,7 @@ typeViewSearch basePath ({ home, name } as canonical) nameDict model =
       ]
 
 
-typeView : Name.Dictionary -> Model Type -> Html
+typeView : Name.Dictionary -> Model Type -> Html msg
 typeView nameDict model =
   let
     annotation =
@@ -229,7 +231,7 @@ typeView nameDict model =
       ]
 
 
-annotationBlock : List (List Html) -> Html
+annotationBlock : List (List (Html msg)) -> Html msg
 annotationBlock bits =
   div
     [ class "searchAnnotation" ]
@@ -242,7 +244,7 @@ annotationBlock bits =
     ]
 
 
-nameToLink : String -> Html
+nameToLink : String -> Html msg
 nameToLink name =
   let
     humanName =
@@ -263,7 +265,7 @@ operator =
 -- VALUE ANNOTATIONS
 
 
-valueAnnotationSearch : String -> Name.Canonical -> Name.Dictionary -> String -> Type -> List (List Html)
+valueAnnotationSearch : String -> Name.Canonical -> Name.Dictionary -> String -> Type -> List (List (Html msg))
 valueAnnotationSearch basePath canonical nameDict name tipe =
   case tipe of
     Type.Function args result ->
@@ -276,7 +278,7 @@ valueAnnotationSearch basePath canonical nameDict name tipe =
       [ Name.toBaseLink basePath nameDict canonical :: padded colon ++ Type.toHtmlWithBasePath basePath nameDict Type.Other tipe ]
 
 
-valueAnnotation : Name.Dictionary -> String -> Type -> List (List Html)
+valueAnnotation : Name.Dictionary -> String -> Type -> List (List (Html msg))
 valueAnnotation nameDict name tipe =
   case tipe of
     Type.Function args result ->
@@ -289,7 +291,7 @@ valueAnnotation nameDict name tipe =
       [ nameToLink name :: padded colon ++ Type.toHtml nameDict Type.Other tipe ]
 
 
-longFunctionAnnotation : Name.Dictionary -> List Type -> Type -> List (List Html)
+longFunctionAnnotation : Name.Dictionary -> List Type -> Type -> List (List (Html msg))
 longFunctionAnnotation nameDict args result =
   let
     tipeHtml =
@@ -302,7 +304,7 @@ longFunctionAnnotation nameDict args result =
     List.map2 (++) starters tipeHtml
 
 
-longFunctionAnnotationSearch : String -> Name.Dictionary -> List Type -> Type -> List (List Html)
+longFunctionAnnotationSearch : String -> Name.Dictionary -> List Type -> Type -> List (List (Html msg))
 longFunctionAnnotationSearch basePath nameDict args result =
   let
     tipeHtml =

@@ -1,4 +1,6 @@
-module Docs.Version (Version, Dictionary, MinorPatch, decoder, filterInteresting, realMax, toDict, fromStringList, vsnToString) where
+module Docs.Version exposing (Version, Dictionary, MinorPatch, decoder, filterInteresting, realMax, toDict, fromStringList, vsnToString)
+
+-- where
 
 import Dict
 import Json.Decode as Json exposing (..)
