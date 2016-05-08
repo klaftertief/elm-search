@@ -2,6 +2,7 @@ module Web exposing (..)
 
 -- where
 
+import AnimationFrame exposing (times)
 import Html.App as Html
 import Component.Search as Search
 
@@ -12,5 +13,5 @@ main =
     { init = Search.init
     , view = Search.view
     , update = Search.update
-    , subscriptions = \_ -> Sub.none
+    , subscriptions = \_ -> times Search.Tick
     }

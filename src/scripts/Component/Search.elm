@@ -11,6 +11,7 @@ import Json.Decode as Json
 import Set
 import String
 import Task
+import Time exposing (Time)
 import Component.PackageDocs as PDocs
 import Docs.Summary as Summary
 import Docs.Entry as Entry
@@ -37,7 +38,9 @@ type alias Info =
   { packageDict : Packages
   , chunks : List Chunk
   , failed : List Summary.Summary
-  , query : String
+  , queryString : String
+  , queryType : Maybe Type.Type
+  , lastKeyPress : Maybe Time
   }
 
 
@@ -86,19 +89,71 @@ type Msg
   | RequestDocs Summary.Summary
   | MakeDocs Ctx.VersionContext Docs.Package
   | Query String
+  | QueryType ( String, Type.Type )
+  | Tick Time
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
   case msg of
     Query query ->
-      flip (,) Cmd.none
-        <| case model of
-            Docs info ->
-              Docs { info | query = query }
+      case model of
+        Docs info ->
+          ( Docs
+              { info
+                | queryString = query
+                , queryType = Nothing
+                , lastKeyPress = Nothing
+              }
+          , Cmd.none
+          )
 
-            _ ->
-              model
+        _ ->
+          ( model, Cmd.none )
+
+    QueryType ( query, queryType ) ->
+      case model of
+        Docs info ->
+          ( Docs
+              { info
+                | queryString = query
+                , queryType = Just queryType
+                , lastKeyPress = Just 0
+              }
+          , Cmd.none
+          )
+
+        _ ->
+          ( model, Cmd.none )
+
+    Tick time ->
+      case model of
+        Docs info ->
+          ( if String.isEmpty info.queryString then
+              Docs
+                { info
+                  | queryType = Nothing
+                  , lastKeyPress = Nothing
+                }
+            else
+              case info.lastKeyPress of
+                Nothing ->
+                  Docs { info | lastKeyPress = Just time }
+
+                Just t ->
+                  if (time - t) > 800 then
+                    Docs
+                      { info
+                        | lastKeyPress = Just t
+                        , queryType = Just (Type.normalize (PDocs.stringToType info.queryString))
+                      }
+                  else
+                    Docs info
+          , Cmd.none
+          )
+
+        _ ->
+          ( model, Cmd.none )
 
     Fail httpError ->
       ( Failed httpError
@@ -128,7 +183,7 @@ update msg model =
           )
 
         _ ->
-          ( Docs (Info (Dict.empty) [] [ summary ] "")
+          ( Docs (Info (Dict.empty) [] [ summary ] "" Nothing Nothing)
           , Cmd.none
           )
 
@@ -164,7 +219,7 @@ update msg model =
             )
 
           _ ->
-            ( Docs (Info (Dict.singleton pkgName pkgInfo) chunks [] "")
+            ( Docs (Info (Dict.singleton pkgName pkgInfo) chunks [] "" Nothing Nothing)
             , Cmd.none
             )
 
@@ -251,10 +306,16 @@ view model =
 
         Docs info ->
           [ viewSearchInput info
-          , if String.isEmpty info.query then
-              viewSearchIntro info
-            else
-              viewSearchResults info
+            --, if String.isEmpty info.queryString then
+            --    viewSearchIntro info
+            --  else
+            --    viewSearchResults info
+          , case info.queryType of
+              Just _ ->
+                viewSearchResults info
+
+              Nothing ->
+                viewSearchIntro info
           ]
 
 
@@ -276,11 +337,11 @@ viewSearchInput info =
     [ class "searchSearchInput" ]
     [ input
         [ placeholder "Search function by name or type signature"
-          --, value info.query
+        , value info.queryString
         , onInput Query
         ]
         []
-    , (if info.query == "" then
+    , (if info.queryString == "" then
         text ""
        else
         button [ onClick (Query "") ] [ text "×" ]
@@ -315,7 +376,7 @@ exampleSearches =
         []
         [ a
             [ style [ ( "cursor", "pointer" ) ]
-            , onClick (Query query)
+            , onClick (QueryType ( query, Type.normalize (PDocs.stringToType query) ))
             ]
             [ code [] [ text query ] ]
         ]
@@ -362,22 +423,24 @@ viewPackesInfo info =
 
 
 viewSearchResults : Info -> Html Msg
-viewSearchResults ({ query, chunks } as info) =
+viewSearchResults ({ queryType, queryString, chunks } as info) =
   let
-    queryType =
-      Type.normalize (PDocs.stringToType query)
-
     filteredChunks =
       case queryType of
-        Type.Var string ->
-          chunks
-            |> List.map (\chunk -> ( Entry.nameDistance query chunk.entry, chunk ))
-            |> List.filter (\( distance, _ ) -> distance <= Type.lowPenalty)
+        Nothing ->
+          []
 
-        _ ->
-          chunks
-            |> List.map (\chunk -> ( Entry.typeDistance queryType chunk.entryNormalized, chunk ))
-            |> List.filter (\( distance, _ ) -> distance <= Type.lowPenalty)
+        Just t ->
+          case t of
+            Type.Var _ ->
+              chunks
+                |> List.map (\chunk -> ( Entry.nameDistance queryString chunk.entry, chunk ))
+                |> List.filter (\( distance, _ ) -> distance <= Type.lowPenalty)
+
+            _ ->
+              chunks
+                |> List.map (\chunk -> ( Entry.typeDistance t chunk.entryNormalized, chunk ))
+                |> List.filter (\( distance, _ ) -> distance <= Type.lowPenalty)
   in
     if List.length filteredChunks == 0 then
       div
