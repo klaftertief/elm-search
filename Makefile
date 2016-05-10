@@ -73,7 +73,8 @@ node_modules:
 	npm install
 
 styles:
-	mkdir -p $(BUILD_DIR)/styles && elm-css $(ELM_STYLE_ENTRY) -o $(BUILD_DIR)/styles
+	@# mkdir -p $(BUILD_DIR)/styles && elm-css $(ELM_STYLE_ENTRY) -o $(BUILD_DIR)/styles
+	mkdir -p $(BUILD_DIR)/styles && cp src/styles/search.css $(BUILD_DIR)/styles
 
 scripts: $(ELM_FILES)
 	$(NODE_BIN_DIRECTORY)/elm-make $(ELM_ENTRY) --yes --warn --output $(BUILD_DIR)/scripts/search.js

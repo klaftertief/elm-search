@@ -319,24 +319,23 @@ view model =
           ]
 
 
-viewLogo : Model -> Html msg
-viewLogo model =
+viewLogo : Html msg
+viewLogo =
   div
-    [ class "logo"
-    , style
-        [ ( "padding", "64px 0 32px 0" )
-        , ( "text-align", "center" )
-        ]
-    ]
-    [ Logo.view ]
+    [ class "searchLogo" ]
+    [ Logo.viewWithSize 24 ]
 
 
 viewSearchInput : Info -> Html Msg
 viewSearchInput info =
   div
-    [ class "searchSearchInput" ]
-    [ input
-        [ placeholder "Search function by name or type signature"
+    [ class "searchForm" ]
+    [ span
+        [ class "searchBranding" ]
+        [ viewLogo, text "Elm Search" ]
+    , input
+        [ class "searchInput"
+        , placeholder "Search function by name or type signature"
         , value info.queryString
         , onInput Query
         ]
@@ -344,7 +343,11 @@ viewSearchInput info =
     , (if info.queryString == "" then
         text ""
        else
-        button [ onClick (Query "") ] [ text "×" ]
+        button
+          [ class "searchReset"
+          , onClick (Query "")
+          ]
+          [ text "×" ]
       )
     ]
 

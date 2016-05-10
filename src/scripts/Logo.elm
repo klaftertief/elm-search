@@ -1,10 +1,60 @@
-module Logo exposing (view)
+module Logo exposing (view, viewWithSize)
 
 -- where
 
 import Color exposing (Color)
 import Svg exposing (..)
 import Svg.Attributes exposing (..)
+
+
+
+view : Svg msg
+view =
+  viewWithSize 128
+
+viewWithSize : Int -> Svg msg
+viewWithSize s =
+  let
+    size =
+      toString s
+  in
+    svg
+      [ width size
+      , height size
+      , viewBox "2 2 132 132"
+      , Svg.Attributes.style "overflow: visible;"
+      ]
+      [ g
+          [ stroke "#fff"
+          , strokeWidth "2"
+          , strokeLinejoin "round"
+            --, transform "rotate(90 64 64)"
+          ]
+          parts
+      ]
+
+
+parts : List (Svg msg)
+parts =
+  [ largeBlueTriangle (Transformation (3 * quarterHypothenuse - 128) (3 * quarterHypothenuse) -90)
+  , largeGreyTriangle (Transformation 0 0 0)
+  , mediumBlueTriangle (Transformation quarterHypothenuse quarterHypothenuse -135)
+  , smallOrangeTriangle (Transformation halfHypothenuse quarterHypothenuse -45)
+  , smallOrangeTriangle (Transformation halfHypothenuse 0 45)
+  , greenSquare (Transformation halfHypothenuse quarterHypothenuse -45)
+  , greenDiamond (Transformation halfHypothenuse quarterHypothenuse 45) False
+  ]
+
+
+
+halfHypothenuse : Float
+halfHypothenuse =
+  128 / (sqrt 2)
+
+
+quarterHypothenuse : Float
+quarterHypothenuse =
+  128 / 2 / (sqrt 2)
 
 
 orange : String
@@ -108,85 +158,3 @@ greenDiamond transformation flip =
             ""
     ]
     []
-
-
-view : Svg msg
-view =
-  svg
-    [ width "128"
-    , height "128"
-    , viewBox "0 0 128 128"
-    , Svg.Attributes.style "overflow: visible;"
-    ]
-    [ g
-        [ stroke "#fff"
-        , strokeWidth "2"
-        , strokeLinejoin "round"
-          --, transform "rotate(90 64 64)"
-        ]
-        elmLogoArrow
-    ]
-
-
-elmLogo : List (Svg msg)
-elmLogo =
-  [ largeBlueTriangle (Transformation 0 128 -90)
-  , largeGreyTriangle (Transformation 0 0 0)
-  , mediumBlueTriangle (Transformation 128 0 90)
-  , smallOrangeTriangle (Transformation 96 32 90)
-  , smallOrangeTriangle (Transformation 128 128 180)
-  , greenSquare (Transformation 64 64 0)
-  , greenDiamond (Transformation 0 0 0) False
-  ]
-
-
-elmLogoArrow : List (Svg msg)
-elmLogoArrow =
-  [ largeBlueTriangle (Transformation (3 * quarterHypothenuse - 128) (3 * quarterHypothenuse) -90)
-  , largeGreyTriangle (Transformation 0 0 0)
-  , mediumBlueTriangle (Transformation quarterHypothenuse quarterHypothenuse -135)
-  , smallOrangeTriangle (Transformation halfHypothenuse quarterHypothenuse -45)
-  , smallOrangeTriangle (Transformation halfHypothenuse 0 45)
-  , greenSquare (Transformation halfHypothenuse quarterHypothenuse -45)
-  , greenDiamond (Transformation halfHypothenuse quarterHypothenuse 45) False
-  ]
-
-
-elmSearchLogo : List (Svg msg)
-elmSearchLogo =
-  [ g
-      [ transform "translate(-32 -32)" ]
-      [ largeBlueTriangle (Transformation 0 128 -90)
-      , largeGreyTriangle (Transformation 0 0 0)
-      ]
-  , g
-      [ transform "translate(32 32)" ]
-      [ mediumBlueTriangle (Transformation 128 0 90)
-      , smallOrangeTriangle (Transformation 96 32 90)
-      , smallOrangeTriangle (Transformation 128 128 180)
-      , greenSquare (Transformation 64 64 0)
-      , greenDiamond (Transformation 0 0 0) False
-      ]
-  ]
-
-
-halfHypothenuse : Float
-halfHypothenuse =
-  128 / (sqrt 2)
-
-
-quarterHypothenuse : Float
-quarterHypothenuse =
-  128 / 2 / (sqrt 2)
-
-
-searchLogo : List (Svg msg)
-searchLogo =
-  [ largeBlueTriangle (Transformation halfHypothenuse 0 0)
-  , largeGreyTriangle (Transformation 0 0 -45)
-  , mediumBlueTriangle (Transformation quarterHypothenuse -quarterHypothenuse 45)
-  , smallOrangeTriangle (Transformation 0 0 0)
-  , smallOrangeTriangle (Transformation halfHypothenuse (1.5 * halfHypothenuse) 45)
-  , greenSquare (Transformation quarterHypothenuse 196 45)
-  , greenDiamond (Transformation quarterHypothenuse (2 * halfHypothenuse) -45) True
-  ]
