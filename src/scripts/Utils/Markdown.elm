@@ -8,12 +8,12 @@ import Markdown
 
 block : String -> Html.Html msg
 block raw =
-  Markdown.toHtmlWith myOptions [] raw
+    Markdown.toHtmlWith myOptions [] raw
 
 
 myOptions =
-  let
-    options =
-      Markdown.defaultOptions
-  in
-    { options | defaultHighlighting = Just "elm" }
+    let
+        options =
+            Markdown.defaultOptions
+    in
+        { options | defaultHighlighting = Just "elm" }

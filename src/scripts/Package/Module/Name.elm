@@ -7,38 +7,37 @@ import String
 
 
 type alias Name =
-  { home : String
-  , name : String
-  }
+    { home : String
+    , name : String
+    }
 
 
 decoder : Decoder Name
 decoder =
-  Decode.customDecoder Decode.string fromString
+    Decode.customDecoder Decode.string fromString
 
 
 fromString : String -> Result String Name
 fromString str =
-  case (List.reverse (String.split "." str)) of
-    name :: home ->
-      Ok (Name name (List.reverse home |> List.join "."))
+    case (List.reverse (String.split "." str)) of
+        name :: home ->
+            Ok (Name name (List.reverse home |> List.join "."))
 
-    _ ->
-      Err (str ++ " is not a valid Elm name")
+        _ ->
+            Err (str ++ " is not a valid Elm name")
 
 
 pathTo : Name -> String
 pathTo { home, name } =
-  String.map
-    dotToDash
-    home
-    ++ "#"
-    ++ name
+    String.map dotToDash
+        home
+        ++ "#"
+        ++ name
 
 
 dotToDash : Char -> Char
 dotToDash char =
-  if char == '.' then
-    '-'
-  else
-    char
+    if char == '.' then
+        '-'
+    else
+        char

@@ -1,15 +1,15 @@
-module Style.Shared (..) where
+module Style.Shared exposing (..)
 
 import Html.CssHelpers exposing (namespace)
 
 
 type CssClasses
-  = SearchInput
+    = SearchInput
 
 
 type CssIds
-  = ElmLogo
+    = ElmLogo
 
 
 cssNamespace =
-  namespace "search"
+    namespace "search"

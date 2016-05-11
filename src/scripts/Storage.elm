@@ -1,4 +1,4 @@
-module Storage (..) where
+module Storage exposing (..)
 
 import Json.Encode exposing (Value)
 import Json.Decode exposing (Decoder, decodeValue)
@@ -8,7 +8,7 @@ import Native.Storage
 
 getItemAsJson : String -> Task String Value
 getItemAsJson =
-  Native.Storage.getItemAsJson
+    Native.Storage.getItemAsJson
 
 
 
@@ -17,36 +17,36 @@ getItemAsJson =
 
 getItem : String -> Decoder value -> Task String value
 getItem key decoder =
-  let
-    decode value =
-      case decodeValue decoder value of
-        Ok v ->
-          succeed v
+    let
+        decode value =
+            case decodeValue decoder value of
+                Ok v ->
+                    succeed v
 
-        Err err ->
-          fail "Failed"
-  in
-    getItemAsJson key `andThen` decode
+                Err err ->
+                    fail "Failed"
+    in
+        getItemAsJson key `andThen` decode
 
 
 setItem : String -> Value -> Task String ()
 setItem =
-  Native.Storage.setItem
+    Native.Storage.setItem
 
 
 removeItem : String -> Task String ()
 removeItem =
-  Native.Storage.removeItem
+    Native.Storage.removeItem
 
 
 clear : Task String ()
 clear =
-  Native.Storage.clear
+    Native.Storage.clear
 
 
 keys : Task String (List String)
 keys =
-  Native.Storage.keys
+    Native.Storage.keys
 
 
 
@@ -56,4 +56,4 @@ keys =
 
 length : Task String Int
 length =
-  Native.Storage.length
+    Native.Storage.length

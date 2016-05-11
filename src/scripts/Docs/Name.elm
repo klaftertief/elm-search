@@ -10,57 +10,57 @@ import String
 
 
 type alias Canonical =
-  { home : String
-  , name : String
-  }
+    { home : String
+    , name : String
+    }
 
 
 type alias Dictionary =
-  Dict.Dict String (Set.Set String)
+    Dict.Dict String (Set.Set String)
 
 
 pathTo : Canonical -> String
 pathTo ({ home, name } as canonical) =
-  String.map
-    (\c ->
-      if c == '.' then
-        '-'
-      else
-        c
-    )
-    home
-    ++ "#"
-    ++ name
+    String.map
+        (\c ->
+            if c == '.' then
+                '-'
+            else
+                c
+        )
+        home
+        ++ "#"
+        ++ name
 
 
 basePathTo : String -> Canonical -> String
 basePathTo basePath ({ home, name } as canonical) =
-  basePath ++ "/" ++ pathTo canonical
+    basePath ++ "/" ++ pathTo canonical
 
 
 toLink : Dictionary -> Canonical -> Html msg
 toLink dict ({ home, name } as canonical) =
-  case Maybe.map (Set.member name) (Dict.get home dict) of
-    Just True ->
-      let
-        link =
-          pathTo canonical
-      in
-        a [ href link ] [ text name ]
+    case Maybe.map (Set.member name) (Dict.get home dict) of
+        Just True ->
+            let
+                link =
+                    pathTo canonical
+            in
+                a [ href link ] [ text name ]
 
-    _ ->
-      text name
+        _ ->
+            text name
 
 
 toBaseLink : String -> Dictionary -> Canonical -> Html msg
 toBaseLink basePath dict ({ home, name } as canonical) =
-  case Maybe.map (Set.member name) (Dict.get home dict) of
-    Just True ->
-      let
-        link =
-          basePathTo basePath canonical
-      in
-        a [ target "_blank", href link ] [ text name ]
+    case Maybe.map (Set.member name) (Dict.get home dict) of
+        Just True ->
+            let
+                link =
+                    basePathTo basePath canonical
+            in
+                a [ target "_blank", href link ] [ text name ]
 
-    _ ->
-      text name
+        _ ->
+            text name
