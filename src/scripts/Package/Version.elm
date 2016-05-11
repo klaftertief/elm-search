@@ -1,9 +1,8 @@
-module Package.Version exposing (Version, decoder, toString)
+module Package.Version exposing (Version, decoder, vsnToString)
 
 -- where
 
-import Dict
-import Json.Decode as Json exposing (..)
+import Json.Decode as Decode exposing (Decoder, (:=))
 import String
 
 
@@ -11,14 +10,14 @@ type alias Version =
     ( Int, Int, Int )
 
 
-toString : Version -> String
-toString ( major, minor, patch ) =
+vsnToString : Version -> String
+vsnToString ( major, minor, patch ) =
     toString major ++ "." ++ toString minor ++ "." ++ toString patch
 
 
 decoder : Decoder Version
 decoder =
-    customDecoder string fromString
+    Decode.customDecoder Decode.string fromString
 
 
 fromString : String -> Result String Version
