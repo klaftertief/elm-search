@@ -21,12 +21,6 @@ type Type
   | Record (List ( String, Type )) (Maybe String)
 
 
-type alias Tag =
-  { tag : String
-  , args : List Type
-  }
-
-
 
 -- TYPE TO FLAT HTML
 
