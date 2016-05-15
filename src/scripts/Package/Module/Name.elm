@@ -26,7 +26,7 @@ fromString : String -> Result String Name
 fromString str =
     case (List.reverse (String.split "." str)) of
         name :: home ->
-            Ok (Name name (List.reverse home |> String.join "."))
+            Ok (Name (List.reverse home |> String.join ".") name)
 
         _ ->
             Err (str ++ " is not a valid Elm name")
