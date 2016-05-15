@@ -15,12 +15,6 @@ type alias Module =
 
 decoder : Decoder Module
 decoder =
-    let
-        make name values unions aliases =
-            Module name (values ++ unions ++ aliases)
-    in
-        Decode.object4 make
-            ("name" := Name.decoder)
-            ("aliases" := Decode.list (Entry.decoder Entry.aliasDecoder))
-            ("types" := Decode.list (Entry.decoder Entry.unionDecoder))
-            ("values" := Decode.list (Entry.decoder Entry.valueDecoder))
+    Decode.object2 Module
+        ("name" := Name.decoder)
+        ("values" := Decode.list Entry.decoder)
