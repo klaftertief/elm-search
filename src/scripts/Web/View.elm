@@ -6,6 +6,8 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import String
+import Package.Module.Type as Type
+import Search.Distance as Distance
 import Web.Model as Model exposing (..)
 
 
@@ -42,9 +44,29 @@ viewSearch info =
                 info.packages
                     |> List.concatMap .modules
                     |> List.concatMap .entries
-                    |> List.filter (.name >> String.contains info.query)
+
+        weightedEntries =
+            case Type.parse info.query of
+                Ok tipe ->
+                    case tipe of
+                        Type.Var _ ->
+                            entries
+                                |> List.map (\entry -> ( Distance.name info.query entry, entry ))
+
+                        _ ->
+                            entries
+                                |> List.map (\entry -> ( Distance.tipe tipe entry, entry ))
+
+                Err _ ->
+                    []
+
+        filteredEntries =
+            weightedEntries
+                |> List.filter (\( distance, _ ) -> distance <= Distance.lowPenalty)
+                |> List.sortBy fst
+                |> List.map snd
     in
         div []
             [ input [ onInput Query, value info.query ] []
-            , div [] (entries |> List.map (\entry -> div [] [ text (toString entry.name) ]))
+            , div [] (filteredEntries |> List.map (\entry -> div [] [ text (toString entry.name) ]))
             ]
