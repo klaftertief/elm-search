@@ -5,7 +5,6 @@ module Web.View exposing (..)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
-import String
 import Package.Module.Type as Type
 import Search.Distance as Distance
 import Web.Model as Model exposing (..)
@@ -37,36 +36,28 @@ viewError error =
 viewSearch : Info -> Html Msg
 viewSearch info =
     let
-        entries =
-            if info.query == "" then
-                []
-            else
-                info.packages
-                    |> List.concatMap .modules
-                    |> List.concatMap .entries
-
-        weightedEntries =
+        weightedChunks =
             case Type.parse info.query of
                 Ok tipe ->
                     case tipe of
                         Type.Var _ ->
-                            entries
-                                |> List.map (\entry -> ( Distance.name info.query entry, entry ))
+                            info.chunks
+                                |> List.map (\chunk -> ( Distance.name info.query chunk, chunk ))
 
                         _ ->
-                            entries
+                            info.chunks
                                 |> List.map (\entry -> ( Distance.tipe tipe entry, entry ))
 
                 Err _ ->
                     []
 
-        filteredEntries =
-            weightedEntries
+        filteredChunks =
+            weightedChunks
                 |> List.filter (\( distance, _ ) -> distance <= Distance.lowPenalty)
                 |> List.sortBy fst
                 |> List.map snd
     in
         div []
             [ input [ onInput Query, value info.query ] []
-            , div [] (filteredEntries |> List.map (\entry -> div [] [ text (toString entry.name) ]))
+            , div [] (filteredChunks |> List.map (\chunk -> div [] [ text (chunk.name ++ " : " ++ toString chunk.tipe) ]))
             ]

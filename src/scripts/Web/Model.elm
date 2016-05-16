@@ -4,6 +4,7 @@ module Web.Model exposing (..)
 
 import Http
 import Package.Package as Package exposing (Package)
+import Search.Chunk as Chunk exposing (Chunk)
 
 
 type Model
@@ -13,7 +14,7 @@ type Model
 
 
 type alias Info =
-    { packages : List Package
+    { chunks : List Chunk
     , query : String
     }
 

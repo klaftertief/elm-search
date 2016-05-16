@@ -6,6 +6,7 @@ import Http
 import Json.Decode as Decode
 import Task
 import Package.Package as Package
+import Search.Chunk as Chunk
 import Web.Model as Model exposing (..)
 
 
@@ -26,7 +27,7 @@ update msg model =
 
         Load packages ->
             ( Success
-                { packages = packages
+                { chunks = List.concatMap Chunk.packageToChunks packages
                 , query = ""
                 }
             , Cmd.none

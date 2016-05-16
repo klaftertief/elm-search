@@ -3,6 +3,7 @@ module Package.Module.Type exposing (..)
 -- where
 
 import Char
+import Dict exposing (Dict)
 import Json.Decode as Decode exposing (Decoder, (:=))
 import String
 import Package.Module.Name as Name exposing (Name)
@@ -20,6 +21,113 @@ type Type
 decoder : Decoder Type
 decoder =
     Decode.customDecoder Decode.string parse
+
+
+
+-- NORMALIZE
+
+
+reserverdVars : Dict String (List String)
+reserverdVars =
+    Dict.empty
+        |> Dict.insert "number" [ "Float", "Int" ]
+        |> Dict.insert "comparable" [ "Float", "Int", "Char", "String" ]
+        |> Dict.insert "appendable" [ "String", "List" ]
+
+
+type alias Mapping =
+    Dict String String
+
+
+defaultMapping : Mapping
+defaultMapping =
+    Dict.keys reserverdVars
+        |> List.map (\v -> ( v, v ))
+        |> Dict.fromList
+
+
+nextMappingValue : Mapping -> String
+nextMappingValue mapping =
+    let
+        base =
+            (Dict.size mapping) - (Dict.size defaultMapping)
+
+        code =
+            (base % 26) + (Char.toCode 'a')
+
+        string =
+            String.fromChar (Char.fromCode code)
+
+        times =
+            (base // 26) + 1
+    in
+        String.repeat times string
+
+
+updateMapping : Type -> Mapping -> Mapping
+updateMapping tipe mapping =
+    let
+        updateMappingFor name =
+            if Dict.member name mapping then
+                mapping
+            else
+                Dict.insert name
+                    (nextMappingValue mapping)
+                    mapping
+    in
+        case tipe of
+            Function args result ->
+                List.foldl updateMapping mapping (List.append args [ result ])
+
+            Var name ->
+                updateMappingFor name
+
+            Apply name args ->
+                List.foldl updateMapping mapping args
+
+            Tuple args ->
+                List.foldl updateMapping mapping args
+
+            Record fields ext ->
+                List.foldl updateMapping mapping (List.map (\( _, t ) -> t) fields)
+
+
+normalize : Type -> Type
+normalize tipe =
+    normalizeWithMapping (updateMapping tipe defaultMapping) tipe
+
+
+normalizeWithMapping : Mapping -> Type -> Type
+normalizeWithMapping mapping tipe =
+    let
+        normalize' =
+            normalizeWithMapping mapping
+    in
+        case tipe of
+            Function args result ->
+                Function (List.map normalize' args)
+                    (normalize' result)
+
+            Var name ->
+                let
+                    name' =
+                        case Dict.get name mapping of
+                            Just n ->
+                                n
+
+                            Nothing ->
+                                name
+                in
+                    Var name'
+
+            Apply name args ->
+                Apply name (List.map normalize' args)
+
+            Tuple args ->
+                Tuple (List.map normalize' args)
+
+            Record fields ext ->
+                Record (List.map (\( k, v ) -> ( k, normalize' v )) fields) ext
 
 
 

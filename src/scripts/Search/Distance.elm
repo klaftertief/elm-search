@@ -2,27 +2,26 @@ module Search.Distance exposing (..)
 
 -- where
 
-import Char
 import Dict exposing (Dict)
 import String
-import Package.Module.Entry as Entry exposing (Entry)
 import Package.Module.Name as Name exposing (Name)
 import Package.Module.Type as Type exposing (..)
+import Search.Chunk as Chunk exposing (Chunk)
 
 
-name : String -> Entry -> Float
-name query entry =
-    if query == entry.name then
+name : String -> Chunk -> Float
+name query chunk =
+    if query == chunk.name then
         noPenalty
-    else if String.contains query entry.name then
-        mediumPenalty * (1 - (toFloat (String.length query) / toFloat (String.length entry.name)))
+    else if String.contains query chunk.name then
+        mediumPenalty * (1 - (toFloat (String.length query) / toFloat (String.length chunk.name)))
     else
         maxPenalty
 
 
-tipe : Type -> Entry -> Float
-tipe query entry =
-    distance (normalize query) (normalize entry.tipe)
+tipe : Type -> Chunk -> Float
+tipe query chunk =
+    distance (normalize query) chunk.tipeNormalized
 
 
 distance : Type -> Type -> Float
@@ -167,109 +166,6 @@ distanceApply ( canonicalN, argsN ) ( canonicalH, argsH ) =
 
         _ ->
             (distanceCanonical canonicalN canonicalH + distanceList argsN argsH) / 2
-
-
-reserverdVars : Dict String (List String)
-reserverdVars =
-    Dict.empty
-        |> Dict.insert "number" [ "Float", "Int" ]
-        |> Dict.insert "comparable" [ "Float", "Int", "Char", "String" ]
-        |> Dict.insert "appendable" [ "String", "List" ]
-
-
-type alias Mapping =
-    Dict String String
-
-
-defaultMapping : Mapping
-defaultMapping =
-    Dict.keys reserverdVars
-        |> List.map (\v -> ( v, v ))
-        |> Dict.fromList
-
-
-nextMappingValue : Mapping -> String
-nextMappingValue mapping =
-    let
-        base =
-            (Dict.size mapping) - (Dict.size defaultMapping)
-
-        code =
-            (base % 26) + (Char.toCode 'a')
-
-        string =
-            String.fromChar (Char.fromCode code)
-
-        times =
-            (base // 26) + 1
-    in
-        String.repeat times string
-
-
-updateMapping : Type -> Mapping -> Mapping
-updateMapping tipe mapping =
-    let
-        updateMappingFor name =
-            if Dict.member name mapping then
-                mapping
-            else
-                Dict.insert name
-                    (nextMappingValue mapping)
-                    mapping
-    in
-        case tipe of
-            Function args result ->
-                List.foldl updateMapping mapping (List.append args [ result ])
-
-            Var name ->
-                updateMappingFor name
-
-            Apply name args ->
-                List.foldl updateMapping mapping args
-
-            Tuple args ->
-                List.foldl updateMapping mapping args
-
-            Record fields ext ->
-                List.foldl updateMapping mapping (List.map (\( _, t ) -> t) fields)
-
-
-normalize : Type -> Type
-normalize tipe =
-    normalizeWithMapping (updateMapping tipe defaultMapping) tipe
-
-
-normalizeWithMapping : Mapping -> Type -> Type
-normalizeWithMapping mapping tipe =
-    let
-        normalize' =
-            normalizeWithMapping mapping
-    in
-        case tipe of
-            Function args result ->
-                Function (List.map normalize' args)
-                    (normalize' result)
-
-            Var name ->
-                let
-                    name' =
-                        case Dict.get name mapping of
-                            Just n ->
-                                n
-
-                            Nothing ->
-                                name
-                in
-                    Var name'
-
-            Apply name args ->
-                Apply name (List.map normalize' args)
-
-            Tuple args ->
-                Tuple (List.map normalize' args)
-
-            Record fields ext ->
-                Record (List.map (\( k, v ) -> ( k, normalize' v )) fields) ext
 
 
 noPenalty : Float
