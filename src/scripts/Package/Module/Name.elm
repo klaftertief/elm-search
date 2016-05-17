@@ -14,7 +14,9 @@ type alias Name =
 
 nameToString : Name -> String
 nameToString { home, name } =
-    String.join "." [ home, name ]
+    [ home, name ]
+        |> List.filter (not << String.isEmpty)
+        |> String.join "."
 
 
 decoder : Decoder Name

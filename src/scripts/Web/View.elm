@@ -6,7 +6,11 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Package.Module.Type as Type
+import Package.Module.Name as Name
 import Search.Distance as Distance
+import Search.Chunk as Chunk exposing (Chunk)
+import Utils.Code exposing (arrow, colon, equals, keyword, padded, space)
+import Utils.Markdown as Markdown
 import Web.Model as Model exposing (..)
 
 
@@ -58,6 +62,30 @@ viewSearch info =
                 |> List.map snd
     in
         div []
-            [ input [ onInput Query, value info.query ] []
-            , div [] (filteredChunks |> List.map (\chunk -> div [] [ text (chunk.name ++ " : " ++ toString chunk.tipe) ]))
+            [ div [ class "searchForm" ]
+                [ input [ onInput Query, value info.query ] [] ]
+            , div [ class "searchResult" ]
+                (List.map viewChunk filteredChunks)
             ]
+
+
+viewChunk : Chunk -> Html Msg
+viewChunk chunk =
+    div [ class "searchChunk" ]
+        [ div [ class "chunkAnnotation" ]
+            [ code []
+                (text chunk.name :: padded colon ++ Type.toHtml Type.Other chunk.tipe)
+            ]
+        , div [ class "chunkDocumentation" ]
+            [ case chunk.docs of
+                Just docs ->
+                    Markdown.block docs
+
+                Nothing ->
+                    text "---"
+            ]
+        , div [ class "chunkMeta" ]
+            [ div [ class "chunkPackage" ] [ text chunk.packageIdentifier ]
+            , div [ class "chunkModule" ] [ text (Name.nameToString chunk.moduleName) ]
+            ]
+        ]

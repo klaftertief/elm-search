@@ -4,10 +4,12 @@ module Package.Module.Type exposing (..)
 
 import Char
 import Dict exposing (Dict)
+import Html exposing (..)
 import Json.Decode as Decode exposing (Decoder, (:=))
 import String
 import Package.Module.Name as Name exposing (Name)
 import Parse.Combinators exposing (..)
+import Utils.Code as Code exposing (arrow, colon, padded, space)
 
 
 type Type
@@ -16,6 +18,85 @@ type Type
     | Apply Name (List Type)
     | Tuple (List Type)
     | Record (List ( String, Type )) (Maybe String)
+
+
+type Context
+    = Func
+    | App
+    | Other
+
+
+toHtml : Context -> Type -> List (Html msg)
+toHtml context tipe =
+        case tipe of
+            Function args result ->
+                let
+                    maybeAddParens =
+                        case context of
+                            Func ->
+                                Code.addParens
+
+                            App ->
+                                Code.addParens
+
+                            Other ->
+                                identity
+
+                    argsHtml =
+                        List.concatMap (\arg -> toHtml Func arg ++ padded arrow) args
+                in
+                    maybeAddParens (argsHtml ++ toHtml Func result)
+
+            Var name ->
+                [ text name ]
+
+            Apply name [] ->
+                [ text (Name.nameToString name) ]
+
+            Apply name args ->
+                let
+                    maybeAddParens =
+                        case context of
+                            Func ->
+                                identity
+
+                            App ->
+                                Code.addParens
+
+                            Other ->
+                                identity
+
+                    argsHtml =
+                        List.concatMap (\arg -> space :: toHtml App arg) args
+                in
+                    maybeAddParens (text (Name.nameToString name) :: argsHtml)
+
+            Tuple args ->
+                List.map (toHtml Other) args
+                    |> List.intersperse [ text ", " ]
+                    |> List.concat
+                    |> Code.addParens
+
+            Record fields ext ->
+                let
+                    fieldsHtml =
+                        List.map fieldToHtml fields
+                            |> List.intersperse [ text ", " ]
+                            |> List.concat
+
+                    recordInsides =
+                        case ext of
+                            Nothing ->
+                                fieldsHtml
+
+                            Just extName ->
+                                text extName :: text " | " :: fieldsHtml
+                in
+                    text "{ " :: recordInsides ++ [ text " }" ]
+
+fieldToHtml : ( String, Type ) -> List (Html msg)
+fieldToHtml ( field, tipe ) =
+    text field :: space :: colon :: space :: toHtml Other tipe
 
 
 decoder : Decoder Type
