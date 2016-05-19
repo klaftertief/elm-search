@@ -7,6 +7,7 @@ import Json.Decode as Decode
 import Task
 import Package.Module.Type as Type exposing (Type)
 import Package.Package as Package
+import Package.Version as Version
 import Search.Chunk as Chunk
 import Set exposing (Set)
 import Web.Model as Model exposing (..)
@@ -61,6 +62,24 @@ update msg model =
                     _ ->
                         model
 
+        SetVersionFilter vsnString ->
+            flip (,) Cmd.none
+                <| case model of
+                    Success facts ->
+                        let
+                            maybeElmVersion =
+                                vsnString
+                                    |> Version.fromString
+                                    |> Result.toMaybe
+                        in
+                            Success
+                                { facts
+                                    | elmVersionsFilter = maybeElmVersion
+                                }
+
+                    _ ->
+                        model
+
         SearchQuery ->
             flip (,) Cmd.none
                 <| case model of
@@ -69,11 +88,14 @@ update msg model =
                             queryType =
                                 Type.parse facts.query
                                     |> Result.toMaybe
+
+                            filteredChunks =
+                                search facts.elmVersionsFilter queryType facts.chunks
                         in
                             Success
                                 { facts
                                     | queryType = queryType
-                                    , filteredChunks = search queryType facts.chunks
+                                    , filteredChunks = filteredChunks
                                 }
 
                     _ ->

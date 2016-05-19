@@ -31,23 +31,33 @@ type Msg
     = Fail Http.Error
     | Load (List Package)
     | SetQuery String
+    | SetVersionFilter String
     | SearchQuery
     | ResetQuery
 
 
-search : Maybe Type -> List Chunk -> List Chunk
-search maybeQueryType chunks =
+search : Maybe Version -> Maybe Type -> List Chunk -> List Chunk
+search maybeVersionsFilter maybeQueryType chunks =
     let
+        versionChunks =
+            case maybeVersionsFilter of
+                Just vsn ->
+                    chunks
+                        |> List.filter (.elmVersion >> (==) maybeVersionsFilter)
+
+                Nothing ->
+                    chunks
+
         weightedChunks =
             case maybeQueryType of
                 Just tipe ->
                     case tipe of
                         Type.Var str ->
-                            chunks
+                            versionChunks
                                 |> List.map (\chunk -> ( Distance.name str chunk, chunk ))
 
                         _ ->
-                            chunks
+                            versionChunks
                                 |> List.map (\chunk -> ( Distance.tipe tipe chunk, chunk ))
 
                 Nothing ->

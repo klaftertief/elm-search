@@ -3,7 +3,6 @@ module Search exposing (..)
 -- where
 
 import Html.App as Html
-import Web.Model as Search
 import Web.Update as Search
 import Web.View as Search
 

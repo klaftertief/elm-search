@@ -5,10 +5,11 @@ module Web.View exposing (..)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
+import Json.Decode as Decode
 import Package.Module.Type as Type exposing (Type)
 import Package.Version as Version exposing (Version)
-import Search.Distance as Distance
 import Search.Chunk as Chunk exposing (Chunk)
+import Set
 import String
 import Utils.Code exposing (arrow, colon, equals, keyword, padded, space)
 import Utils.Markdown as Markdown
@@ -41,11 +42,30 @@ viewError error =
 viewSearch : Info -> Html Msg
 viewSearch info =
     div []
-        [ Html.form [ class "searchForm", onSubmit SearchQuery ]
-            [ input [ onInput SetQuery, value info.query ] [] ]
-        , div [ class "searchResult" ]
-            (List.map viewChunk info.filteredChunks)
+        [ viewSearchForm info
+        , viewSearchResults info
         ]
+
+
+viewSearchForm : Info -> Html Msg
+viewSearchForm info =
+    Html.form [ class "searchForm", onSubmit SearchQuery ]
+        [ input [ name "q", onInput SetQuery, value info.query ] []
+        , select [ name "v", on "change" (Decode.map SetVersionFilter targetValue) ]
+            ((option [] [ text "any" ])
+                :: (info.elmVersions
+                        |> Set.toList
+                        |> List.reverse
+                        |> List.map (\vsn -> option [] [ text (Version.vsnToString vsn) ])
+                   )
+            )
+        ]
+
+
+viewSearchResults : Info -> Html Msg
+viewSearchResults info =
+    div [ class "searchResult" ]
+        (List.map viewChunk info.filteredChunks)
 
 
 viewChunk : Chunk -> Html Msg

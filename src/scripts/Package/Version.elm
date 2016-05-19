@@ -1,4 +1,4 @@
-module Package.Version exposing (Version, decoder, vsnToString)
+module Package.Version exposing (..)
 
 -- where
 
