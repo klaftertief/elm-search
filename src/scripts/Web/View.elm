@@ -42,15 +42,21 @@ viewError error =
 viewSearch : Info -> Html Msg
 viewSearch info =
     div []
-        [ viewSearchForm info
+        [ viewSearchHeader info
         , viewSearchResults info
         ]
 
 
+viewSearchHeader : Info -> Html Msg
+viewSearchHeader info =
+    div [ class "searchHeader" ]
+        [ viewSearchForm info ]
+
+
 viewSearchForm : Info -> Html Msg
 viewSearchForm info =
-    Html.form [ class "searchForm", onSubmit SearchQuery ]
-        [ input [ name "q", onInput SetQuery, value info.query ] []
+    Html.form [ class "searchForm", action ".", onSubmit SearchQuery ]
+        [ input [ name "q", type' "search", onInput SetQuery, value info.query ] []
         , select [ name "v", on "change" (Decode.map SetVersionFilter targetValue) ]
             ((option [] [ text "any" ])
                 :: (info.elmVersions
@@ -59,6 +65,7 @@ viewSearchForm info =
                         |> List.map (\vsn -> option [] [ text (Version.vsnToString vsn) ])
                    )
             )
+        , button [ type' "submit" ] [ text "Search" ]
         ]
 
 
