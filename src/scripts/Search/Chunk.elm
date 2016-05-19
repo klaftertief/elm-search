@@ -4,40 +4,79 @@ module Search.Chunk exposing (..)
 
 import String
 import Package.Module.Entry as Entry exposing (Entry)
-import Package.Module.Name as Name exposing (Name)
 import Package.Module.Type as Type exposing (Type)
 import Package.Package as Package exposing (Package)
+import Package.Version as Version exposing (Version)
 
 
 type alias Chunk =
-    { name : String
+    { name : Name
     , tipe : Type
     , tipeNormalized : Type
     , docs : Maybe String
-    , packageIdentifier : String
-    , moduleName : Name
+    , elmVersion : Maybe Version
     }
 
 
-packageToChunks : Package -> List Chunk
-packageToChunks package =
+type alias Name =
+    { userName : String
+    , packageName : String
+    , packageVersion : Version
+    , moduleName : String
+    , name : String
+    }
+
+
+packageChunks : Package -> List Chunk
+packageChunks package =
     package.modules
         |> List.concatMap
-            (\mod ->
-                List.map ((,) mod.name) mod.entries
+            (\{ name, elmVersion, entries } ->
+                List.map ((,,) name elmVersion) entries
             )
         |> List.map
-            (\( name, entry ) ->
-                toChunk (Package.identifier package) name entry
+            (\( name, maybeVersion, entry ) ->
+                toChunk package name maybeVersion entry
             )
 
 
-toChunk : String -> Name -> Entry -> Chunk
-toChunk packageIdentifier moduleName { name, docs, tipe } =
-    { name = name
+toChunk : Package -> String -> Maybe Version -> Entry -> Chunk
+toChunk package moduleName elmVersion { name, docs, tipe } =
+    { name = Name package.user package.name package.version moduleName name
     , tipe = tipe
     , tipeNormalized = Type.normalize tipe
     , docs = List.head (docs |> String.trim |> String.split "\n\n" |> List.filter (not << String.isEmpty))
-    , packageIdentifier = packageIdentifier
-    , moduleName = moduleName
+    , elmVersion = elmVersion
     }
+
+
+identifierHome : Name -> String
+identifierHome { userName, packageName, packageVersion, moduleName } =
+    [ userName, packageName, Version.vsnToString packageVersion, moduleName ]
+        |> String.join "/"
+
+
+rootUrl : String
+rootUrl =
+    "http://package.elm-lang.org"
+
+
+pathTo : Name -> String
+pathTo { userName, packageName, packageVersion, moduleName, name } =
+    [ rootUrl, "packages", userName, packageName, Version.vsnToString packageVersion, pathToModule moduleName name ]
+        |> String.join "/"
+
+
+pathToModule : String -> String -> String
+pathToModule moduleName name =
+    String.map dotToDash moduleName
+        ++ "#"
+        ++ name
+
+
+dotToDash : Char -> Char
+dotToDash char =
+    if char == '.' then
+        '-'
+    else
+        char

@@ -5,8 +5,10 @@ module Web.Update exposing (..)
 import Http
 import Json.Decode as Decode
 import Task
+import Package.Module.Type as Type exposing (Type)
 import Package.Package as Package
 import Search.Chunk as Chunk
+import Set exposing (Set)
 import Web.Model as Model exposing (..)
 
 
@@ -26,23 +28,69 @@ update msg model =
             )
 
         Load packages ->
-            ( Success
-                { chunks = List.concatMap Chunk.packageToChunks packages
-                , query = ""
-                }
-            , Cmd.none
-            )
+            let
+                chunks =
+                    List.concatMap Chunk.packageChunks packages
 
-        Query query ->
+                elmVersionsList =
+                    chunks
+                        |> List.map .elmVersion
+                        |> List.filterMap identity
+            in
+                ( Success
+                    { chunks = chunks
+                    , filteredChunks = []
+                    , query = ""
+                    , queryType = Nothing
+                    , elmVersions = Set.fromList elmVersionsList
+                    , elmVersionsFilter = Nothing
+                    }
+                , Cmd.none
+                )
+
+        SetQuery query ->
             flip (,) Cmd.none
                 <| case model of
                     Success facts ->
-                        Success { facts | query = query }
+                        Success
+                            { facts
+                                | query = query
+                                , queryType = Nothing
+                            }
 
-                    Loading ->
+                    _ ->
                         model
 
-                    Failed _ ->
+        SearchQuery ->
+            flip (,) Cmd.none
+                <| case model of
+                    Success facts ->
+                        let
+                            queryType =
+                                Type.parse facts.query
+                                    |> Result.toMaybe
+                        in
+                            Success
+                                { facts
+                                    | queryType = queryType
+                                    , filteredChunks = search queryType facts.chunks
+                                }
+
+                    _ ->
+                        model
+
+        ResetQuery ->
+            flip (,) Cmd.none
+                <| case model of
+                    Success facts ->
+                        Success
+                            { facts
+                                | query = ""
+                                , queryType = Nothing
+                                , filteredChunks = []
+                            }
+
+                    _ ->
                         model
 
 

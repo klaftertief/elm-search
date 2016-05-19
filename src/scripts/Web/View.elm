@@ -5,10 +5,11 @@ module Web.View exposing (..)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
-import Package.Module.Type as Type
-import Package.Module.Name as Name
+import Package.Module.Type as Type exposing (Type)
+import Package.Version as Version exposing (Version)
 import Search.Distance as Distance
 import Search.Chunk as Chunk exposing (Chunk)
+import String
 import Utils.Code exposing (arrow, colon, equals, keyword, padded, space)
 import Utils.Markdown as Markdown
 import Web.Model as Model exposing (..)
@@ -39,53 +40,70 @@ viewError error =
 
 viewSearch : Info -> Html Msg
 viewSearch info =
-    let
-        weightedChunks =
-            case Type.parse info.query of
-                Ok tipe ->
-                    case tipe of
-                        Type.Var _ ->
-                            info.chunks
-                                |> List.map (\chunk -> ( Distance.name info.query chunk, chunk ))
-
-                        _ ->
-                            info.chunks
-                                |> List.map (\entry -> ( Distance.tipe tipe entry, entry ))
-
-                Err _ ->
-                    []
-
-        filteredChunks =
-            weightedChunks
-                |> List.filter (\( distance, _ ) -> distance <= Distance.lowPenalty)
-                |> List.sortBy fst
-                |> List.map snd
-    in
-        div []
-            [ div [ class "searchForm" ]
-                [ input [ onInput Query, value info.query ] [] ]
-            , div [ class "searchResult" ]
-                (List.map viewChunk filteredChunks)
-            ]
+    div []
+        [ Html.form [ class "searchForm", onSubmit SearchQuery ]
+            [ input [ onInput SetQuery, value info.query ] [] ]
+        , div [ class "searchResult" ]
+            (List.map viewChunk info.filteredChunks)
+        ]
 
 
 viewChunk : Chunk -> Html Msg
 viewChunk chunk =
     div [ class "searchChunk" ]
         [ div [ class "chunkAnnotation" ]
-            [ code []
-                (text chunk.name :: padded colon ++ Type.toHtml Type.Other chunk.tipe)
-            ]
+            [ annotationBlock (annotation chunk) ]
         , div [ class "chunkDocumentation" ]
-            [ case chunk.docs of
-                Just docs ->
-                    Markdown.block docs
-
-                Nothing ->
-                    text "---"
+            [ Maybe.map Markdown.block chunk.docs
+                |> Maybe.withDefault (text "---")
             ]
         , div [ class "chunkMeta" ]
-            [ div [ class "chunkPackage" ] [ text chunk.packageIdentifier ]
-            , div [ class "chunkModule" ] [ text (Name.nameToString chunk.moduleName) ]
+            [ div [ class "chunkPackageLink" ]
+                [ a [ href (Chunk.pathTo chunk.name) ]
+                    [ text (Chunk.identifierHome chunk.name) ]
+                ]
+            , div [ class "chunkVersion" ]
+                [ text
+                    (Maybe.map Version.vsnToString chunk.elmVersion
+                        |> Maybe.withDefault "---"
+                    )
+                ]
             ]
         ]
+
+
+annotationBlock : List (List (Html msg)) -> Html msg
+annotationBlock bits =
+    pre [] [ code [] (List.concat (List.intersperse [ text "\n" ] bits)) ]
+
+
+annotation : Chunk -> List (List (Html msg))
+annotation chunk =
+    case chunk.tipe of
+        Type.Function args result ->
+            if String.length chunk.name.name + 3 + Type.length Type.Other chunk.tipe > 64 then
+                [ annotationName chunk ] :: longFunctionAnnotation args result
+            else
+                [ annotationName chunk :: padded colon ++ Type.toHtml Type.Other chunk.tipe ]
+
+        _ ->
+            [ annotationName chunk :: padded colon ++ Type.toHtml Type.Other chunk.tipe ]
+
+
+annotationName : Chunk -> Html msg
+annotationName { name } =
+    a [ href (Chunk.pathTo name) ]
+        [ text name.name ]
+
+
+longFunctionAnnotation : List Type -> Type -> List (List (Html msg))
+longFunctionAnnotation args result =
+    let
+        tipeHtml =
+            List.map (Type.toHtml Type.Func) (args ++ [ result ])
+
+        starters =
+            [ text "    ", colon, text "  " ]
+                :: List.repeat (List.length args) [ text "    ", arrow, space ]
+    in
+        List.map2 (++) starters tipeHtml

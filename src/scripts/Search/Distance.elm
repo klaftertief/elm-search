@@ -10,11 +10,11 @@ import Search.Chunk as Chunk exposing (Chunk)
 
 
 name : String -> Chunk -> Float
-name query chunk =
-    if query == chunk.name then
+name query { name } =
+    if query == name.name then
         noPenalty
-    else if String.contains query chunk.name then
-        mediumPenalty * (1 - (toFloat (String.length query) / toFloat (String.length chunk.name)))
+    else if String.contains query name.name then
+        mediumPenalty * (1 - (toFloat (String.length query) / toFloat (String.length name.name)))
     else
         maxPenalty
 
