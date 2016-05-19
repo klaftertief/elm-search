@@ -14,7 +14,7 @@ import String
 
 
 type Model
-    = Loading
+    = Loading String
     | Failed Http.Error
     | Success Info
 
@@ -94,7 +94,10 @@ toQueryString : Maybe Version -> String -> String
 toQueryString maybeVersionsFilter query =
     let
         start =
-            [ ( "q", query ) ]
+            if String.isEmpty query then
+                []
+            else
+                [ ( "q", query ) ]
 
         queries =
             case maybeVersionsFilter of
@@ -104,12 +107,20 @@ toQueryString maybeVersionsFilter query =
                 Nothing ->
                     start
     in
-        Http.url "" queries
+        if List.isEmpty queries then
+            ""
+        else
+            "?" ++ String.join "&" (List.map queryPair queries)
+
+
+queryPair : ( String, String ) -> String
+queryPair ( key, value ) =
+    Http.uriEncode key ++ "=" ++ Http.uriEncode value
 
 
 parseQueryString : String -> ( String, Maybe Version )
 parseQueryString queryString =
-    case String.uncons queryString of
+    case String.uncons (Http.uriDecode queryString) of
         Just ( '?', rest ) ->
             let
                 parts =

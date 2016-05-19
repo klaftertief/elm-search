@@ -16,7 +16,7 @@ import Web.Model as Model exposing (..)
 
 init : Flags -> ( Model, Cmd Msg )
 init { search } =
-    ( Loading
+    ( Loading search
     , getPackages
     )
 
@@ -31,6 +31,14 @@ update msg model =
 
         Load packages ->
             let
+                ( query, maybeVersion ) =
+                    case model of
+                        Loading queryString ->
+                            parseQueryString queryString
+
+                        _ ->
+                            ( "", Nothing )
+
                 chunks =
                     List.concatMap Chunk.packageChunks packages
 
@@ -40,13 +48,14 @@ update msg model =
                         |> List.filterMap identity
             in
                 ( Success
-                    { chunks = chunks
-                    , filteredChunks = []
-                    , query = ""
-                    , queryType = Nothing
-                    , elmVersions = Set.fromList elmVersionsList
-                    , elmVersionsFilter = Nothing
-                    }
+                    <| handleSearch
+                        { chunks = chunks
+                        , filteredChunks = []
+                        , query = query
+                        , queryType = Nothing
+                        , elmVersions = Set.fromList elmVersionsList
+                        , elmVersionsFilter = maybeVersion
+                        }
                 , Cmd.none
                 )
 
@@ -83,22 +92,13 @@ update msg model =
 
         SearchQuery ->
             case model of
-                Success facts ->
+                Success info ->
                     let
-                        queryType =
-                            Type.parse facts.query
-                                |> Result.toMaybe
-
-                        filteredChunks =
-                            search facts.elmVersionsFilter queryType facts.chunks
+                        newInfo =
+                            handleSearch info
                     in
-                        ( Success
-                            { facts
-                                | queryType = queryType
-                                , filteredChunks = filteredChunks
-                            }
-                          --, Cmd.none
-                        , Ports.pushQuery (toQueryString facts.elmVersionsFilter facts.query)
+                        ( Success newInfo
+                        , Ports.pushQuery (toQueryString newInfo.elmVersionsFilter newInfo.query)
                         )
 
                 _ ->
@@ -125,18 +125,35 @@ update msg model =
 
                 newModel =
                     case model of
-                        Success facts ->
+                        Success info ->
                             Success
-                                { facts
-                                    | query = query
-                                    , elmVersionsFilter = maybeVersion
-                                }
+                                (handleSearch
+                                    { info
+                                        | query = query
+                                        , elmVersionsFilter = maybeVersion
+                                    }
+                                )
 
                         _ ->
                             model
             in
-                --update SearchQuery newModel
                 ( newModel, Cmd.none )
+
+
+handleSearch : Info -> Info
+handleSearch info =
+    let
+        queryType =
+            Type.parse info.query
+                |> Result.toMaybe
+
+        filteredChunks =
+            search info.elmVersionsFilter queryType info.chunks
+    in
+        { info
+            | queryType = queryType
+            , filteredChunks = filteredChunks
+        }
 
 
 getPackages : Cmd Msg

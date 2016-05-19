@@ -19,7 +19,7 @@ import Web.Model as Model exposing (..)
 view : Model -> Html Msg
 view model =
     case model of
-        Loading ->
+        Loading _ ->
             viewLoading
 
         Failed error ->
