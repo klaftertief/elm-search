@@ -3,15 +3,19 @@ module Search exposing (..)
 -- where
 
 import Html.App as Html
+import Ports
+import Web.Model as Search exposing (..)
 import Web.Update as Search
 import Web.View as Search
 
 
-main : Program Never
+main : Program Flags
 main =
-    Html.program
+    Html.programWithFlags
         { init = Search.init
         , view = Search.view
         , update = Search.update
-        , subscriptions = \_ -> Sub.none
+        , subscriptions =
+            \_ ->
+                Sub.batch [ Ports.query LocationSearchChange ]
         }

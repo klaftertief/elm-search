@@ -8,13 +8,14 @@ import Task
 import Package.Module.Type as Type exposing (Type)
 import Package.Package as Package
 import Package.Version as Version
+import Ports
 import Search.Chunk as Chunk
 import Set exposing (Set)
 import Web.Model as Model exposing (..)
 
 
-init : ( Model, Cmd Msg )
-init =
+init : Flags -> ( Model, Cmd Msg )
+init { search } =
     ( Loading
     , getPackages
     )
@@ -81,25 +82,27 @@ update msg model =
                         model
 
         SearchQuery ->
-            flip (,) Cmd.none
-                <| case model of
-                    Success facts ->
-                        let
-                            queryType =
-                                Type.parse facts.query
-                                    |> Result.toMaybe
+            case model of
+                Success facts ->
+                    let
+                        queryType =
+                            Type.parse facts.query
+                                |> Result.toMaybe
 
-                            filteredChunks =
-                                search facts.elmVersionsFilter queryType facts.chunks
-                        in
-                            Success
-                                { facts
-                                    | queryType = queryType
-                                    , filteredChunks = filteredChunks
-                                }
+                        filteredChunks =
+                            search facts.elmVersionsFilter queryType facts.chunks
+                    in
+                        ( Success
+                            { facts
+                                | queryType = queryType
+                                , filteredChunks = filteredChunks
+                            }
+                          --, Cmd.none
+                        , Ports.pushQuery (toQueryString facts.elmVersionsFilter facts.query)
+                        )
 
-                    _ ->
-                        model
+                _ ->
+                    ( model, Cmd.none )
 
         ResetQuery ->
             flip (,) Cmd.none
@@ -114,6 +117,26 @@ update msg model =
 
                     _ ->
                         model
+
+        LocationSearchChange queryString ->
+            let
+                ( query, maybeVersion ) =
+                    parseQueryString queryString
+
+                newModel =
+                    case model of
+                        Success facts ->
+                            Success
+                                { facts
+                                    | query = query
+                                    , elmVersionsFilter = maybeVersion
+                                }
+
+                        _ ->
+                            model
+            in
+                --update SearchQuery newModel
+                ( newModel, Cmd.none )
 
 
 getPackages : Cmd Msg

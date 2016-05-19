@@ -2,6 +2,7 @@ module Web.Model exposing (..)
 
 -- where
 
+import Dict
 import Http
 import Package.Module.Type as Type exposing (Type)
 import Package.Package as Package exposing (Package)
@@ -9,6 +10,7 @@ import Package.Version as Version exposing (Version)
 import Search.Chunk as Chunk exposing (Chunk)
 import Search.Distance as Distance
 import Set exposing (Set)
+import String
 
 
 type Model
@@ -34,6 +36,11 @@ type Msg
     | SetVersionFilter String
     | SearchQuery
     | ResetQuery
+    | LocationSearchChange String
+
+
+type alias Flags =
+    { search : String }
 
 
 search : Maybe Version -> Maybe Type -> List Chunk -> List Chunk
@@ -81,3 +88,50 @@ search maybeVersionsFilter maybeQueryType chunks =
                 |> List.map snd
     in
         filteredChunks
+
+
+toQueryString : Maybe Version -> String -> String
+toQueryString maybeVersionsFilter query =
+    let
+        start =
+            [ ( "q", query ) ]
+
+        queries =
+            case maybeVersionsFilter of
+                Just vsn ->
+                    start ++ [ ( "v", Version.vsnToString vsn ) ]
+
+                Nothing ->
+                    start
+    in
+        Http.url "" queries
+
+
+parseQueryString : String -> ( String, Maybe Version )
+parseQueryString queryString =
+    case String.uncons queryString of
+        Just ( '?', rest ) ->
+            let
+                parts =
+                    String.split "&" rest
+                        |> List.map (String.split "=")
+                        |> List.filterMap
+                            (\pair ->
+                                case pair of
+                                    [ k, v ] ->
+                                        Just ( k, v )
+
+                                    _ ->
+                                        Nothing
+                            )
+                        |> Dict.fromList
+            in
+                ( Dict.get "q" parts |> Maybe.withDefault ""
+                , Dict.get "v" parts
+                    |> Maybe.map Version.fromString
+                    |> Maybe.map Result.toMaybe
+                    |> Maybe.withDefault Nothing
+                )
+
+        _ ->
+            ( "", Nothing )
