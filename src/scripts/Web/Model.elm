@@ -4,7 +4,7 @@ module Web.Model exposing (..)
 
 import Dict
 import Http
-import Package.Module.Type as Type exposing (Type)
+import Package.Module.Type as Type
 import Package.Package as Package exposing (Package)
 import Package.Version as Version exposing (Version)
 import Search.Chunk as Chunk exposing (Chunk)
@@ -23,7 +23,7 @@ type alias Info =
     { chunks : List Chunk
     , filteredChunks : List Chunk
     , query : String
-    , queryType : Maybe Type
+    , queryType : Maybe Type.Type
     , elmVersions : Set Version
     , elmVersionsFilter : Maybe Version
     }
@@ -43,7 +43,7 @@ type alias Flags =
     { search : String }
 
 
-search : Maybe Version -> Maybe Type -> List Chunk -> List Chunk
+search : Maybe Version -> Maybe Type.Type -> List Chunk -> List Chunk
 search maybeVersionsFilter maybeQueryType chunks =
     let
         versionChunks =
@@ -76,9 +76,9 @@ search maybeVersionsFilter maybeQueryType chunks =
                 |> List.map
                     (\( distance, chunk ) ->
                         if chunk.name.userName == "elm-lang" && chunk.name.packageName == "core" then
-                            ( distance - Distance.lowPenalty, chunk )
-                        else if chunk.name.userName == "elm-lang" then
                             ( distance - Distance.lowPenalty / 2, chunk )
+                        else if chunk.name.userName == "elm-lang" then
+                            ( distance - Distance.lowPenalty / 3, chunk )
                         else if chunk.name.userName == "elm-community" then
                             ( distance - Distance.lowPenalty / 4, chunk )
                         else

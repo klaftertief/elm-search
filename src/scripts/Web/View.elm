@@ -6,6 +6,7 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Json.Decode as Decode
+import Logo
 import Package.Module.Type as Type exposing (Type)
 import Package.Version as Version exposing (Version)
 import Search.Chunk as Chunk exposing (Chunk)
@@ -50,21 +51,39 @@ viewSearch info =
 viewSearchHeader : Info -> Html Msg
 viewSearchHeader info =
     div [ class "searchHeader" ]
-        [ viewSearchForm info ]
+        [ viewSearchTitle
+        , viewSearchForm info
+        ]
+
+
+viewSearchTitle : Html Msg
+viewSearchTitle =
+    div [ class "searchBranding" ]
+        [ viewLogo
+        , span [ class "searchTitle" ] [ text "Elm Search" ]
+        ]
+
+
+viewLogo : Html msg
+viewLogo =
+    span [ class "searchLogo" ]
+        [ Logo.viewWithSize 128 ]
 
 
 viewSearchForm : Info -> Html Msg
 viewSearchForm info =
     Html.form [ class "searchForm", action ".", onSubmit SearchQuery ]
         [ input [ name "q", type' "search", onInput SetQuery, value info.query ] []
-        , select [ name "v", on "change" (Decode.map SetVersionFilter targetValue) ]
-            ((option [] [ text "any" ])
-                :: (info.elmVersions
-                        |> Set.toList
-                        |> List.reverse
-                        |> List.map (\vsn -> option [] [ text (Version.vsnToString vsn) ])
-                   )
-            )
+        , label []
+            [ select [ name "v", on "change" (Decode.map SetVersionFilter targetValue) ]
+                ((option [] [ text "any" ])
+                    :: (info.elmVersions
+                            |> Set.toList
+                            |> List.reverse
+                            |> List.map (\vsn -> option [] [ text (Version.vsnToString vsn) ])
+                       )
+                )
+            ]
         , button [ type' "submit" ] [ text "Search" ]
         ]
 
@@ -85,7 +104,7 @@ viewChunk chunk =
                 |> Maybe.withDefault (text "---")
             ]
         , div [ class "chunkMeta" ]
-            [ div [ class "chunkPackageLink" ]
+            [ div [ class "chunkPath" ]
                 [ a [ href (Chunk.pathTo chunk.name) ]
                     [ text (Chunk.identifierHome chunk.name) ]
                 ]
