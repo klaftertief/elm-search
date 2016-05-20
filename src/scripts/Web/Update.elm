@@ -35,7 +35,7 @@ update msg model =
                         _ ->
                             ""
 
-                ( search, searchCmd ) =
+                search =
                     Search.init (parseSearchString queryString) packages
             in
                 ( Ready search
@@ -46,7 +46,7 @@ update msg model =
             case model of
                 Ready search ->
                     let
-                        ( newSearch, searchCmd ) =
+                        newSearch =
                             Search.update searchMsg search
 
                         cmd =

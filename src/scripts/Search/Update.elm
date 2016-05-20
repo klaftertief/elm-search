@@ -4,10 +4,10 @@ import Package.Package as Package exposing (Package)
 import Search.Model as Model exposing (..)
 
 
-init : Filter -> List Package -> ( Model, Cmd Msg )
+init : Filter -> List Package -> Model
 init filter packages =
     let
-        ( model, cmd ) =
+        model =
             update (BuildIndex packages) { initialModel | filter = filter }
     in
         case filter.query of
@@ -15,16 +15,14 @@ init filter packages =
                 update RunFilter model
 
             Nothing ->
-                ( model, cmd )
+                model
 
 
-update : Msg -> Model -> ( Model, Cmd Msg )
+update : Msg -> Model -> Model
 update msg model =
     case msg of
         BuildIndex packages ->
-            ( { model | index = buildIndex packages }
-            , Cmd.none
-            )
+            { model | index = buildIndex packages }
 
         SetFilterQueryFrom queryString ->
             let
@@ -37,9 +35,7 @@ update msg model =
                         , query = maybeQueryFromString queryString
                     }
             in
-                ( { model | filter = filter }
-                , Cmd.none
-                )
+                { model | filter = filter }
 
         SetFilterVersionFrom versionString ->
             let
@@ -51,11 +47,7 @@ update msg model =
                         | elmVersion = maybeVersionFromString versionString
                     }
             in
-                ( { model | filter = filter }
-                , Cmd.none
-                )
+                { model | filter = filter }
 
         RunFilter ->
-            ( { model | result = runFilter model.filter model.index }
-            , Cmd.none
-            )
+            { model | result = runFilter model.filter model.index }

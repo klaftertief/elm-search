@@ -168,7 +168,7 @@ distanceByQuery query chunks =
 
 filterByDistance : Float -> List ( Float, Chunk ) -> List ( Float, Chunk )
 filterByDistance distance weightedChunks =
-    List.filter (\( d, _ ) -> d <= distance) weightedChunks
+    List.filter (fst >> (>=) distance) weightedChunks
 
 
 prioritizeChunks : List ( Float, Chunk ) -> List ( Float, Chunk )
