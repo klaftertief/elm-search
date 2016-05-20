@@ -22,8 +22,12 @@ import Web.Model as Model exposing (..)
 view : Model -> Html Msg
 view model =
     case model of
-        Loading _ ->
-            viewLoading
+        Loading filter ->
+            let
+                search =
+                    Search.initialModel
+            in
+                viewLoading { search | filter = filter }
 
         Failed error ->
             viewError (toString error)
@@ -32,19 +36,28 @@ view model =
             viewSearch search
 
 
-viewLoading : Html Msg
-viewLoading =
-    div [] [ text "Loading package docs..." ]
+viewLoading : Search.Model -> Html Msg
+viewLoading search =
+    div [ class "searchLoading" ]
+        [ viewSearchHeader search
+        , viewStatus "Loading and indexing package docs..."
+        ]
 
 
 viewError : String -> Html Msg
 viewError error =
-    div [] [ text error ]
+    div [ class "searchError" ]
+        [ viewStatus error ]
+
+
+viewStatus : String -> Html Msg
+viewStatus status =
+    p [ class "searchStatus" ] [ text status ]
 
 
 viewSearch : Search.Model -> Html Msg
 viewSearch search =
-    div []
+    div [ class "searchReady" ]
         [ viewSearchHeader search
         , viewSearchResults search
         ]
@@ -53,13 +66,13 @@ viewSearch search =
 viewSearchHeader : Search.Model -> Html Msg
 viewSearchHeader search =
     div [ class "searchHeader" ]
-        [ viewSearchTitle
+        [ viewSearchBranding
         , viewSearchForm search
         ]
 
 
-viewSearchTitle : Html Msg
-viewSearchTitle =
+viewSearchBranding : Html Msg
+viewSearchBranding =
     div [ class "searchBranding" ]
         [ viewLogo
         , span [ class "searchTitle" ] [ text "Elm Search" ]
@@ -73,35 +86,47 @@ viewLogo =
 
 
 viewSearchForm : Search.Model -> Html Msg
-viewSearchForm { index, filter } =
-    App.map SearchMsg
-        <| Html.form
-            [ class "searchForm"
-            , action "."
-            , onSubmit Search.RunFilter
-            ]
-            [ input
-                [ name "q"
-                , type' "search"
-                , onInput Search.SetFilterQueryFrom
-                , value filter.queryString
+viewSearchForm { filter, index, result } =
+    let
+        isDisabled =
+            List.isEmpty result.chunks
+    in
+        App.map SearchMsg
+            <| Html.form
+                [ class "searchForm"
+                , action "."
+                , onSubmit Search.RunFilter
                 ]
-                []
-            , label []
-                [ select
-                    [ name "v"
-                    , on "change" (Decode.map Search.SetFilterVersionFrom targetValue)
+                [ input
+                    [ name "q"
+                    , type' "search"
+                    , onInput Search.SetFilterQueryFrom
+                    , value filter.queryString
+                    , disabled isDisabled
                     ]
-                    (option [] [ text "any" ]
-                        :: (index.elmVersions
-                                |> Set.toList
-                                |> List.reverse
-                                |> List.map (\vsn -> option [] [ text (Version.vsnToString vsn) ])
-                           )
-                    )
+                    []
+                , label []
+                    [ select
+                        [ name "v"
+                        , on "change" (Decode.map Search.SetFilterVersionFrom targetValue)
+                        , disabled isDisabled
+                        ]
+                        (option [] [ text "any" ]
+                            :: (List.map
+                                    (\vsn ->
+                                        option [ selected (Just vsn == filter.elmVersion) ]
+                                            [ text (Version.vsnToString vsn) ]
+                                    )
+                                    (index.elmVersions |> Set.toList |> List.reverse)
+                               )
+                        )
+                    ]
+                , button
+                    [ type' "submit"
+                    , disabled isDisabled
+                    ]
+                    [ text "Search" ]
                 ]
-            , button [ type' "submit" ] [ text "Search" ]
-            ]
 
 
 viewSearchResults : Search.Model -> Html Msg

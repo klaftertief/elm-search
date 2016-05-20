@@ -12,9 +12,13 @@ import Web.Model as Model exposing (..)
 
 init : Flags -> ( Model, Cmd Msg )
 init { search } =
-    ( Loading search
-    , getPackages
-    )
+    let
+        filter =
+            parseSearchString search
+    in
+        ( Loading filter
+        , getPackages
+        )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -27,16 +31,16 @@ update msg model =
 
         Load packages ->
             let
-                queryString =
+                filter =
                     case model of
-                        Loading string ->
-                            string
+                        Loading f ->
+                            f
 
                         _ ->
-                            ""
+                            Search.initialFilter
 
                 search =
-                    Search.init (parseSearchString queryString) packages
+                    Search.init filter packages
             in
                 ( Ready search
                 , Cmd.none

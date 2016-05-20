@@ -11,7 +11,7 @@ import String
 
 
 type Model
-    = Loading String
+    = Loading Search.Filter
     | Failed Http.Error
     | Ready Search.Model
 
