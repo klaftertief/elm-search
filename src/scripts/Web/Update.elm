@@ -1,16 +1,12 @@
 module Web.Update exposing (..)
 
--- where
-
 import Http
 import Json.Decode as Decode
 import Task
-import Package.Module.Type as Type exposing (Type)
 import Package.Package as Package
-import Package.Version as Version
 import Ports
-import Search.Chunk as Chunk
-import Set exposing (Set)
+import Search.Model as Search
+import Search.Update as Search
 import Web.Model as Model exposing (..)
 
 
@@ -31,129 +27,65 @@ update msg model =
 
         Load packages ->
             let
-                ( query, maybeVersion ) =
+                queryString =
                     case model of
-                        Loading queryString ->
-                            parseQueryString queryString
+                        Loading string ->
+                            string
 
                         _ ->
-                            ( "", Nothing )
+                            ""
 
-                chunks =
-                    List.concatMap Chunk.packageChunks packages
-
-                elmVersionsList =
-                    chunks
-                        |> List.map .elmVersion
-                        |> List.filterMap identity
+                ( search, searchCmd ) =
+                    Search.init (parseSearchString queryString) packages
             in
-                ( Success
-                    <| handleSearch
-                        { chunks = chunks
-                        , filteredChunks = []
-                        , query = query
-                        , queryType = Nothing
-                        , elmVersions = Set.fromList elmVersionsList
-                        , elmVersionsFilter = maybeVersion
-                        }
+                ( Ready search
                 , Cmd.none
                 )
 
-        SetQuery query ->
-            flip (,) Cmd.none
-                <| case model of
-                    Success facts ->
-                        Success
-                            { facts
-                                | query = query
-                                , queryType = Nothing
-                            }
-
-                    _ ->
-                        model
-
-        SetVersionFilter vsnString ->
-            flip (,) Cmd.none
-                <| case model of
-                    Success facts ->
-                        let
-                            maybeElmVersion =
-                                vsnString
-                                    |> Version.fromString
-                                    |> Result.toMaybe
-                        in
-                            Success
-                                { facts
-                                    | elmVersionsFilter = maybeElmVersion
-                                }
-
-                    _ ->
-                        model
-
-        SearchQuery ->
+        Search searchMsg ->
             case model of
-                Success info ->
+                Ready search ->
                     let
-                        newInfo =
-                            handleSearch info
+                        ( newSearch, searchCmd ) =
+                            Search.update searchMsg search
+
+                        cmd =
+                            case searchMsg of
+                                Search.RunFilter ->
+                                    Ports.pushQuery
+                                        (toQueryString search.filter.elmVersion
+                                            search.filter.queryString
+                                        )
+
+                                _ ->
+                                    Cmd.none
                     in
-                        ( Success newInfo
-                        , Ports.pushQuery (toQueryString newInfo.elmVersionsFilter newInfo.query)
+                        ( Ready newSearch
+                        , cmd
                         )
 
                 _ ->
                     ( model, Cmd.none )
 
-        ResetQuery ->
-            flip (,) Cmd.none
-                <| case model of
-                    Success facts ->
-                        Success
-                            { facts
-                                | query = ""
-                                , queryType = Nothing
-                                , filteredChunks = []
-                            }
-
-                    _ ->
-                        model
-
         LocationSearchChange queryString ->
-            let
-                ( query, maybeVersion ) =
-                    parseQueryString queryString
-
-                newModel =
-                    case model of
-                        Success info ->
-                            Success
-                                (handleSearch
-                                    { info
-                                        | query = query
-                                        , elmVersionsFilter = maybeVersion
-                                    }
-                                )
-
-                        _ ->
-                            model
-            in
-                ( newModel, Cmd.none )
-
-
-handleSearch : Info -> Info
-handleSearch info =
-    let
-        queryType =
-            Type.parse info.query
-                |> Result.toMaybe
-
-        filteredChunks =
-            search info.elmVersionsFilter queryType info.chunks
-    in
-        { info
-            | queryType = queryType
-            , filteredChunks = filteredChunks
-        }
+            --let
+            --    ( query, maybeVersion ) =
+            --        parseQueryString queryString
+            --    newModel =
+            --        case model of
+            --            Success info ->
+            --                Success
+            --                    (handleSearch
+            --                        { info
+            --                            | query = query
+            --                            , elmVersionsFilter = maybeVersion
+            --                        }
+            --                    )
+            --            _ ->
+            --                model
+            --in
+            --    ( newModel, Cmd.none )
+            ( model, Cmd.none )
 
 
 getPackages : Cmd Msg

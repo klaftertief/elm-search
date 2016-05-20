@@ -23,7 +23,8 @@ type alias Index =
 
 
 type alias Filter =
-    { query : Maybe Query
+    { queryString : String
+    , query : Maybe Query
     , elmVersion : Maybe Version
     }
 
@@ -54,7 +55,8 @@ initialIndex =
 
 initialFilter : Filter
 initialFilter =
-    { query = Nothing
+    { queryString = ""
+    , query = Nothing
     , elmVersion = Nothing
     }
 
@@ -79,7 +81,12 @@ maybeQueryFromString string =
         Just
             <| case Type.parse string of
                 Ok tipe ->
-                    Type tipe
+                    case tipe of
+                        Type.Var _ ->
+                            Name string
+
+                        _ ->
+                            Type tipe
 
                 Err _ ->
                     Name string
@@ -161,7 +168,7 @@ distanceByQuery query chunks =
 
 filterByDistance : Float -> List ( Float, Chunk ) -> List ( Float, Chunk )
 filterByDistance distance weightedChunks =
-    List.filter (fst >> (<=) distance) weightedChunks
+    List.filter (\( d, _ ) -> d <= distance) weightedChunks
 
 
 prioritizeChunks : List ( Float, Chunk ) -> List ( Float, Chunk )

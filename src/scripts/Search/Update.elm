@@ -1,13 +1,21 @@
 module Search.Update exposing (..)
 
 import Package.Package as Package exposing (Package)
-import Package.Version as Version
 import Search.Model as Model exposing (..)
 
 
-init : List Package -> ( Model, Cmd Msg )
-init packages =
-    update (BuildIndex packages) initialModel
+init : Filter -> List Package -> ( Model, Cmd Msg )
+init filter packages =
+    let
+        ( model, cmd ) =
+            update (BuildIndex packages) { initialModel | filter = filter }
+    in
+        case filter.query of
+            Just query ->
+                update RunFilter model
+
+            Nothing ->
+                ( model, cmd )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -25,7 +33,8 @@ update msg model =
 
                 filter =
                     { filterFacts
-                        | query = maybeQueryFromString queryString
+                        | queryString = queryString
+                        , query = maybeQueryFromString queryString
                     }
             in
                 ( { model | filter = filter }

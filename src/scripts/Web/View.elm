@@ -3,6 +3,7 @@ module Web.View exposing (..)
 -- where
 
 import Html exposing (..)
+import Html.App as App
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Json.Decode as Decode
@@ -10,6 +11,7 @@ import Logo
 import Package.Module.Type as Type exposing (Type)
 import Package.Version as Version exposing (Version)
 import Search.Chunk as Chunk exposing (Chunk)
+import Search.Model as Search
 import Set
 import String
 import Utils.Code exposing (arrow, colon, equals, keyword, padded, space)
@@ -26,8 +28,8 @@ view model =
         Failed error ->
             viewError (toString error)
 
-        Success info ->
-            viewSearch info
+        Ready search ->
+            viewSearch search
 
 
 viewLoading : Html Msg
@@ -40,7 +42,7 @@ viewError error =
     div [] [ text error ]
 
 
-viewSearch : Info -> Html Msg
+viewSearch : Search.Model -> Html Msg
 viewSearch info =
     div []
         [ viewSearchHeader info
@@ -48,7 +50,7 @@ viewSearch info =
         ]
 
 
-viewSearchHeader : Info -> Html Msg
+viewSearchHeader : Search.Model -> Html Msg
 viewSearchHeader info =
     div [ class "searchHeader" ]
         [ viewSearchTitle
@@ -67,31 +69,45 @@ viewSearchTitle =
 viewLogo : Html msg
 viewLogo =
     span [ class "searchLogo" ]
-        [ Logo.viewWithSize 128 ]
+        [ Logo.viewWithSize 96 ]
 
 
-viewSearchForm : Info -> Html Msg
-viewSearchForm info =
-    Html.form [ class "searchForm", action ".", onSubmit SearchQuery ]
-        [ input [ name "q", type' "search", onInput SetQuery, value info.query ] []
-        , label []
-            [ select [ name "v", on "change" (Decode.map SetVersionFilter targetValue) ]
-                ((option [] [ text "any" ])
-                    :: (info.elmVersions
-                            |> Set.toList
-                            |> List.reverse
-                            |> List.map (\vsn -> option [] [ text (Version.vsnToString vsn) ])
-                       )
-                )
+viewSearchForm : Search.Model -> Html Msg
+viewSearchForm { index, filter } =
+    App.map Search
+        <| Html.form
+            [ class "searchForm"
+            , action "."
+            , onSubmit Search.RunFilter
             ]
-        , button [ type' "submit" ] [ text "Search" ]
-        ]
+            [ input
+                [ name "q"
+                , type' "search"
+                , onInput Search.SetFilterQueryFrom
+                , value filter.queryString
+                ]
+                []
+            , label []
+                [ select
+                    [ name "v"
+                    , on "change" (Decode.map Search.SetFilterVersionFrom targetValue)
+                    ]
+                    (option [] [ text "any" ]
+                        :: (index.elmVersions
+                                |> Set.toList
+                                |> List.reverse
+                                |> List.map (\vsn -> option [] [ text (Version.vsnToString vsn) ])
+                           )
+                    )
+                ]
+            , button [ type' "submit" ] [ text "Search" ]
+            ]
 
 
-viewSearchResults : Info -> Html Msg
-viewSearchResults info =
+viewSearchResults : Search.Model -> Html Msg
+viewSearchResults { result } =
     div [ class "searchResult" ]
-        (List.map viewChunk info.filteredChunks)
+        (List.map viewChunk result.chunks)
 
 
 viewChunk : Chunk -> Html Msg
