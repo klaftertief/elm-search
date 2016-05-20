@@ -19,7 +19,7 @@ type Model
 type Msg
     = Fail Http.Error
     | Load (List Package)
-    | Search Search.Msg
+    | SearchMsg Search.Msg
     | LocationSearchChange String
 
 
@@ -44,10 +44,7 @@ toQueryString maybeVersionsFilter query =
                 Nothing ->
                     start
     in
-        if List.isEmpty queries then
-            ""
-        else
-            "?" ++ String.join "&" (List.map queryPair queries)
+        "?" ++ String.join "&" (List.map queryPair queries)
 
 
 queryPair : ( String, String ) -> String
@@ -57,7 +54,7 @@ queryPair ( key, value ) =
 
 parseSearchString : String -> Search.Filter
 parseSearchString searchString =
-    case String.uncons (Http.uriDecode searchString) of
+    case String.uncons searchString of
         Just ( '?', rest ) ->
             let
                 parts =
@@ -67,7 +64,7 @@ parseSearchString searchString =
                             (\pair ->
                                 case pair of
                                     [ k, v ] ->
-                                        Just ( k, v )
+                                        Just ( Http.uriDecode k, Http.uriDecode v )
 
                                     _ ->
                                         Nothing

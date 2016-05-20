@@ -9,6 +9,9 @@ init filter packages =
     let
         model =
             update (BuildIndex packages) { initialModel | filter = filter }
+
+        _ =
+            Debug.log "#chunks" (List.length model.index.chunks)
     in
         case filter.query of
             Just query ->
@@ -23,6 +26,9 @@ update msg model =
     case msg of
         BuildIndex packages ->
             { model | index = buildIndex packages }
+
+        SetFilter filter ->
+            { model | filter = filter }
 
         SetFilterQueryFrom queryString ->
             let

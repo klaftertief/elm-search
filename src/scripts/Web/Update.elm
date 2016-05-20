@@ -42,7 +42,7 @@ update msg model =
                 , Cmd.none
                 )
 
-        Search searchMsg ->
+        SearchMsg searchMsg ->
             case model of
                 Ready search ->
                     let
@@ -52,40 +52,35 @@ update msg model =
                         cmd =
                             case searchMsg of
                                 Search.RunFilter ->
-                                    Ports.pushQuery
-                                        (toQueryString search.filter.elmVersion
-                                            search.filter.queryString
-                                        )
+                                    Ports.pushQuery (toQueryString search.filter.elmVersion search.filter.queryString)
 
                                 _ ->
                                     Cmd.none
                     in
-                        ( Ready newSearch
-                        , cmd
-                        )
+                        ( Ready newSearch, cmd )
 
                 _ ->
                     ( model, Cmd.none )
 
         LocationSearchChange queryString ->
-            --let
-            --    ( query, maybeVersion ) =
-            --        parseQueryString queryString
-            --    newModel =
-            --        case model of
-            --            Success info ->
-            --                Success
-            --                    (handleSearch
-            --                        { info
-            --                            | query = query
-            --                            , elmVersionsFilter = maybeVersion
-            --                        }
-            --                    )
-            --            _ ->
-            --                model
-            --in
-            --    ( newModel, Cmd.none )
-            ( model, Cmd.none )
+            case model of
+                Ready search ->
+                    let
+                        filter =
+                            parseSearchString queryString
+
+                        newSearch =
+                            if filter /= search.filter then
+                                search
+                                    |> Search.update (Search.SetFilter filter)
+                                    |> Search.update Search.RunFilter
+                            else
+                                search
+                    in
+                        ( Ready newSearch, Cmd.none )
+
+                _ ->
+                    ( model, Cmd.none )
 
 
 getPackages : Cmd Msg

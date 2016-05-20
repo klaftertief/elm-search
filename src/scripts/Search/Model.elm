@@ -68,6 +68,7 @@ initialResult =
 
 type Msg
     = BuildIndex (List Package)
+    | SetFilter Filter
     | SetFilterQueryFrom String
     | SetFilterVersionFrom String
     | RunFilter
@@ -104,6 +105,7 @@ buildIndex packages =
     let
         chunks =
             List.concatMap Chunk.packageChunks packages
+                |> List.filter (.elmVersion >> (/=) Nothing)
 
         elmVersions =
             chunks

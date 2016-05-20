@@ -43,18 +43,18 @@ viewError error =
 
 
 viewSearch : Search.Model -> Html Msg
-viewSearch info =
+viewSearch search =
     div []
-        [ viewSearchHeader info
-        , viewSearchResults info
+        [ viewSearchHeader search
+        , viewSearchResults search
         ]
 
 
 viewSearchHeader : Search.Model -> Html Msg
-viewSearchHeader info =
+viewSearchHeader search =
     div [ class "searchHeader" ]
         [ viewSearchTitle
-        , viewSearchForm info
+        , viewSearchForm search
         ]
 
 
@@ -74,7 +74,7 @@ viewLogo =
 
 viewSearchForm : Search.Model -> Html Msg
 viewSearchForm { index, filter } =
-    App.map Search
+    App.map SearchMsg
         <| Html.form
             [ class "searchForm"
             , action "."
