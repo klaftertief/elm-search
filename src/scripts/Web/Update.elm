@@ -95,7 +95,7 @@ getPackages =
                 |> Decode.oneOf
                 |> Decode.list
     in
-        "/all-package-docs.json"
+        "all-package-docs.json"
             |> Http.get decodeSafe
             |> Task.perform Fail
                 (\maybePackages ->
