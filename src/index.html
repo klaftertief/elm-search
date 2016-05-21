@@ -4,12 +4,25 @@
   <title>Elm Search</title>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <!-- <link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,700,400italic,700italic|Source+Code+Pro' rel='stylesheet' type='text/css'/> -->
+  <link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,700,400italic,700italic|Source+Code+Pro' rel='stylesheet' type='text/css'/>
   <link rel="stylesheet" href="styles/search.css">
 </head>
 <body>
-  <div id="app"></div>
+  <div id="main"></div>
   <script src="scripts/search.js"></script>
-  <script>Elm.Web.embed(document.getElementById('app'))</script>
+  <script>
+    var app = Elm.Web.embed(
+      document.getElementById('main'),
+      { search: window.location.search || "" }
+    );
+
+    window.onpopstate = function(event) {
+      app.ports.query.send(window.location.search);
+    };
+    app.ports.pushQuery.subscribe(function(query) {
+      window.history.pushState({}, "", query);
+      app.ports.query.send(window.location.search);
+    });
+  </script>
 </body>
 </html>

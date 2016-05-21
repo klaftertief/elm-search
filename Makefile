@@ -2,14 +2,10 @@
 
 # Add binaries of local npm packages to the PATH
 PATH := $(PWD)/bin:$(PWD)/node_modules/.bin:$(PATH)
-# SHELL := /bin/bash
+SHELL := /bin/bash
 
 ELM_ENTRY = src/scripts/Web.elm
 ELM_FILES = $(shell find src -type f -name '*.elm')
-
-ELM_STYLE_ENTRY = src/scripts/Stylesheets.elm
-
-NODE_BIN_DIRECTORY = node_modules/.bin
 
 DEVD_VERSION = 0.5
 MODD_VERSION = 0.3
@@ -34,18 +30,14 @@ all: $(COMPILE_TARGETS) ## Compiles project files
 install: $(INSTALL_TARGETS) ## Installs prerequisites and generates file/folder structure
 
 server: ## Runs a local server for development
-	bin/devd  -l -a -p 8888 -w $(BUILD_DIR) $(BUILD_DIR)/ # /packages/=../elm-package-docs/dist/packages
+	devd  -l -a -p 8888 -w $(BUILD_DIR) $(BUILD_DIR)/
 
 
 watch: ## Watches files for changes, runs a local dev server and triggers live reload
-	bin/modd
+	modd
 
-clean: ## Removes compiled files
-	rm -rf $(BUILD_DIR)/*
-
-test: $(TEST_TARGETS) ## Runs unit tests via elm-test
-	@# $(NODE_BIN_DIRECTORY)/elm-test test/TestRunner.elm
-	elm-test tests/TestRunner.elm
+# clean: ## Removes compiled files
+# 	rm -rf $(BUILD_DIR)/*
 
 help: ## Prints a help guide
 	@echo "Available tasks:"
@@ -53,11 +45,6 @@ help: ## Prints a help guide
 
 bin:
 	mkdir -p $@
-
-test/TestRunner.elm:
-	@# $(NODE_BIN_DIRECTORY)/elm-test init --yes
-	elm-test init --yes
-	mkdir -p tests
 
 bin/devd:
 	curl ${DEVD_URL} -L -o $@.tgz
@@ -73,11 +60,10 @@ node_modules:
 	npm install
 
 styles:
-	@# mkdir -p $(BUILD_DIR)/styles && elm-css $(ELM_STYLE_ENTRY) -o $(BUILD_DIR)/styles
 	mkdir -p $(BUILD_DIR)/styles && cp src/styles/search.css $(BUILD_DIR)/styles
 
 scripts: $(ELM_FILES)
-	$(NODE_BIN_DIRECTORY)/elm-make $(ELM_ENTRY) --yes --warn --output $(BUILD_DIR)/scripts/search.js
+	elm-make $(ELM_ENTRY) --yes --warn --output $(BUILD_DIR)/scripts/search.js
 
 html:
 	mkdir -p $(BUILD_DIR) && cp src/index.html $(BUILD_DIR)/index.html
