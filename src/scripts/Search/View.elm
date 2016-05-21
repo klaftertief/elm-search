@@ -34,14 +34,14 @@ viewSearchBranding =
 viewLogo : Html msg
 viewLogo =
     span [ class "searchLogo" ]
-        [ Logo.viewWithSize 96 ]
+        [ Logo.viewWithSize 64 ]
 
 
 viewSearchForm : Model -> Html Msg
 viewSearchForm { filter, index, result } =
     let
         isDisabled =
-            List.isEmpty result.chunks
+            List.isEmpty index.chunks
     in
         Html.form
             [ classList
