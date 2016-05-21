@@ -35,7 +35,7 @@ build: $(BUILD_DIR) $(COMPILE_TARGETS) ## Compiles project files
 download: $(BUILD_DIR) package-docs $(BUILD_DIR)/all-package-docs.json ## Downloads docs files
 
 publish: build download ## Builds the app, downloads packages, makes a new commit in the `gh-pages` branch and pushes it to GitHub
-	(cd $(DOWNLOAD_DIR) && git add -A && git commit -m "Update app and documentation" && git push origin gh-pages)
+	(cd $(BUILD_DIR) && git add -A && git commit -m "Update app and documentation" && git push origin gh-pages)
 
 install: $(INSTALL_TARGETS) ## Installs prerequisites and generates file/folder structure
 
