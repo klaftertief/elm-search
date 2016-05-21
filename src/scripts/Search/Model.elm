@@ -129,7 +129,7 @@ runFilter { query, elmVersion } { chunks } =
                         |> distanceByQuery filterQuery
                         |> filterByDistance Distance.lowPenalty
                         |> prioritizeChunks
-                        |> List.sortBy fst
+                        |> List.sortBy (\( d, c ) -> ( d, c.name.name, c.name.moduleName, c.name.packageName ))
                         |> List.map snd
 
                 Nothing ->
