@@ -11,7 +11,7 @@ init filter packages =
             update (BuildIndex packages) { initialModel | filter = filter }
 
         _ =
-            Debug.log "#chunks" (List.length model.index.chunks)
+            List.length model.index.chunks
     in
         case filter.query of
             Just query ->
