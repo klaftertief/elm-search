@@ -62,7 +62,7 @@ html:
 	mkdir -p $(BUILD_DIR) && cp src/index.html $(BUILD_DIR)/index.html
 
 
-$(BUILD_DIR)/all-docs.json:
+$(BUILD_DIR)/all-docs.json: download
 	@bin/jq -s . $(PACKAGE_DOCS_TARGETS) > $@
 
 $(BUILD_DIR)/all-package-docs.json: all-packages $(BUILD_DIR)/all-docs.json
