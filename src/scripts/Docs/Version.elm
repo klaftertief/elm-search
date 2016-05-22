@@ -1,6 +1,4 @@
-module Package.Version exposing (..)
-
--- where
+module Docs.Version exposing (..)
 
 import Json.Decode as Decode exposing (Decoder, (:=))
 import String

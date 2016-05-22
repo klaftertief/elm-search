@@ -1,8 +1,8 @@
-module Package.Module exposing (..)
+module Docs.Module exposing (..)
 
 import Json.Decode as Decode exposing (Decoder, (:=))
-import Package.Entry as Entry exposing (Entry)
-import Package.Version as Version exposing (Version)
+import Docs.Entry as Entry exposing (Entry)
+import Docs.Version as Version exposing (Version)
 
 
 type alias Module =

@@ -2,8 +2,8 @@ module Search.Distance exposing (..)
 
 import Dict exposing (Dict)
 import String
-import Package.Name as Name exposing (Name)
-import Package.Type as Type exposing (..)
+import Docs.Name as Name exposing (Name)
+import Docs.Type as Type exposing (..)
 import Search.Chunk as Chunk exposing (Chunk)
 
 

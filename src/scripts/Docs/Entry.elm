@@ -1,7 +1,7 @@
-module Package.Entry exposing (..)
+module Docs.Entry exposing (..)
 
 import Json.Decode as Decode exposing (Decoder, (:=))
-import Package.Type as Type exposing (Type)
+import Docs.Type as Type exposing (Type)
 
 
 type alias Entry =

@@ -1,6 +1,6 @@
 module Search.Update exposing (..)
 
-import Package.Package as Package exposing (Package)
+import Docs.Package as Package exposing (Package)
 import Search.Model as Model exposing (..)
 
 

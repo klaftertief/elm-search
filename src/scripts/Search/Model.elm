@@ -1,8 +1,8 @@
 module Search.Model exposing (..)
 
-import Package.Type as Type
-import Package.Package as Package exposing (Package)
-import Package.Version as Version exposing (Version)
+import Docs.Type as Type
+import Docs.Package as Package exposing (Package)
+import Docs.Version as Version exposing (Version)
 import Search.Chunk as Chunk exposing (Chunk)
 import Search.Distance as Distance
 import Set exposing (Set)

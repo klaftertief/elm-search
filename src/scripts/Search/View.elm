@@ -5,8 +5,8 @@ import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Json.Decode as Decode
 import Logo
-import Package.Type as Type exposing (Type)
-import Package.Version as Version exposing (Version)
+import Docs.Type as Type exposing (Type)
+import Docs.Version as Version exposing (Version)
 import Search.Chunk as Chunk exposing (Chunk)
 import Search.Model as Model exposing (..)
 import Set

@@ -1,11 +1,9 @@
 module Web.Model exposing (..)
 
--- where
-
 import Dict
 import Http
-import Package.Package as Package exposing (Package)
-import Package.Version as Version exposing (Version)
+import Docs.Package as Package exposing (Package)
+import Docs.Version as Version exposing (Version)
 import Search.Model as Search
 import String
 

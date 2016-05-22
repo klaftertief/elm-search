@@ -1,11 +1,11 @@
-module Package.Type exposing (..)
+module Docs.Type exposing (..)
 
 import Char
 import Dict exposing (Dict)
 import Html exposing (..)
 import Json.Decode as Decode exposing (Decoder, (:=))
 import String
-import Package.Name as Name exposing (Name)
+import Docs.Name as Name exposing (Name)
 import Parse.Combinators exposing (..)
 import Utils.Code as Code exposing (arrow, colon, padded, space)
 

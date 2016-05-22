@@ -3,7 +3,7 @@ module Web.Update exposing (..)
 import Http
 import Json.Decode as Decode
 import Task
-import Package.Package as Package
+import Docs.Package as Package
 import Ports
 import Search.Model as Search
 import Search.Update as Search

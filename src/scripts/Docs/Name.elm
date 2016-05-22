@@ -1,4 +1,4 @@
-module Package.Name exposing (..)
+module Docs.Name exposing (..)
 
 import Json.Decode as Decode exposing (Decoder, (:=))
 import String
