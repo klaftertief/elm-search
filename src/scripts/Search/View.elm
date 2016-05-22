@@ -100,8 +100,8 @@ viewChunk chunk =
             ]
         , div [ class "chunkMeta" ]
             [ div [ class "chunkPath" ]
-                [ a [ href (Chunk.pathTo chunk.name) ]
-                    [ text (Chunk.identifierHome chunk.name) ]
+                [ a [ href (Chunk.pathTo chunk.context) ]
+                    [ text (Chunk.identifierHome chunk.context) ]
                 ]
             , div [ class "chunkVersion" ]
                 [ text
@@ -122,7 +122,7 @@ annotation : Chunk -> List (List (Html msg))
 annotation chunk =
     case chunk.tipe of
         Type.Function args result ->
-            if String.length chunk.name.name + 3 + Type.length Type.Other chunk.tipe > 64 then
+            if String.length chunk.context.name + 3 + Type.length Type.Other chunk.tipe > 64 then
                 [ annotationName chunk ] :: longFunctionAnnotation args result
             else
                 [ annotationName chunk :: padded colon ++ Type.toHtml Type.Other chunk.tipe ]
@@ -132,9 +132,9 @@ annotation chunk =
 
 
 annotationName : Chunk -> Html msg
-annotationName { name } =
-    a [ href (Chunk.pathTo name) ]
-        [ text name.name ]
+annotationName { context } =
+    a [ href (Chunk.pathTo context) ]
+        [ text context.name ]
 
 
 longFunctionAnnotation : List Type -> Type -> List (List (Html msg))

@@ -8,7 +8,7 @@ import Docs.Version as Version exposing (Version)
 
 
 type alias Chunk =
-    { name : Name
+    { context : Context
     , tipe : Type
     , tipeNormalized : Type
     , docs : Maybe String
@@ -16,7 +16,7 @@ type alias Chunk =
     }
 
 
-type alias Name =
+type alias Context =
     { userName : String
     , packageName : String
     , packageVersion : Version
@@ -40,7 +40,7 @@ packageChunks package =
 
 toChunk : Package -> String -> Maybe Version -> Entry -> Chunk
 toChunk package moduleName elmVersion { name, docs, tipe } =
-    { name = Name package.user package.name package.version moduleName name
+    { context = Context package.user package.name package.version moduleName name
     , tipe = tipe
     , tipeNormalized = Type.normalize tipe
     , docs = List.head (docs |> String.trim |> String.split "\n\n" |> List.filter (not << String.isEmpty))
@@ -48,7 +48,7 @@ toChunk package moduleName elmVersion { name, docs, tipe } =
     }
 
 
-identifierHome : Name -> String
+identifierHome : Context -> String
 identifierHome { userName, packageName, packageVersion, moduleName } =
     [ userName, packageName, Version.vsnToString packageVersion, moduleName ]
         |> String.join "/"
@@ -59,7 +59,7 @@ rootUrl =
     "http://package.elm-lang.org"
 
 
-pathTo : Name -> String
+pathTo : Context -> String
 pathTo { userName, packageName, packageVersion, moduleName, name } =
     [ rootUrl, "packages", userName, packageName, Version.vsnToString packageVersion, pathToModule moduleName name ]
         |> String.join "/"

@@ -8,11 +8,11 @@ import Search.Chunk as Chunk exposing (Chunk)
 
 
 name : String -> Chunk -> Float
-name query { name } =
-    if query == name.name then
+name query { context } =
+    if query == context.name then
         noPenalty
-    else if String.contains query name.name then
-        mediumPenalty * (1 - (toFloat (String.length query) / toFloat (String.length name.name)))
+    else if String.contains query context.name then
+        mediumPenalty * (1 - (toFloat (String.length query) / toFloat (String.length context.name)))
     else
         maxPenalty
 
