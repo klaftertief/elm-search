@@ -1,11 +1,9 @@
 module Search.Distance exposing (..)
 
--- where
-
 import Dict exposing (Dict)
 import String
-import Package.Module.Name as Name exposing (Name)
-import Package.Module.Type as Type exposing (..)
+import Package.Name as Name exposing (Name)
+import Package.Type as Type exposing (..)
 import Search.Chunk as Chunk exposing (Chunk)
 
 

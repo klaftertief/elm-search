@@ -1,10 +1,7 @@
 module Package.Module exposing (..)
 
--- where
-
 import Json.Decode as Decode exposing (Decoder, (:=))
-import Package.Module.Name as Name exposing (Name)
-import Package.Module.Entry as Entry exposing (Entry)
+import Package.Entry as Entry exposing (Entry)
 import Package.Version as Version exposing (Version)
 
 

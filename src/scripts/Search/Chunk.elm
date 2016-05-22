@@ -1,10 +1,8 @@
 module Search.Chunk exposing (..)
 
---where
-
 import String
-import Package.Module.Entry as Entry exposing (Entry)
-import Package.Module.Type as Type exposing (Type)
+import Package.Entry as Entry exposing (Entry)
+import Package.Type as Type exposing (Type)
 import Package.Package as Package exposing (Package)
 import Package.Version as Version exposing (Version)
 

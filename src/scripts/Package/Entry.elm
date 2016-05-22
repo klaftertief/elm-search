@@ -1,9 +1,7 @@
-module Package.Module.Entry exposing (..)
-
--- where
+module Package.Entry exposing (..)
 
 import Json.Decode as Decode exposing (Decoder, (:=))
-import Package.Module.Type as Type exposing (Type)
+import Package.Type as Type exposing (Type)
 
 
 type alias Entry =

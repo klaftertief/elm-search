@@ -1,6 +1,4 @@
-module Package.Module.Name exposing (..)
-
--- where
+module Package.Name exposing (..)
 
 import Json.Decode as Decode exposing (Decoder, (:=))
 import String

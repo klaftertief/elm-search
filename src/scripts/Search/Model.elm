@@ -1,6 +1,6 @@
 module Search.Model exposing (..)
 
-import Package.Module.Type as Type
+import Package.Type as Type
 import Package.Package as Package exposing (Package)
 import Package.Version as Version exposing (Version)
 import Search.Chunk as Chunk exposing (Chunk)
