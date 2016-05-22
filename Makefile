@@ -1,4 +1,4 @@
-.PHONY: install server watch clean help build download publish
+.PHONY: install server watch clean help build download all-packages publish
 
 # Add binaries of local npm packages to the PATH
 PATH := $(PWD)/bin:$(PWD)/node_modules/.bin:$(PATH)
@@ -62,7 +62,7 @@ html:
 	mkdir -p $(BUILD_DIR) && cp src/index.html $(BUILD_DIR)/index.html
 
 
-$(BUILD_DIR)/all-docs.json: download
+$(BUILD_DIR)/all-docs.json: all-packages
 	@bin/jq -s . $(PACKAGE_DOCS_TARGETS) > $@
 
 $(BUILD_DIR)/all-package-docs.json: all-packages $(BUILD_DIR)/all-docs.json
