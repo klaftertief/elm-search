@@ -1,4 +1,4 @@
-.PHONY: install server watch clean help build download all-packages publish
+.PHONY: install server watch clean help build download publish
 
 # Add binaries of local npm packages to the PATH
 PATH := $(PWD)/bin:$(PWD)/node_modules/.bin:$(PATH)
@@ -18,7 +18,7 @@ BUILD_DIR := dist
 INSTALL_TARGETS := bin bin/modd bin/devd bin/jq node_modules
 COMPILE_TARGETS := scripts styles html
 
-PACKAGE_DOCS_TARGETS = $(shell <$(BUILD_DIR)/all-packages.json bin/jq -r '.[] | "$(BUILD_DIR)/packages/" + .name + "/" + .versions[0] + "/documentation.json"')
+PACKAGE_DOCS_TARGETS = $(shell <$(BUILD_DIR)/all-packages.json jq -r '.[] | "$(BUILD_DIR)/packages/" + .name + "/" + .versions[0] + "/documentation.json"')
 
 ifeq ($(OS),Darwin)
 	DEVD_URL = "https://github.com/cortesi/devd/releases/download/v${DEVD_VERSION}/devd-${DEVD_VERSION}-osx64.tgz"
@@ -63,7 +63,7 @@ html:
 
 
 $(BUILD_DIR)/all-docs.json: all-packages
-	@bin/jq -s . $(PACKAGE_DOCS_TARGETS) > $@
+	@jq -s . $(PACKAGE_DOCS_TARGETS) > $@
 
 $(BUILD_DIR)/all-package-docs.json: all-packages $(BUILD_DIR)/all-docs.json
 	@jq -n --slurpfile packages $(BUILD_DIR)/$(word 1,$^).json --slurpfile docs $(word 2,$^) '$$packages[0] | to_entries | map(.value + {version: .value.versions[0], docs: $$docs[0][.key]} | del(.versions))' > $@
