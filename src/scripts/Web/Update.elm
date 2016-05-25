@@ -17,7 +17,7 @@ init { search } =
             parseSearchString search
     in
         ( Loading filter
-        , getPackages
+        , getPackages "index-published-0.17.json"
         )
 
 
@@ -87,16 +87,15 @@ update msg model =
                     ( model, Cmd.none )
 
 
-getPackages : Cmd Msg
-getPackages =
+getPackages : String -> Cmd Msg
+getPackages url =
     let
         decodeSafe =
             [ Decode.map Just Package.decoder, Decode.succeed Nothing ]
                 |> Decode.oneOf
                 |> Decode.list
     in
-        "all-package-docs.json"
-            |> Http.get decodeSafe
+        Http.get decodeSafe url
             |> Task.perform Fail
                 (\maybePackages ->
                     Load (List.filterMap identity maybePackages)

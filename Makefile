@@ -1,4 +1,4 @@
-.PHONY: install server watch clean help build download publish
+.PHONY: install server watch clean help build download local publish
 
 # Add binaries of local npm packages to the PATH
 PATH := $(PWD)/bin:$(PWD)/node_modules/.bin:$(PATH)
@@ -18,11 +18,6 @@ BUILD_DIR := dist
 INSTALL_TARGETS := bin bin/modd bin/devd bin/jq node_modules
 COMPILE_TARGETS := scripts styles html
 
-PACKAGE_DOCS_TARGETS = $(shell <$(BUILD_DIR)/all-packages.json jq -r '.[] | "$(BUILD_DIR)/packages/" + .name + "/" + .versions[0] + "/documentation.json"')
-LOCAL_PACKAGE_DOCS_TARGETS =$(shell <elm-stuff/exact-dependencies.json jq -r 'to_entries | .[] | "$(BUILD_DIR)/packages/" + .key + "/" + .value + "/documentation.json"')
-
-
-
 ifeq ($(OS),Darwin)
 	DEVD_URL = "https://github.com/cortesi/devd/releases/download/v${DEVD_VERSION}/devd-${DEVD_VERSION}-osx64.tgz"
 	MODD_URL = "https://github.com/cortesi/modd/releases/download/v${MODD_VERSION}/modd-${MODD_VERSION}-osx64.tgz"
@@ -33,9 +28,18 @@ else
 	JQ_URL := "https://github.com/stedolan/jq/releases/download/jq-${JQ_VERSION}/jq-linux64"
 endif
 
+publishedPackages = $(shell curl http://package.elm-lang.org/all-packages?elm-package-version=$(1) | jq -r '.[] | "$(BUILD_DIR)/packages/" + .name + "/" + .versions[0] + "/documentation.json"')
+
+PUBLISHED_PACKAGES_016 = $(call publishedPackages,0.16)
+PUBLISHED_PACKAGES_017 = $(call publishedPackages,0.17)
+LOCAL_PACKAGES = $(shell <elm-stuff/exact-dependencies.json jq -r 'to_entries | .[] | "$(BUILD_DIR)/packages/" + .key + "/" + .value + "/documentation.json"')
+
+
 build: $(BUILD_DIR) $(COMPILE_TARGETS) ## Compiles project files
 
-download: $(BUILD_DIR) package-docs $(BUILD_DIR)/all-package-docs.json ## Downloads docs files
+download: $(BUILD_DIR) $(BUILD_DIR)/index-published-0.17.json $(BUILD_DIR)/index-published-0.16.json ## Downloads docs files
+
+local: $(BUILD_DIR) $(BUILD_DIR)/index-published-0.17.json $(BUILD_DIR)/index-published-0.16.json ## Downloads docs files from locally installed packages
 
 publish: build download ## Builds the app, downloads packages, makes a new commit in the `gh-pages` branch and pushes it to GitHub
 	(cd $(BUILD_DIR) && git add -A && git commit -m "Update app and documentation" && git push origin gh-pages)
@@ -64,23 +68,15 @@ scripts: $(ELM_FILES)
 html:
 	mkdir -p $(BUILD_DIR) && cp src/index.html $(BUILD_DIR)/index.html
 
+# TODO: find a nice way to keep this DRY and dynamic
+$(BUILD_DIR)/index-published-0.17.json: $(PUBLISHED_PACKAGES_017)
+	@jq '(input_filename|ltrimstr("$(BUILD_DIR)/packages/")|rtrimstr("/documentation.json")|capture("(?<name>^.+)\/(?<version>\\d\\.\\d\\.\\d$$)")) + {docs: .} | select(.docs[0]["generated-with-elm-version"] | startswith("0.17"))?' $^ | jq -s '.' > $@
 
-$(BUILD_DIR)/all-docs.json: all-packages $(BUILD_DIR)/local-packages.json
-	@jq -s . $(PACKAGE_DOCS_TARGETS) $(LOCAL_PACKAGE_DOCS_TARGETS) > $@
+$(BUILD_DIR)/index-published-0.16.json: $(PUBLISHED_PACKAGES_016)
+	@jq '(input_filename|ltrimstr("$(BUILD_DIR)/packages/")|rtrimstr("/documentation.json")|capture("(?<name>^.+)\/(?<version>\\d\\.\\d\\.\\d$$)")) + {docs: .} | select(.docs[0]["generated-with-elm-version"] | startswith("0.16"))?' $^ | jq -s '.' > $@
 
-
-$(BUILD_DIR)/all-docs-object.json: all-packages $(BUILD_DIR)/local-packages.json
-	@jq '(input_filename|ltrimstr("$(BUILD_DIR)/packages/")|rtrimstr("/documentation.json")|capture("(?<name>^.+)\/(?<version>\\d\\.\\d\\.\\d$$)")) + {docs: .} | select(.docs[0]["generated-with-elm-version"] | startswith("0.17."))?' $(PACKAGE_DOCS_TARGETS) $(LOCAL_PACKAGE_DOCS_TARGETS) | jq -s '.' > $@
-
-
-$(BUILD_DIR)/all-package-docs.json: all-packages $(BUILD_DIR)/all-docs.json
-	@jq -n --slurpfile packages $(BUILD_DIR)/$(word 1,$^).json --slurpfile docs $(word 2,$^) '$$packages[0] | to_entries | map(.value + {version: .value.versions[0], docs: $$docs[0][.key]} | del(.versions))' > $@
-
-package-docs: all-packages
-	@$(MAKE) $(PACKAGE_DOCS_TARGETS) $(LOCAL_PACKAGE_DOCS_TARGETS)
-
-%-packages:
-	curl $(ELM_PACKAGE_URL)/$@ -o $(BUILD_DIR)/$@.json -f --retry 2 --create-dirs
+$(BUILD_DIR)/index-local.json: $(LOCAL_PACKAGES)
+	@jq '(input_filename|ltrimstr("$(BUILD_DIR)/packages/")|rtrimstr("/documentation.json")|capture("(?<name>^.+)\/(?<version>\\d\\.\\d\\.\\d$$)")) + {docs: .}' $^ | jq -s '.' > $@
 
 $(BUILD_DIR)/packages/%/documentation.json:
 	curl $(ELM_PACKAGE_URL)/$(@:$(BUILD_DIR)/%=%) -o $@ -f --retry 2 --create-dirs -L
@@ -90,13 +86,6 @@ elm-stuff/exact-dependencies.json:
 
 # elm-stuff/packages/%/documentation.json:
 # 	pushd $(dir $@) && elm-make --docs documentation.json --yes && popd
-
-$(BUILD_DIR)/local-packages.json: elm-stuff/exact-dependencies.json
-	@jq 'to_entries | map(. + { name: .key, version: .value} | del(.key, .value))' $< > $@
-
-$(BUILD_DIR)/local-package-docs.json: $(BUILD_DIR)/local-packages.json $(BUILD_DIR)/all-docs.json
-	@jq -n --slurpfile packages $(word 1,$^) --slurpfile docs $(word 2,$^) '$$packages[0] | map(.name + {version: .version, docs: $$docs[0][.name]})' > $@
-
 
 bin $(BUILD_DIR):
 	mkdir -p $@
