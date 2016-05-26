@@ -82,7 +82,7 @@ $(BUILD_DIR)/local/index.json: $(LOCAL_PACKAGES)
 	@jq '(input_filename|ltrimstr("$(BUILD_DIR)/packages/")|rtrimstr("/documentation.json")|capture("(?<name>^.+)\/(?<version>\\d\\.\\d\\.\\d$$)")) + {docs: .}' $^ | jq -s '.' > $@
 
 cache/packages/%/documentation.json:
-	curl $(ELM_PACKAGE_URL)/$(@:$(BUILD_DIR)/%=%) -o $@ -f --retry 2 --create-dirs -L
+	curl $(ELM_PACKAGE_URL)/$(@:cache/%=%) -o $@ -f --retry 2 --create-dirs -L
 
 elm-stuff/exact-dependencies.json:
 	elm-package install --yes
