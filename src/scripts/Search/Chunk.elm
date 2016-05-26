@@ -49,8 +49,8 @@ toChunk package moduleName elmVersion { name, docs, tipe } =
 
 
 identifierHome : Context -> String
-identifierHome { userName, packageName, packageVersion, moduleName } =
-    [ userName, packageName, Version.vsnToString packageVersion, moduleName ]
+identifierHome { userName, packageName, packageVersion } =
+    [ userName, packageName, Version.vsnToString packageVersion ]
         |> String.join "/"
 
 
@@ -59,17 +59,24 @@ rootUrl =
     "http://package.elm-lang.org"
 
 
-pathTo : Context -> String
-pathTo { userName, packageName, packageVersion, moduleName, name } =
-    [ rootUrl, "packages", userName, packageName, Version.vsnToString packageVersion, pathToModule moduleName name ]
+pathToPackage : Context -> String
+pathToPackage { userName, packageName, packageVersion } =
+    [ rootUrl, "packages", userName, packageName, Version.vsnToString packageVersion ]
         |> String.join "/"
 
 
-pathToModule : String -> String -> String
-pathToModule moduleName name =
-    String.map dotToDash moduleName
-        ++ "#"
-        ++ name
+pathToModule : Context -> String
+pathToModule ({ moduleName } as context) =
+    [ pathToPackage context
+    , String.map dotToDash moduleName
+    ]
+        |> String.join "/"
+
+
+pathToValue : Context -> String
+pathToValue ({ name } as context) =
+    [ pathToModule context, name ]
+        |> String.join "#"
 
 
 dotToDash : Char -> Char

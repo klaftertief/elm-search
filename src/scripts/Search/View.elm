@@ -3,13 +3,10 @@ module Search.View exposing (..)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
-import Json.Decode as Decode
 import Logo
 import Docs.Type as Type exposing (Type)
-import Docs.Version as Version exposing (Version)
 import Search.Chunk as Chunk exposing (Chunk)
 import Search.Model as Model exposing (..)
-import Set
 import String
 import Utils.Code exposing (arrow, colon, equals, keyword, padded, space)
 import Utils.Markdown as Markdown
@@ -59,22 +56,6 @@ viewSearchForm { filter, index, result } =
                 , disabled isDisabled
                 ]
                 []
-            , label []
-                [ select
-                    [ name "v"
-                    , on "change" (Decode.map SetFilterVersionFrom targetValue)
-                    , disabled isDisabled
-                    ]
-                    (option [] [ text "any" ]
-                        :: (List.map
-                                (\vsn ->
-                                    option [ selected (Just vsn == filter.elmVersion) ]
-                                        [ text (Version.vsnToString vsn) ]
-                                )
-                                (index.elmVersions |> Set.toList |> List.reverse)
-                           )
-                    )
-                ]
             , button
                 [ type' "submit"
                 , disabled isDisabled
@@ -100,14 +81,12 @@ viewChunk chunk =
             ]
         , div [ class "chunkMeta" ]
             [ div [ class "chunkPath" ]
-                [ a [ href (Chunk.pathTo chunk.context) ]
+                [ a [ href (Chunk.pathToPackage chunk.context) ]
                     [ text (Chunk.identifierHome chunk.context) ]
                 ]
-            , div [ class "chunkVersion" ]
-                [ text
-                    (Maybe.map Version.vsnToString chunk.elmVersion
-                        |> Maybe.withDefault "---"
-                    )
+            , div [ class "chunkModule" ]
+                [ a [ href (Chunk.pathToModule chunk.context) ]
+                    [ text (chunk.context.moduleName) ]
                 ]
             ]
         ]
@@ -133,7 +112,7 @@ annotation chunk =
 
 annotationName : Chunk -> Html msg
 annotationName { context } =
-    a [ href (Chunk.pathTo context) ]
+    a [ href (Chunk.pathToValue context) ]
         [ text context.name ]
 
 

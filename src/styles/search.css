@@ -181,6 +181,8 @@ code {
     text-decoration: none;
 }
 
-.chunkVersion {
+.chunkModule,
+.chunkModule a {
     color: #ea157a;
+    text-decoration: none;
 }

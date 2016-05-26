@@ -2,10 +2,8 @@ module Search.Model exposing (..)
 
 import Docs.Type as Type
 import Docs.Package as Package exposing (Package)
-import Docs.Version as Version exposing (Version)
 import Search.Chunk as Chunk exposing (Chunk)
 import Search.Distance as Distance
-import Set exposing (Set)
 import String
 
 
@@ -18,14 +16,12 @@ type alias Model =
 
 type alias Index =
     { chunks : List Chunk
-    , elmVersions : Set Version
     }
 
 
 type alias Filter =
     { queryString : String
     , query : Maybe Query
-    , elmVersion : Maybe Version
     }
 
 
@@ -49,7 +45,6 @@ initialModel =
 initialIndex : Index
 initialIndex =
     { chunks = []
-    , elmVersions = Set.empty
     }
 
 
@@ -57,7 +52,6 @@ initialFilter : Filter
 initialFilter =
     { queryString = ""
     , query = Nothing
-    , elmVersion = Nothing
     }
 
 
@@ -70,7 +64,6 @@ type Msg
     = BuildIndex (List Package)
     | SetFilter Filter
     | SetFilterQueryFrom String
-    | SetFilterVersionFrom String
     | RunFilter
 
 
@@ -93,39 +86,18 @@ maybeQueryFromString string =
                     Name string
 
 
-maybeVersionFromString : String -> Maybe Version
-maybeVersionFromString string =
-    string
-        |> Version.fromString
-        |> Result.toMaybe
-
-
 buildIndex : List Package -> Index
 buildIndex packages =
-    let
-        chunks =
-            List.concatMap Chunk.packageChunks packages
-                |> List.filter (.elmVersion >> (/=) Nothing)
-
-        elmVersions =
-            chunks
-                |> List.map .elmVersion
-                |> List.filterMap identity
-                |> Set.fromList
-    in
-        { chunks = chunks
-        , elmVersions = elmVersions
-        }
+    { chunks = List.concatMap Chunk.packageChunks packages }
 
 
 runFilter : Filter -> Index -> Result
-runFilter { query, elmVersion } { chunks } =
+runFilter { query } { chunks } =
     let
         resultChunks =
             case query of
                 Just filterQuery ->
                     chunks
-                        |> filterByMaybeVersion elmVersion
                         |> distanceByQuery filterQuery
                         |> filterByDistance Distance.lowPenalty
                         |> prioritizeChunks
@@ -136,21 +108,6 @@ runFilter { query, elmVersion } { chunks } =
                     []
     in
         { chunks = resultChunks }
-
-
-filterByMaybeVersion : Maybe Version -> List Chunk -> List Chunk
-filterByMaybeVersion maybeVersion chunks =
-    case maybeVersion of
-        Just version ->
-            filterByVersion version chunks
-
-        Nothing ->
-            chunks
-
-
-filterByVersion : Version -> List Chunk -> List Chunk
-filterByVersion version chunks =
-    List.filter (.elmVersion >> (==) (Just version)) chunks
 
 
 distanceByQuery : Query -> List Chunk -> List ( Float, Chunk )

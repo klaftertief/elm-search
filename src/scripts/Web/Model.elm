@@ -3,7 +3,6 @@ module Web.Model exposing (..)
 import Dict
 import Http
 import Docs.Package as Package exposing (Package)
-import Docs.Version as Version exposing (Version)
 import Search.Model as Search
 import String
 
@@ -22,27 +21,21 @@ type Msg
 
 
 type alias Flags =
-    { search : String }
+    { index : String
+    , search : String
+    }
 
 
-toQueryString : Maybe Version -> String -> String
-toQueryString maybeVersionsFilter query =
+toQueryString : Search.Filter -> String
+toQueryString { queryString } =
     let
-        start =
-            if String.isEmpty query then
+        pairs =
+            if String.isEmpty queryString then
                 []
             else
-                [ ( "q", query ) ]
-
-        queries =
-            case maybeVersionsFilter of
-                Just vsn ->
-                    start ++ [ ( "v", Version.vsnToString vsn ) ]
-
-                Nothing ->
-                    start
+                [ ( "q", queryString ) ]
     in
-        "?" ++ String.join "&" (List.map queryPair queries)
+        "?" ++ String.join "&" (List.map queryPair pairs)
 
 
 queryPair : ( String, String ) -> String
@@ -74,15 +67,9 @@ parseSearchString searchString =
 
                 query =
                     Search.maybeQueryFromString queryString
-
-                elmVersion =
-                    Dict.get "v" parts
-                        |> Maybe.withDefault ""
-                        |> Search.maybeVersionFromString
             in
                 { queryString = queryString
                 , query = query
-                , elmVersion = elmVersion
                 }
 
         _ ->

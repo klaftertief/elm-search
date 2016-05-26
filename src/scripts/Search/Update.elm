@@ -43,17 +43,5 @@ update msg model =
             in
                 { model | filter = filter }
 
-        SetFilterVersionFrom versionString ->
-            let
-                filterFacts =
-                    model.filter
-
-                filter =
-                    { filterFacts
-                        | elmVersion = maybeVersionFromString versionString
-                    }
-            in
-                { model | filter = filter }
-
         RunFilter ->
             { model | result = runFilter model.filter model.index }

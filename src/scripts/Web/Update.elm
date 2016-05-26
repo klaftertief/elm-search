@@ -11,13 +11,13 @@ import Web.Model as Model exposing (..)
 
 
 init : Flags -> ( Model, Cmd Msg )
-init { search } =
+init { index, search } =
     let
         filter =
             parseSearchString search
     in
         ( Loading filter
-        , getPackages "index-published-0.17.json"
+        , getPackages index
         )
 
 
@@ -56,7 +56,7 @@ update msg model =
                         cmd =
                             case searchMsg of
                                 Search.RunFilter ->
-                                    Ports.pushQuery (toQueryString search.filter.elmVersion search.filter.queryString)
+                                    Ports.pushQuery (toQueryString search.filter)
 
                                 _ ->
                                     Cmd.none

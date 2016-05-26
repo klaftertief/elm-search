@@ -13,7 +13,9 @@
   <script>
     var app = Elm.Web.embed(
       document.getElementById('main'),
-      { search: window.location.search || "" }
+      { index : '0.17/index.json'
+      , search : window.location.search || ""
+      }
     );
 
     window.onpopstate = function(event) {
