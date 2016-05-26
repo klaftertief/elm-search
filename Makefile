@@ -69,13 +69,16 @@ html:
 	mkdir -p $(BUILD_DIR) && cp src/index.html $(BUILD_DIR)/index.html
 
 # TODO: find a nice way to keep this DRY and dynamic
-$(BUILD_DIR)/index-published-0.17.json: $(PUBLISHED_PACKAGES_017)
+$(BUILD_DIR)/0.17/index.json: $(PUBLISHED_PACKAGES_017)
+	@mkdir -p $(BUILD_DIR)/0.17
 	@jq '(input_filename|ltrimstr("$(BUILD_DIR)/packages/")|rtrimstr("/documentation.json")|capture("(?<name>^.+)\/(?<version>\\d\\.\\d\\.\\d$$)")) + {docs: .} | select(.docs[0]["generated-with-elm-version"] | startswith("0.17"))?' $^ | jq -s '.' > $@
 
-$(BUILD_DIR)/index-published-0.16.json: $(PUBLISHED_PACKAGES_016)
+$(BUILD_DIR)/0.16/index.json: $(PUBLISHED_PACKAGES_016)
+	@mkdir -p $(BUILD_DIR)/0.16
 	@jq '(input_filename|ltrimstr("$(BUILD_DIR)/packages/")|rtrimstr("/documentation.json")|capture("(?<name>^.+)\/(?<version>\\d\\.\\d\\.\\d$$)")) + {docs: .} | select(.docs[0]["generated-with-elm-version"] | startswith("0.16"))?' $^ | jq -s '.' > $@
 
-$(BUILD_DIR)/index-local.json: $(LOCAL_PACKAGES)
+$(BUILD_DIR)/local/index.json: $(LOCAL_PACKAGES)
+	@mkdir -p $(BUILD_DIR)/local
 	@jq '(input_filename|ltrimstr("$(BUILD_DIR)/packages/")|rtrimstr("/documentation.json")|capture("(?<name>^.+)\/(?<version>\\d\\.\\d\\.\\d$$)")) + {docs: .}' $^ | jq -s '.' > $@
 
 $(BUILD_DIR)/packages/%/documentation.json:
