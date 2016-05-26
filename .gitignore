@@ -2,3 +2,4 @@ elm-stuff
 /bin/*
 node_modules/
 dist/
+cache/

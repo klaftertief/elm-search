@@ -28,11 +28,11 @@ else
 	JQ_URL := "https://github.com/stedolan/jq/releases/download/jq-${JQ_VERSION}/jq-linux64"
 endif
 
-publishedPackages = $(shell curl http://package.elm-lang.org/all-packages?elm-package-version=$(1) | jq -r '.[] | "$(BUILD_DIR)/packages/" + .name + "/" + .versions[0] + "/documentation.json"')
+publishedPackages = $(shell curl http://package.elm-lang.org/all-packages?elm-package-version=$(1) | jq -r '.[] | "cache/packages/" + .name + "/" + .versions[0] + "/documentation.json"')
 
 PUBLISHED_PACKAGES_016 = $(call publishedPackages,0.16)
 PUBLISHED_PACKAGES_017 = $(call publishedPackages,0.17)
-LOCAL_PACKAGES = $(shell <elm-stuff/exact-dependencies.json jq -r 'to_entries | .[] | "$(BUILD_DIR)/packages/" + .key + "/" + .value + "/documentation.json"')
+LOCAL_PACKAGES = $(shell <elm-stuff/exact-dependencies.json jq -r 'to_entries | .[] | "cache/packages/" + .key + "/" + .value + "/documentation.json"')
 
 
 build: $(BUILD_DIR) $(COMPILE_TARGETS) ## Compiles project files
@@ -81,7 +81,7 @@ $(BUILD_DIR)/local/index.json: $(LOCAL_PACKAGES)
 	@mkdir -p $(BUILD_DIR)/local
 	@jq '(input_filename|ltrimstr("$(BUILD_DIR)/packages/")|rtrimstr("/documentation.json")|capture("(?<name>^.+)\/(?<version>\\d\\.\\d\\.\\d$$)")) + {docs: .}' $^ | jq -s '.' > $@
 
-$(BUILD_DIR)/packages/%/documentation.json:
+cache/packages/%/documentation.json:
 	curl $(ELM_PACKAGE_URL)/$(@:$(BUILD_DIR)/%=%) -o $@ -f --retry 2 --create-dirs -L
 
 elm-stuff/exact-dependencies.json:
@@ -90,7 +90,7 @@ elm-stuff/exact-dependencies.json:
 # elm-stuff/packages/%/documentation.json:
 # 	pushd $(dir $@) && elm-make --docs documentation.json --yes && popd
 
-bin $(BUILD_DIR):
+bin $(BUILD_DIR) cache:
 	mkdir -p $@
 
 bin/devd:
