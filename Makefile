@@ -71,15 +71,15 @@ html:
 # TODO: find a nice way to keep this DRY and dynamic
 $(BUILD_DIR)/0.17/index.json: $(PUBLISHED_PACKAGES_017)
 	@mkdir -p $(BUILD_DIR)/0.17
-	@jq '(input_filename|ltrimstr("$(BUILD_DIR)/packages/")|rtrimstr("/documentation.json")|capture("(?<name>^.+)\/(?<version>\\d\\.\\d\\.\\d$$)")) + {docs: .} | select(.docs[0]["generated-with-elm-version"] | startswith("0.17"))?' $^ | jq -s '.' > $@
+	@jq '(input_filename|ltrimstr("cache/packages/")|rtrimstr("/documentation.json")|capture("(?<name>^.+)\/(?<version>\\d\\.\\d\\.\\d$$)")) + {docs: .} | select(.docs[0]["generated-with-elm-version"] | startswith("0.17"))?' $^ | jq -s '.' > $@
 
 $(BUILD_DIR)/0.16/index.json: $(PUBLISHED_PACKAGES_016)
 	@mkdir -p $(BUILD_DIR)/0.16
-	@jq '(input_filename|ltrimstr("$(BUILD_DIR)/packages/")|rtrimstr("/documentation.json")|capture("(?<name>^.+)\/(?<version>\\d\\.\\d\\.\\d$$)")) + {docs: .} | select(.docs[0]["generated-with-elm-version"] | startswith("0.16"))?' $^ | jq -s '.' > $@
+	@jq '(input_filename|ltrimstr("cache/packages/")|rtrimstr("/documentation.json")|capture("(?<name>^.+)\/(?<version>\\d\\.\\d\\.\\d$$)")) + {docs: .} | select(.docs[0]["generated-with-elm-version"] | startswith("0.16"))?' $^ | jq -s '.' > $@
 
 $(BUILD_DIR)/local/index.json: $(LOCAL_PACKAGES)
 	@mkdir -p $(BUILD_DIR)/local
-	@jq '(input_filename|ltrimstr("$(BUILD_DIR)/packages/")|rtrimstr("/documentation.json")|capture("(?<name>^.+)\/(?<version>\\d\\.\\d\\.\\d$$)")) + {docs: .}' $^ | jq -s '.' > $@
+	@jq '(input_filename|ltrimstr("cache/packages/")|rtrimstr("/documentation.json")|capture("(?<name>^.+)\/(?<version>\\d\\.\\d\\.\\d$$)")) + {docs: .}' $^ | jq -s '.' > $@
 
 cache/packages/%/documentation.json:
 	curl $(ELM_PACKAGE_URL)/$(@:cache/%=%) -o $@ -f --retry 2 --create-dirs -L
