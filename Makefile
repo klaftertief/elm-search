@@ -37,7 +37,7 @@ LOCAL_PACKAGES = $(shell <elm-stuff/exact-dependencies.json jq -r 'to_entries | 
 
 build: $(BUILD_DIR) $(COMPILE_TARGETS) ## Compiles project files
 
-download: $(BUILD_DIR) $(BUILD_DIR)/index-published-0.17.json $(BUILD_DIR)/index-published-0.16.json ## Downloads docs files
+download: $(BUILD_DIR) $(BUILD_DIR)/0.16/index.json $(BUILD_DIR)/0.17/index.json ## Downloads docs files
 
 local: $(BUILD_DIR) $(BUILD_DIR)/index-published-0.17.json $(BUILD_DIR)/index-published-0.16.json ## Downloads docs files from locally installed packages
 
