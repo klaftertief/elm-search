@@ -1,4 +1,4 @@
-.PHONY: install server watch clean help build download local publish
+.PHONY: install server watch clean help build download local publish cache/packages-017 cache/packages-016
 
 # Add binaries of local npm packages to the PATH
 PATH := $(PWD)/bin:$(PWD)/node_modules/.bin:$(PATH)
@@ -30,8 +30,6 @@ endif
 
 publishedPackages = $(shell curl http://package.elm-lang.org/all-packages?elm-package-version=$(1) | jq -r '.[] | "cache/packages/" + .name + "/" + .versions[0] + "/documentation.json"')
 
-PUBLISHED_PACKAGES_016 = $(call publishedPackages,0.16)
-PUBLISHED_PACKAGES_017 = $(call publishedPackages,0.17)
 LOCAL_PACKAGES = $(shell <elm-stuff/exact-dependencies.json jq -r 'to_entries | .[] | "cache/packages/" + .key + "/" + .value + "/documentation.json"')
 
 
@@ -39,7 +37,7 @@ build: $(BUILD_DIR) $(COMPILE_TARGETS) ## Compiles project files
 
 download: $(BUILD_DIR) $(BUILD_DIR)/0.16/index.json $(BUILD_DIR)/0.17/index.json ## Downloads docs files
 
-local: $(BUILD_DIR) $(BUILD_DIR)/index-published-0.17.json $(BUILD_DIR)/index-published-0.16.json ## Downloads docs files from locally installed packages
+local: $(BUILD_DIR) $(BUILD_DIR)/local/index.json ## Downloads docs files from locally installed packages
 
 publish: build download ## Builds the app, downloads packages, makes a new commit in the `gh-pages` branch and pushes it to GitHub
 	(cd $(BUILD_DIR) && git add -A && git commit -m "Update app and documentation" && git push origin gh-pages)
@@ -69,13 +67,19 @@ html:
 	mkdir -p $(BUILD_DIR) && cp -r src/html/ $(BUILD_DIR)
 
 # TODO: find a nice way to keep this DRY and dynamic
-$(BUILD_DIR)/0.17/index.json: $(PUBLISHED_PACKAGES_017)
-	@mkdir -p $(BUILD_DIR)/0.17
-	@jq '(input_filename|ltrimstr("cache/packages/")|rtrimstr("/documentation.json")|capture("(?<name>^.+)\/(?<version>\\d\\.\\d\\.\\d$$)")) + {docs: .} | select(.docs[0]["generated-with-elm-version"] | startswith("0.17"))?' $^ | jq -s '.' > $@
+cache/packages-017:
+	@echo $(call publishedPackages,0.17) > $@
 
-$(BUILD_DIR)/0.16/index.json: $(PUBLISHED_PACKAGES_016)
+$(BUILD_DIR)/0.17/index.json: cache/packages-017 $(shell cat cache/packages-017)
+	@mkdir -p $(BUILD_DIR)/0.17
+	@jq '(input_filename|ltrimstr("cache/packages/")|rtrimstr("/documentation.json")|capture("(?<name>^.+)\/(?<version>\\d\\.\\d\\.\\d$$)")) + {docs: .} | select(.docs[0]["generated-with-elm-version"] | startswith("0.17"))?' $(shell cat $<) | jq -s '.' > $@
+
+cache/packages-016:
+	@echo $(call publishedPackages,0.16) > $@
+
+$(BUILD_DIR)/0.16/index.json: cache/packages-016 $(shell cat cache/packages-016)
 	@mkdir -p $(BUILD_DIR)/0.16
-	@jq '(input_filename|ltrimstr("cache/packages/")|rtrimstr("/documentation.json")|capture("(?<name>^.+)\/(?<version>\\d\\.\\d\\.\\d$$)")) + {docs: .} | select(.docs[0]["generated-with-elm-version"] | startswith("0.16"))?' $^ | jq -s '.' > $@
+	@jq '(input_filename|ltrimstr("cache/packages/")|rtrimstr("/documentation.json")|capture("(?<name>^.+)\/(?<version>\\d\\.\\d\\.\\d$$)")) + {docs: .} | select(.docs[0]["generated-with-elm-version"] | startswith("0.16"))?' $(shell cat $<) | jq -s '.' > $@
 
 $(BUILD_DIR)/local/index.json: $(LOCAL_PACKAGES)
 	@mkdir -p $(BUILD_DIR)/local
