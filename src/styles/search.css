@@ -56,40 +56,11 @@ code {
     -webkit-appearance: none;
     font-size: 16px;
     font-family: Source Code Pro, consolas, inconsolata, monospace;
-    margin: 0 0.5rem;
+    margin: 0 0.5rem 0 0;
     padding: 0.5rem 1rem;
     background-color: #fff;
     border: 1px solid #bbb;
     border-radius: 3px;
-}
-.searchForm label {
-    order: -10;
-    position: relative;
-}
-.searchForm label::after {
-    color: #ea157a;
-    content: '▾';
-    position: absolute;
-    right: 0.5rem;
-    top: 0;
-    bottom: 0;
-    display: flex;
-    pointer-events: none;
-    line-height: 2.25rem;
-}
-.searchForm select {
-    display: block;
-    width: 6rem;
-    margin: 0;
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    font-size: 16px;
-    font-family: Source Sans Pro, sans-serif;
-    padding: 0.5rem 1.5rem 0.5rem 1rem;
-    background-color: #fff;
-    border: 1px solid #bbb;
-    border-radius: 3px;
-    color: #ea157a;
 }
 .searchForm button {
     display: block;
@@ -105,7 +76,6 @@ code {
     color: #fff;
 }
 .searchForm input:disabled,
-.searchForm select:disabled,
 .searchForm button:disabled {
     background-color: #eee;
     border-color: #bbb;
