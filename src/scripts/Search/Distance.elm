@@ -7,12 +7,12 @@ import Docs.Type as Type exposing (..)
 import Search.Chunk as Chunk exposing (Chunk)
 
 
-name : String -> Chunk -> Float
-name query { context } =
-    if query == context.name then
+simple : (Chunk -> String) -> String -> Chunk -> Float
+simple extract query chunk =
+    if query == (extract chunk) then
         noPenalty
-    else if String.contains query context.name then
-        mediumPenalty * (1 - (toFloat (String.length query) / toFloat (String.length context.name)))
+    else if String.contains query (extract chunk) then
+        mediumPenalty * (1 - (toFloat (String.length query) / toFloat (String.length (extract chunk))))
     else
         maxPenalty
 

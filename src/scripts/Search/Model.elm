@@ -28,6 +28,9 @@ type alias Filter =
 type Query
     = Name String
     | Type Type.Type
+    | User String
+    | Package String
+    | Module String
 
 
 type alias Result =
@@ -73,17 +76,24 @@ maybeQueryFromString string =
         Nothing
     else
         Just
-            <| case Type.parse string of
-                Ok tipe ->
-                    case tipe of
-                        Type.Var _ ->
-                            Name string
+            <| if String.startsWith "user:" string then
+                User (String.dropLeft 5 string)
+               else if String.startsWith "package:" string then
+                Package (String.dropLeft 8 string)
+               else if String.startsWith "module:" string then
+                Module (String.dropLeft 7 string)
+               else
+                case Type.parse string of
+                    Ok tipe ->
+                        case tipe of
+                            Type.Var _ ->
+                                Name string
 
-                        _ ->
-                            Type tipe
+                            _ ->
+                                Type tipe
 
-                Err _ ->
-                    Name string
+                    Err _ ->
+                        Name string
 
 
 buildIndex : List Package -> Index
@@ -117,10 +127,19 @@ distanceByQuery query chunks =
             indexedPair
                 <| case query of
                     Name name ->
-                        Distance.name name
+                        Distance.simple (.context >> .name) name
 
                     Type tipe ->
                         Distance.tipe tipe
+
+                    User name ->
+                        Distance.simple (.context >> .userName) name
+
+                    Package name ->
+                        Distance.simple (.context >> .packageName) name
+
+                    Module name ->
+                        Distance.simple (.context >> .moduleName) name
     in
         List.map distance chunks
 
