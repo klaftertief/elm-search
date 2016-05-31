@@ -14,10 +14,10 @@ init filter packages =
             List.length model.index.chunks
     in
         case filter.query of
-            Just query ->
+            [ query ] ->
                 update RunFilter model
 
-            Nothing ->
+            _ ->
                 model
 
 
@@ -38,7 +38,7 @@ update msg model =
                 filter =
                     { filterFacts
                         | queryString = queryString
-                        , query = maybeQueryFromString queryString
+                        , query = queryListFromString queryString
                     }
             in
                 { model | filter = filter }

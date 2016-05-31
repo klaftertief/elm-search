@@ -21,7 +21,7 @@ type alias Index =
 
 type alias Filter =
     { queryString : String
-    , query : Maybe Query
+    , query : List Query
     }
 
 
@@ -54,7 +54,7 @@ initialIndex =
 initialFilter : Filter
 initialFilter =
     { queryString = ""
-    , query = Nothing
+    , query = []
     }
 
 
@@ -70,30 +70,30 @@ type Msg
     | RunFilter
 
 
-maybeQueryFromString : String -> Maybe Query
-maybeQueryFromString string =
+queryListFromString : String -> List Query
+queryListFromString string =
     if String.isEmpty string then
-        Nothing
+        []
     else
-        Just
-            <| if String.startsWith "user:" string then
-                User (String.dropLeft 5 string)
-               else if String.startsWith "package:" string then
-                Package (String.dropLeft 8 string)
-               else if String.startsWith "module:" string then
-                Module (String.dropLeft 7 string)
-               else
-                case Type.parse string of
-                    Ok tipe ->
-                        case tipe of
-                            Type.Var _ ->
-                                Name string
+        [ if String.startsWith "user:" string then
+            User (String.dropLeft 5 string)
+          else if String.startsWith "package:" string then
+            Package (String.dropLeft 8 string)
+          else if String.startsWith "module:" string then
+            Module (String.dropLeft 7 string)
+          else
+            case Type.parse string of
+                Ok tipe ->
+                    case tipe of
+                        Type.Var _ ->
+                            Name string
 
-                            _ ->
-                                Type tipe
+                        _ ->
+                            Type tipe
 
-                    Err _ ->
-                        Name string
+                Err _ ->
+                    Name string
+        ]
 
 
 buildIndex : List Package -> Index
@@ -106,42 +106,41 @@ runFilter { query } { chunks } =
     let
         resultChunks =
             case query of
-                Just filterQuery ->
-                    chunks
-                        |> distanceByQuery filterQuery
+                [] ->
+                    []
+
+                _ ->
+                    List.foldl distanceByQuery (List.map (\c -> ( 0, c )) chunks) query
+                        |> List.map (\( d, c ) -> ( d / toFloat (List.length query), c ))
                         |> filterByDistance Distance.lowPenalty
                         |> prioritizeChunks
                         |> List.sortBy (\( d, c ) -> ( d, c.context.name, c.context.moduleName, c.context.packageName ))
                         |> List.map snd
-
-                Nothing ->
-                    []
     in
         { chunks = resultChunks }
 
 
-distanceByQuery : Query -> List Chunk -> List ( Float, Chunk )
+distanceByQuery : Query -> List ( Float, Chunk ) -> List ( Float, Chunk )
 distanceByQuery query chunks =
     let
         distance =
-            indexedPair
-                <| case query of
-                    Name name ->
-                        Distance.simple (.context >> .name) name
+            case query of
+                Name name ->
+                    Distance.simple (.context >> .name) name
 
-                    Type tipe ->
-                        Distance.tipe tipe
+                Type tipe ->
+                    Distance.tipe tipe
 
-                    User name ->
-                        Distance.simple (.context >> .userName) name
+                User name ->
+                    Distance.simple (.context >> .userName) name
 
-                    Package name ->
-                        Distance.simple (.context >> .packageName) name
+                Package name ->
+                    Distance.simple (.context >> .packageName) name
 
-                    Module name ->
-                        Distance.simple (.context >> .moduleName) name
+                Module name ->
+                    Distance.simple (.context >> .moduleName) name
     in
-        List.map distance chunks
+        List.map (\( d, c ) -> ( d + distance c, c )) chunks
 
 
 filterByDistance : Float -> List ( Float, Chunk ) -> List ( Float, Chunk )

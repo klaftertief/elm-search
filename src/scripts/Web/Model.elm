@@ -66,7 +66,7 @@ parseSearchString searchString =
                     Dict.get "q" parts |> Maybe.withDefault ""
 
                 query =
-                    Search.maybeQueryFromString queryString
+                    Search.queryListFromString queryString
             in
                 { queryString = queryString
                 , query = query
