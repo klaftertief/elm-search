@@ -8,7 +8,15 @@
   <link rel="stylesheet" href="../styles/search.css">
 </head>
 <body>
-  <div id="main"></div>
+  <div id="main" class="searchApp"></div>
+  <footer class="searchFooter">
+    <p>All code for this site is open source and written in Elm. <a href="https://github.com/klaftertief/elm-search/">Check it out!</a></p>
+    <nav class="searchNav">
+      <h4>Available indexes:</h4>
+      <span>0.17</span>
+      <a href="../0.16/">0.16</a>
+    </nav>
+  </footer>
   <script src="../scripts/search.js"></script>
   <script>
     var app = Elm.Web.embed(
