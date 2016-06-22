@@ -85,7 +85,7 @@ $(BUILD_DIR)/0.16/index.json: cache/packages-016
 
 $(BUILD_DIR)/local/index.json: $(LOCAL_PACKAGES)
 	@mkdir -p $(BUILD_DIR)/local
-	@jq '(input_filename|ltrimstr("cache/packages/")|rtrimstr("/documentation.json")|capture("(?<name>^.+)\/(?<version>\\d\\.\\d\\.\\d$$)")) + {docs: .}' $^ | jq -s '.' > $@
+	@jq '(input_filename|ltrimstr("cache/packages/")|rtrimstr("/documentation.json")|capture("(?<name>^.+)\/(?<version>\\d+\\.\\d+\\.\\d+$$)")) + {docs: .}' $^ | jq -s '.' > $@
 
 cache/packages/%/documentation.json:
 	curl $(ELM_PACKAGE_URL)/$(@:cache/%=%) -o $@ -f --retry 2 --create-dirs -L
