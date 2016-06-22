@@ -73,7 +73,7 @@ cache/packages-017:
 $(BUILD_DIR)/0.17/index.json: cache/packages-017
 	@mkdir -p $(BUILD_DIR)/0.17
 	@$(MAKE) $(shell cat $<)
-	@jq '(input_filename|ltrimstr("cache/packages/")|rtrimstr("/documentation.json")|capture("(?<name>^.+)\/(?<version>\\d\\.\\d\\.\\d$$)")) + {docs: .} | select(.docs[0]["generated-with-elm-version"] | startswith("0.17"))?' $(shell cat $<) | jq -s '.' > $@
+	@jq '(input_filename|ltrimstr("cache/packages/")|rtrimstr("/documentation.json")|capture("(?<name>^.+)\/(?<version>\\d+\\.\\d+\\.\\d+$$)")) + {docs: .} | select(.docs[0]["generated-with-elm-version"] | startswith("0.17"))?' $(shell cat $<) | jq -s '.' > $@
 
 cache/packages-016:
 	@echo $(call publishedPackages,0.16) > $@
@@ -81,7 +81,7 @@ cache/packages-016:
 $(BUILD_DIR)/0.16/index.json: cache/packages-016
 	@mkdir -p $(BUILD_DIR)/0.16
 	@$(MAKE) $(shell cat $<)
-	@jq '(input_filename|ltrimstr("cache/packages/")|rtrimstr("/documentation.json")|capture("(?<name>^.+)\/(?<version>\\d\\.\\d\\.\\d$$)")) + {docs: .} | select(.docs[0]["generated-with-elm-version"] | startswith("0.16"))?' $(shell cat $<) | jq -s '.' > $@
+	@jq '(input_filename|ltrimstr("cache/packages/")|rtrimstr("/documentation.json")|capture("(?<name>^.+)\/(?<version>\\d+\\.\\d+\\.\\d+$$)")) + {docs: .} | select(.docs[0]["generated-with-elm-version"] | startswith("0.16"))?' $(shell cat $<) | jq -s '.' > $@
 
 $(BUILD_DIR)/local/index.json: $(LOCAL_PACKAGES)
 	@mkdir -p $(BUILD_DIR)/local
