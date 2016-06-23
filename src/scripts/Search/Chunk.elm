@@ -1,5 +1,6 @@
 module Search.Chunk exposing (..)
 
+import Json.Encode as Json
 import String
 import Docs.Entry as Entry exposing (Entry)
 import Docs.Type as Type exposing (Type)
@@ -23,6 +24,16 @@ type alias Context =
     , moduleName : String
     , name : String
     }
+
+
+encode : Chunk -> Json.Value
+encode chunk =
+    Json.object
+        [ ( "name", Json.string (chunk.context.name) )
+        , ( "type", Json.string (Type.asString Type.Other chunk.tipe |> String.join " ") )
+        , ( "url", Json.string (pathToValue chunk.context) )
+        , ( "docs", Json.string (Maybe.withDefault "" chunk.docs) )
+        ]
 
 
 packageChunks : Package -> List Chunk

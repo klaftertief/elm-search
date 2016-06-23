@@ -24,6 +24,84 @@ type Context
     | Other
 
 
+asString : Context -> Type -> List String
+asString context tipe =
+    case tipe of
+        Function args result ->
+            let
+                maybeAddParens =
+                    case context of
+                        Func ->
+                            addParens
+
+                        App ->
+                            addParens
+
+                        Other ->
+                            identity
+
+                argsString =
+                    List.concatMap (\arg -> (asString Func arg) ++ [ " -> " ]) args
+            in
+                maybeAddParens (argsString ++ asString Func result)
+
+        Var name ->
+            [ name ]
+
+        Apply name [] ->
+            [ name.name ]
+
+        Apply name args ->
+            let
+                maybeAddParens =
+                    case context of
+                        Func ->
+                            addParens
+
+                        App ->
+                            addParens
+
+                        Other ->
+                            identity
+
+                argsString =
+                    List.concatMap (\arg -> " " :: asString App arg) args
+            in
+                maybeAddParens ((name.name) :: argsString)
+
+        Tuple args ->
+            List.map (asString Other) args
+                |> List.intersperse [ ", " ]
+                |> List.concat
+
+        Record fields ext ->
+            let
+                fieldsString =
+                    List.map fieldToString fields
+                        |> List.intersperse [ ", " ]
+                        |> List.concat
+
+                recordInsides =
+                    case ext of
+                        Nothing ->
+                            fieldsString
+
+                        Just extName ->
+                            extName :: " | " :: fieldsString
+            in
+                "{ " :: recordInsides ++ [ " }" ]
+
+
+fieldToString : ( String, Type ) -> List String
+fieldToString ( field, tipe ) =
+    (field ++ " : ") :: (asString Other tipe)
+
+
+addParens : List String -> List String
+addParens list =
+    "(" :: list ++ [ ")" ]
+
+
 toHtml : Context -> Type -> List (Html msg)
 toHtml context tipe =
     case tipe of

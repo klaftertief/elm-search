@@ -2,6 +2,7 @@ module Search.Model exposing (..)
 
 import Docs.Type as Type
 import Docs.Package as Package exposing (Package)
+import Json.Encode as Json
 import Search.Chunk as Chunk exposing (Chunk)
 import Search.Distance as Distance
 import String
@@ -35,6 +36,13 @@ type Query
 
 type alias Result =
     { chunks : List Chunk }
+
+
+encodeResult : Result -> Json.Value
+encodeResult { chunks } =
+    chunks
+        |> List.map Chunk.encode
+        |> Json.list
 
 
 initialModel : Model

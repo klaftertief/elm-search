@@ -12,13 +12,17 @@ type alias Flags =
 
 
 type alias Model =
-    { count : Int
-    , index : Search.Index
+    { index : Search.Index }
+
+
+type alias Response =
+    { query : String
+    , result : Value
     }
 
 
 type Msg
-    = NoOp
+    = Search String
 
 
 decodeSafe : Decode.Decoder (List (Maybe Package))
@@ -39,11 +43,26 @@ buildIndex value =
 
 init : Flags -> ( Model, Cmd Msg )
 init { index } =
-    ( { count = Debug.log "initial count" 0
-      , index = buildIndex index
-      }
+    ( { index = buildIndex index }
     , Cmd.none
     )
+
+
+update : Msg -> Model -> ( Model, Cmd Msg )
+update msg model =
+    case msg of
+        Search query ->
+            let
+                filter =
+                    Search.Filter query
+                        (Search.queryListFromString query)
+
+                result =
+                    Search.runFilter filter model.index
+            in
+                ( model
+                , response (Response query (Search.encodeResult result))
+                )
 
 
 main : Program Flags
@@ -51,18 +70,14 @@ main =
     Html.programWithFlags
         { init = init
         , view = (\model -> Html.text "")
-        , update =
-            (\msg model ->
-                ( { model
-                    | count = Debug.log "updated count" (model.count + 1)
-                  }
-                , Cmd.none
-                )
-            )
+        , update = update
         , subscriptions =
             \_ ->
-                Sub.batch [ foo (always NoOp) ]
+                Sub.batch [ request Search ]
         }
 
 
-port foo : (String -> msg) -> Sub msg
+port request : (String -> msg) -> Sub msg
+
+
+port response : Response -> Cmd msg
