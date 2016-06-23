@@ -10,7 +10,7 @@ var interval = 5;
 var maxDuration = 5000;
 
 app.ports.response.subscribe(function(msg) {
-	responses[msg.query] = msg.result;
+	responses[msg.query] = msg;
 });
 
 server.get('/', function (req, res) {
