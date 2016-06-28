@@ -1,45 +1,24 @@
-module Parse.Type exposing (parse)
-
--- where
+module Parse.Type exposing (parse, decoder)
 
 import Char
 import String
-import Parse.Combinators exposing (..)
-import Docs.Name as Name
+import Json.Decode as Decode exposing (Decoder)
+import Combine exposing (..)
+import Combine.Char exposing (..)
+import Docs.Name as Name exposing (Name)
 import Docs.Type exposing (Type(..))
 
 
--- PARSE
+decoder : Decoder Type
+decoder =
+    Decode.customDecoder Decode.string parse
 
 
-parse : String -> Result String Type
+parse : String -> Result.Result String Type
 parse tipeString =
-    run tipe tipeString
-
-
-
--- HELPERS
-
-
-elmVarWith : Parser Char -> Parser String
-elmVarWith starter =
-    map2 (::) starter (zeroOrMore varChar)
-        |> map String.fromList
-
-
-varChar : Parser Char
-varChar =
-    satisfy (\c -> Char.isLower c || Char.isUpper c || c == '_' || c == '\'' || Char.isDigit c)
-
-
-spaces : Parser ()
-spaces =
-    map (always ()) (zeroOrMore (char ' '))
-
-
-commasLeading : Parser a -> Parser (List a)
-commasLeading parser =
-    zeroOrMore (ignore3 spaces (char ',') spaces parser)
+    Combine.parse tipe tipeString
+        |> fst
+        |> Result.formatError (String.join ", ")
 
 
 
@@ -55,33 +34,33 @@ var =
 -- TYPE APPLICATIONS
 
 
-name : Parser Name.Canonical
+name : Parser Name
 name =
     nameHelp []
 
 
-nameHelp : List String -> Parser Name.Canonical
+nameHelp : List String -> Parser Name
 nameHelp seen =
     elmVarWith upper
         `andThen` \str ->
-                    oneOf
+                    choice
                         [ ignore1 (char '.') (nameHelp (str :: seen))
-                        , succeed (Name.Canonical (String.join "." (List.reverse seen)) str)
+                        , succeed (Name (String.join "." (List.reverse seen)) str)
                         ]
 
 
 apply : Parser Type
 apply =
-    lazy
+    rec
         <| \_ ->
-            map2 Apply name (zeroOrMore (ignore1 spaces applyTerm))
+            map2 Apply name (many (ignore1 spaces applyTerm))
 
 
 applyTerm : Parser Type
 applyTerm =
-    lazy
+    rec
         <| \_ ->
-            oneOf [ var, map (\n -> Apply n []) name, record, parenTipe ]
+            choice [ var, map (\n -> Apply n []) name, record, parenTipe ]
 
 
 
@@ -90,10 +69,10 @@ applyTerm =
 
 record : Parser Type
 record =
-    lazy
+    rec
         <| \_ ->
             middle (ignore1 (char '{') spaces)
-                (oneOf
+                (choice
                     [ elmVarWith lower `andThen` recordHelp
                     , succeed (Record [] Nothing)
                     ]
@@ -103,10 +82,10 @@ record =
 
 recordHelp : String -> Parser Type
 recordHelp lowerName =
-    lazy
+    rec
         <| \_ ->
             ignore1 spaces
-                <| oneOf
+                <| choice
                     [ map2 (\t rest -> Record (( lowerName, t ) :: rest) Nothing)
                         (ignore2 (char ':') spaces tipe)
                         (commasLeading field)
@@ -117,7 +96,7 @@ recordHelp lowerName =
 
 field : Parser ( String, Type )
 field =
-    lazy
+    rec
         <| \_ ->
             map2 (,) (elmVarWith lower) (ignore3 spaces (char ':') spaces tipe)
 
@@ -128,7 +107,7 @@ field =
 
 tipe : Parser Type
 tipe =
-    lazy
+    rec
         <| \_ ->
             map2 (buildFunction []) tipeTerm arrowTerms
 
@@ -148,25 +127,25 @@ buildFunction args currentType remainingTypes =
 
 arrowTerms : Parser (List Type)
 arrowTerms =
-    lazy
+    rec
         <| \_ ->
-            zeroOrMore (ignore3 spaces (string "->") spaces tipeTerm)
+            many (ignore3 spaces (string "->") spaces tipeTerm)
 
 
 tipeTerm : Parser Type
 tipeTerm =
-    lazy
+    rec
         <| \_ ->
-            oneOf [ var, apply, record, parenTipe ]
+            choice [ var, apply, record, parenTipe ]
 
 
 parenTipe : Parser Type
 parenTipe =
-    lazy
+    rec
         <| \_ ->
             map tuplize
                 <| middle (ignore1 (char '(') spaces)
-                    (oneOf
+                    (choice
                         [ map2 (::) tipe (commasLeading tipe)
                         , succeed []
                         ]
@@ -182,3 +161,85 @@ tuplize args =
 
         _ ->
             Tuple args
+
+
+
+-- HELPERS
+
+
+elmVarWith : Parser Char -> Parser String
+elmVarWith starter =
+    map2 (::) starter (many varChar)
+        |> map String.fromList
+
+
+varChar : Parser Char
+varChar =
+    satisfy (\c -> Char.isLower c || Char.isUpper c || c == '_' || c == '\'' || Char.isDigit c)
+
+
+spaces : Parser ()
+spaces =
+    map (always ()) (many space)
+
+
+commasLeading : Parser a -> Parser (List a)
+commasLeading parser =
+    many (ignore3 spaces (char ',') spaces parser)
+
+
+
+-- UTILS
+
+
+map2 : (a -> b -> c) -> Parser a -> Parser b -> Parser c
+map2 func parserA parserB =
+    parserA
+        `andThen` \a ->
+                    parserB
+                        `andThen` \b ->
+                                    succeed (func a b)
+
+
+map3 : (a -> b -> c -> d) -> Parser a -> Parser b -> Parser c -> Parser d
+map3 func parserA parserB parserC =
+    parserA
+        `andThen` \a ->
+                    parserB
+                        `andThen` \b ->
+                                    parserC
+                                        `andThen` \c ->
+                                                    succeed (func a b c)
+
+
+map4 : (a -> b -> c -> d -> e) -> Parser a -> Parser b -> Parser c -> Parser d -> Parser e
+map4 func parserA parserB parserC parserD =
+    parserA
+        `andThen` \a ->
+                    parserB
+                        `andThen` \b ->
+                                    parserC
+                                        `andThen` \c ->
+                                                    parserD
+                                                        `andThen` \d ->
+                                                                    succeed (func a b c d)
+
+
+ignore1 : Parser x -> Parser a -> Parser a
+ignore1 x parser =
+    map2 (\_ a -> a) x parser
+
+
+ignore2 : Parser x -> Parser y -> Parser a -> Parser a
+ignore2 x y parser =
+    map3 (\_ _ a -> a) x y parser
+
+
+ignore3 : Parser x -> Parser y -> Parser z -> Parser a -> Parser a
+ignore3 x y z parser =
+    map4 (\_ _ _ a -> a) x y z parser
+
+
+middle : Parser x -> Parser a -> Parser y -> Parser a
+middle x parser y =
+    map3 (\_ a _ -> a) x parser y

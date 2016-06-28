@@ -2,6 +2,7 @@ module Docs.Entry exposing (..)
 
 import Json.Decode as Decode exposing (Decoder, (:=))
 import Docs.Type as Type exposing (Type)
+import Parse.Type as Type
 
 
 type alias Entry =

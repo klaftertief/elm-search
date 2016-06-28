@@ -1,6 +1,7 @@
 module Search.Model exposing (..)
 
 import Docs.Type as Type
+import Parse.Type as Type
 import Docs.Package as Package exposing (Package)
 import Search.Chunk as Chunk exposing (Chunk)
 import Search.Distance as Distance
