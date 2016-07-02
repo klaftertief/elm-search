@@ -2,6 +2,7 @@ module Search.Update exposing (..)
 
 import Docs.Package as Package exposing (Package)
 import Search.Model as Model exposing (..)
+import String
 
 
 init : Filter -> List Package -> Model
@@ -40,8 +41,17 @@ update msg model =
                         | queryString = queryString
                         , query = queryListFromString queryString
                     }
+
+                resultChunks =
+                    if String.isEmpty queryString then
+                        []
+                    else
+                        model.result.chunks
             in
-                { model | filter = filter }
+                { model
+                    | filter = filter
+                    , result = { chunks = resultChunks }
+                }
 
         SetFilterQueryStringAndRunFilter queryString ->
             update (SetFilterQueryString queryString) model
