@@ -31,7 +31,7 @@ code {
 }
 
 .searchHeader {
-    padding: 1.5rem 1rem;
+    padding: 1.5rem 0;
     background-color: #ddd;
     border-bottom: 1px solid #ccc;
 }
@@ -55,6 +55,7 @@ code {
     width: 100%;
     max-width: 800px;
     margin: 0 auto;
+    padding: 0 1rem;
 }
 
 .searchForm input {
@@ -92,20 +93,32 @@ code {
     color: #666;
 }
 
-
 .searchStatus {
     margin: 3rem auto;
-    text-align: center;
+    padding: 0 1rem;
+    max-width: 800px;
     font-size: 1.5rem;
 }
 
-.searchResult {
-    padding: 1.5rem 1rem;
+.searchBody {
+    margin: 3rem auto;
+    padding: 0 1rem;
+    max-width: 800px;
+}
+
+.searchIntro h1 {
+    margin: 0 0 1.5rem 0;
+    font-size: 1.5rem;
+    font-weight: normal;
+}
+.searchIntro h2 {
+    margin: 0 0 1.5rem 0;
+    font-size: 1.25rem;
+    font-weight: normal;
 }
 
 .searchChunk {
     width: 100%;
-    max-width: 800px;
     margin: 0 auto 1.5rem auto;
     background-color: #fff;
     border: 1px solid #ddd;

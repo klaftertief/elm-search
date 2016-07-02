@@ -50,5 +50,5 @@ viewReady search =
     App.map SearchMsg
         <| div [ class "searchReady" ]
             [ Search.viewSearchHeader search
-            , Search.viewSearchResults search
+            , Search.viewSearchBody search
             ]

@@ -51,7 +51,7 @@ viewSearchForm { filter, index, result } =
             [ input
                 [ name "q"
                 , type' "search"
-                , onInput SetFilterQueryFrom
+                , onInput SetFilterQueryString
                 , value filter.queryString
                 , disabled isDisabled
                 ]
@@ -61,6 +61,46 @@ viewSearchForm { filter, index, result } =
                 , disabled isDisabled
                 ]
                 [ text "Search" ]
+            ]
+
+
+viewSearchBody : Model -> Html Msg
+viewSearchBody model =
+    let
+        searchBody =
+            if String.isEmpty model.filter.queryString then
+                viewSearchIntro
+            else
+                viewSearchResults model
+    in
+        div [ class "searchBody" ]
+            [ searchBody ]
+
+
+viewSearchIntro : Html Msg
+viewSearchIntro =
+    let
+        exampleQueries =
+            [ "map"
+            , "(a -> b -> b) -> b -> List a -> b"
+            , "Result x a -> (a -> Result x b) -> Result x b"
+            , "String -> Int"
+            ]
+
+        exampleSearchItem query =
+            li []
+                [ a
+                    [ style [ ( "cursor", "pointer" ) ]
+                    , onClick (SetFilterQueryStringAndRunFilter query)
+                    ]
+                    [ text query ]
+                ]
+    in
+        div [ class "searchIntro" ]
+            [ h1 [] [ text "Welcome to Elm Search" ]
+            , p [] [ text "Search the modules of the latest Elm packages by either function name or by approximate type signature." ]
+            , h2 [] [ text "Example queries" ]
+            , ul [] (List.map exampleSearchItem exampleQueries)
             ]
 
 

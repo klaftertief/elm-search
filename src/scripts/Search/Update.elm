@@ -30,7 +30,7 @@ update msg model =
         SetFilter filter ->
             { model | filter = filter }
 
-        SetFilterQueryFrom queryString ->
+        SetFilterQueryString queryString ->
             let
                 filterFacts =
                     model.filter
@@ -42,6 +42,10 @@ update msg model =
                     }
             in
                 { model | filter = filter }
+
+        SetFilterQueryStringAndRunFilter queryString ->
+            update (SetFilterQueryString queryString) model
+                |> update RunFilter
 
         RunFilter ->
             { model | result = runFilter model.filter model.index }

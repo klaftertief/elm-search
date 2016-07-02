@@ -66,7 +66,8 @@ initialResult =
 type Msg
     = BuildIndex (List Package)
     | SetFilter Filter
-    | SetFilterQueryFrom String
+    | SetFilterQueryString String
+    | SetFilterQueryStringAndRunFilter String
     | RunFilter
 
 
