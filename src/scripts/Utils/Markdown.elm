@@ -11,6 +11,7 @@ block raw =
     Markdown.toHtmlWith myOptions [] raw
 
 
+myOptions : Markdown.Options
 myOptions =
     let
         options =

@@ -2,7 +2,6 @@ module Logo exposing (view, viewWithSize)
 
 -- where
 
-import Color exposing (Color)
 import Svg exposing (..)
 import Svg.Attributes exposing (..)
 
