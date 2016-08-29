@@ -106,7 +106,7 @@ distanceList needle hay =
     in
         List.map2 distance needle hay
             |> List.sum
-            |> (flip (+)) (toFloat diffLength * maxPenalty)
+            |> (+) (toFloat diffLength * maxPenalty)
             |> (flip (/)) (toFloat maxLength)
 
 
