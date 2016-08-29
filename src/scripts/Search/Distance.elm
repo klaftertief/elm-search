@@ -89,17 +89,17 @@ distance needle hay =
 distanceList : List Type -> List Type -> Float
 distanceList needle hay =
     let
-        needelLength =
+        needleLength =
             List.length needle
 
         hayLength =
             List.length hay
 
         sharedLength =
-            min needelLength hayLength
+            min needleLength hayLength
 
         maxLength =
-            max needelLength hayLength
+            max needleLength hayLength
 
         diffLength =
             maxLength - sharedLength
@@ -157,10 +157,10 @@ distanceApply ( canonicalN, argsN ) ( canonicalH, argsH ) =
             --distanceCanonical canonicalN canonicalH
             -- TODO: should we do this only for some specific types like `Maybe` and `Result`?
             -- TODO: check if this is a nice implementation (with regard to `min` and `+ lowPenalty`)
-            min maxPenalty
-                <| distance (Apply canonicalN argsN)
+            min maxPenalty <|
+                distance (Apply canonicalN argsN)
                     (Maybe.withDefault hd (List.head (List.reverse tl)))
-                + lowPenalty
+                    + lowPenalty
 
         _ ->
             (distanceCanonical canonicalN canonicalH + distanceList argsN argsH) / 2
