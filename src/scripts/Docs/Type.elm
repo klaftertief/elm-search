@@ -410,7 +410,13 @@ buildFunction args currentType remainingTypes =
             if List.isEmpty args then
                 currentType
             else
-                Function (List.reverse args) currentType
+                case currentType of
+                    -- This is a hacky way to normalise redundant parens for functions that return functions
+                    Function functionArgs functionType ->
+                        Function (List.reverse args ++ functionArgs) functionType
+
+                    _ ->
+                        Function (List.reverse args) currentType
 
         t :: ts ->
             buildFunction (currentType :: args) t ts
