@@ -332,24 +332,25 @@ name =
 nameHelp : List String -> Parser Name
 nameHelp seen =
     elmVarWith upper
-        `andThen` \str ->
-                    oneOf
-                        [ ignore1 (char '.') (nameHelp (str :: seen))
-                        , succeed (Name (String.join "." (List.reverse seen)) str)
-                        ]
+        `andThen`
+            \str ->
+                oneOf
+                    [ ignore1 (char '.') (nameHelp (str :: seen))
+                    , succeed (Name (String.join "." (List.reverse seen)) str)
+                    ]
 
 
 apply : Parser Type
 apply =
-    lazy
-        <| \_ ->
+    lazy <|
+        \_ ->
             map2 Apply name (zeroOrMore (ignore1 spaces applyTerm))
 
 
 applyTerm : Parser Type
 applyTerm =
-    lazy
-        <| \_ ->
+    lazy <|
+        \_ ->
             oneOf [ var, map (\n -> Apply n []) name, record, parenTipe ]
 
 
@@ -359,8 +360,8 @@ applyTerm =
 
 record : Parser Type
 record =
-    lazy
-        <| \_ ->
+    lazy <|
+        \_ ->
             middle (ignore1 (char '{') spaces)
                 (oneOf
                     [ elmVarWith lower `andThen` recordHelp
@@ -372,10 +373,10 @@ record =
 
 recordHelp : String -> Parser Type
 recordHelp lowerName =
-    lazy
-        <| \_ ->
-            ignore1 spaces
-                <| oneOf
+    lazy <|
+        \_ ->
+            ignore1 spaces <|
+                oneOf
                     [ map2 (\t rest -> Record (( lowerName, t ) :: rest) Nothing)
                         (ignore2 (char ':') spaces tipe)
                         (commasLeading field)
@@ -386,8 +387,8 @@ recordHelp lowerName =
 
 field : Parser ( String, Type )
 field =
-    lazy
-        <| \_ ->
+    lazy <|
+        \_ ->
             map2 (,) (elmVarWith lower) (ignore3 spaces (char ':') spaces tipe)
 
 
@@ -397,8 +398,8 @@ field =
 
 tipe : Parser Type
 tipe =
-    lazy
-        <| \_ ->
+    lazy <|
+        \_ ->
             map2 (buildFunction []) tipeTerm arrowTerms
 
 
@@ -417,24 +418,24 @@ buildFunction args currentType remainingTypes =
 
 arrowTerms : Parser (List Type)
 arrowTerms =
-    lazy
-        <| \_ ->
+    lazy <|
+        \_ ->
             zeroOrMore (ignore3 spaces (string "->") spaces tipeTerm)
 
 
 tipeTerm : Parser Type
 tipeTerm =
-    lazy
-        <| \_ ->
+    lazy <|
+        \_ ->
             oneOf [ var, apply, record, parenTipe ]
 
 
 parenTipe : Parser Type
 parenTipe =
-    lazy
-        <| \_ ->
-            map tuplize
-                <| middle (ignore1 (char '(') spaces)
+    lazy <|
+        \_ ->
+            map tuplize <|
+                middle (ignore1 (char '(') spaces)
                     (oneOf
                         [ map2 (::) tipe (commasLeading tipe)
                         , succeed []
