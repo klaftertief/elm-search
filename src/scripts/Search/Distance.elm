@@ -104,10 +104,13 @@ distanceList needle hay =
         diffLength =
             maxLength - sharedLength
     in
-        List.map2 distance needle hay
-            |> List.sum
-            |> (+) (toFloat diffLength * maxPenalty)
-            |> (flip (/)) (toFloat maxLength)
+        if diffLength > 1 then
+            maxPenalty
+        else
+            List.map2 distance needle hay
+                |> List.sum
+                |> (+) (toFloat diffLength * maxPenalty)
+                |> (flip (/)) (toFloat maxLength)
 
 
 distanceName : String -> String -> Float
