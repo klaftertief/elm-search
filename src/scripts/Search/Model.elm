@@ -113,7 +113,7 @@ runFilter { query } { chunks } =
                 _ ->
                     List.foldl distanceByQuery (List.map (\c -> ( 0, c )) chunks) query
                         |> List.map (\( d, c ) -> ( d / toFloat (List.length query), c ))
-                        |> filterByDistance Distance.lowPenalty
+                        |> filterByDistance (Distance.lowPenalty / 2)
                         |> prioritizeChunks
                         |> List.sortBy (\( d, c ) -> ( d, c.context.name, c.context.moduleName, c.context.packageName ))
                         |> List.map snd
