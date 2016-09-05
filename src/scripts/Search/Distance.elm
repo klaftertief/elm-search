@@ -2,6 +2,7 @@ module Search.Distance exposing (..)
 
 import Dict exposing (Dict)
 import String
+import List.Extra
 import Docs.Name as Name exposing (Name)
 import Docs.Type as Type exposing (..)
 import Search.Chunk as Chunk exposing (Chunk)
@@ -107,10 +108,17 @@ distanceList needle hay =
         if diffLength > 1 then
             maxPenalty
         else
-            List.map2 distance needle hay
-                |> List.sum
-                |> (+) (toFloat diffLength * maxPenalty)
-                |> (flip (/)) (toFloat maxLength)
+            -- TODO: optimize, maybe add penalty for permutations
+            List.Extra.permutations needle
+                |> List.map
+                    (\curr ->
+                        List.map2 distance curr hay
+                            |> List.sum
+                            |> (+) (toFloat diffLength * maxPenalty)
+                            |> (flip (/)) (toFloat maxLength)
+                    )
+                |> List.minimum
+                |> Maybe.withDefault maxPenalty
 
 
 distanceName : String -> String -> Float
