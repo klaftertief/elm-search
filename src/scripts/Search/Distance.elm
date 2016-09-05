@@ -63,11 +63,19 @@ distance needle hay =
             distanceName nameN nameH
 
         -- Special cases for comparisons like `number` - `Float`
-        ( Var nameN, Apply canonicalH _ ) ->
+        ( Var nameN, Apply canonicalH [] ) ->
             distanceVarApply nameN canonicalH
 
-        ( Apply canonicalN _, Var nameH ) ->
+        ( Apply canonicalN [], Var nameH ) ->
             distanceVarApply nameH canonicalN
+
+        -- Hack for special cases like `a` - `Maybe a`
+        -- TODO: make proper comparison
+        ( Var nameN, Apply canonicalH argsH ) ->
+            distanceApply ( { name = "", home = "" }, [ Var nameN ] ) ( canonicalH, argsH )
+
+        ( Apply canonicalN argsN, Var nameH ) ->
+            distanceApply ( { name = "", home = "" }, [ Var nameH ] ) ( canonicalN, argsN )
 
         -- `Apply Name (List Type)`
         -- `Foo.Bar a b` ~> `Apply { home = "Foo", name = "Bar" } ([Var "a", Var "b"])`
