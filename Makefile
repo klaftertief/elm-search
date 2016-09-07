@@ -28,14 +28,14 @@ else
 	JQ_URL := "https://github.com/stedolan/jq/releases/download/jq-${JQ_VERSION}/jq-linux64"
 endif
 
-publishedPackages = $(shell curl http://package.elm-lang.org/all-packages?elm-package-version=$(1) | jq -r '.[] | "cache/packages/" + .name + "/" + .versions[0] + "/documentation.json"')
+publishedPackages = $(shell curl http://package.elm-lang.org/all-packages?elm-package-version=$(1) | bin/jq -r '.[] | "cache/packages/" + .name + "/" + .versions[0] + "/documentation.json"')
 
-LOCAL_PACKAGES = $(shell <elm-stuff/exact-dependencies.json jq -r 'to_entries | .[] | "cache/packages/" + .key + "/" + .value + "/documentation.json"')
+LOCAL_PACKAGES = $(shell <elm-stuff/exact-dependencies.json bin/jq -r 'to_entries | .[] | "cache/packages/" + .key + "/" + .value + "/documentation.json"')
 
 
 build: $(BUILD_DIR) $(COMPILE_TARGETS) ## Compiles project files
 
-download: $(BUILD_DIR) $(BUILD_DIR)/0.16/index.json $(BUILD_DIR)/0.17/index.json ## Downloads docs files
+download: $(BUILD_DIR) cache $(BUILD_DIR)/0.16/index.json $(BUILD_DIR)/0.17/index.json ## Downloads docs files
 
 local: $(BUILD_DIR) $(BUILD_DIR)/local/index.json ## Downloads docs files from locally installed packages
 
@@ -45,10 +45,10 @@ publish: build download ## Builds the app, downloads packages, makes a new commi
 install: $(INSTALL_TARGETS) ## Installs prerequisites and generates file/folder structure
 
 server: ## Runs a local server for development
-	devd  -l -a -p 8888 -w $(BUILD_DIR) $(BUILD_DIR)/
+	bin/devd  -l -a -p 8888 -w $(BUILD_DIR) $(BUILD_DIR)/
 
 watch: ## Watches files for changes, runs a local dev server and triggers live reload
-	modd
+	bin/modd
 
 clean: ## Removes compiled files
 	rm -rf $(BUILD_DIR)/*
@@ -61,7 +61,7 @@ styles:
 	mkdir -p $(BUILD_DIR)/styles && cp src/styles/search.css $(BUILD_DIR)/styles
 
 scripts: $(ELM_FILES)
-	elm-make $(ELM_ENTRY) --yes --warn --output $(BUILD_DIR)/scripts/search.js
+	node_modules/.bin/elm-make $(ELM_ENTRY) --yes --warn --output $(BUILD_DIR)/scripts/search.js
 
 html:
 	mkdir -p $(BUILD_DIR) && cp -r src/html/* $(BUILD_DIR)
@@ -73,25 +73,25 @@ cache/packages-017:
 $(BUILD_DIR)/0.17/index.json: cache/packages-017
 	@mkdir -p $(BUILD_DIR)/0.17
 	@$(MAKE) $(shell cat $<)
-	@jq '(input_filename|ltrimstr("cache/packages/")|rtrimstr("/documentation.json")|capture("(?<name>^.+)\/(?<version>\\d+\\.\\d+\\.\\d+$$)")) + {docs: .} | select(.docs[0]["generated-with-elm-version"] | startswith("0.17"))?' $(shell cat $<) | jq -s '.' > $@
+	@bin/jq '(input_filename|ltrimstr("cache/packages/")|rtrimstr("/documentation.json")|capture("(?<name>^.+)\/(?<version>\\d+\\.\\d+\\.\\d+$$)")) + {docs: .} | select(.docs[0]["generated-with-elm-version"] | startswith("0.17"))?' $(shell cat $<) | bin/jq -s '.' > $@
 
-cache/packages-016:
+cache/packages-016: cache
 	@echo $(call publishedPackages,0.16) > $@
 
 $(BUILD_DIR)/0.16/index.json: cache/packages-016
 	@mkdir -p $(BUILD_DIR)/0.16
 	@$(MAKE) $(shell cat $<)
-	@jq '(input_filename|ltrimstr("cache/packages/")|rtrimstr("/documentation.json")|capture("(?<name>^.+)\/(?<version>\\d+\\.\\d+\\.\\d+$$)")) + {docs: .} | select(.docs[0]["generated-with-elm-version"] | startswith("0.16"))?' $(shell cat $<) | jq -s '.' > $@
+	@bin/jq '(input_filename|ltrimstr("cache/packages/")|rtrimstr("/documentation.json")|capture("(?<name>^.+)\/(?<version>\\d+\\.\\d+\\.\\d+$$)")) + {docs: .} | select(.docs[0]["generated-with-elm-version"] | startswith("0.16"))?' $(shell cat $<) | bin/jq -s '.' > $@
 
 $(BUILD_DIR)/local/index.json: $(LOCAL_PACKAGES)
 	@mkdir -p $(BUILD_DIR)/local
-	@jq '(input_filename|ltrimstr("cache/packages/")|rtrimstr("/documentation.json")|capture("(?<name>^.+)\/(?<version>\\d+\\.\\d+\\.\\d+$$)")) + {docs: .}' $^ | jq -s '.' > $@
+	@bin/jq '(input_filename|ltrimstr("cache/packages/")|rtrimstr("/documentation.json")|capture("(?<name>^.+)\/(?<version>\\d+\\.\\d+\\.\\d+$$)")) + {docs: .}' $^ | bin/jq -s '.' > $@
 
 cache/packages/%/documentation.json:
 	curl $(ELM_PACKAGE_URL)/$(@:cache/%=%) -o $@ -f --retry 2 --create-dirs -L
 
 elm-stuff/exact-dependencies.json:
-	elm-package install --yes
+	node_modules/.bin/elm-package install --yes
 
 # elm-stuff/packages/%/documentation.json:
 # 	pushd $(dir $@) && elm-make --docs documentation.json --yes && popd
