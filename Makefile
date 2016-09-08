@@ -64,7 +64,7 @@ scripts: $(ELM_FILES)
 	elm-make $(ELM_ENTRY) --yes --warn --output $(BUILD_DIR)/scripts/search.js
 
 html:
-	mkdir -p $(BUILD_DIR) && cp -r src/html/ $(BUILD_DIR)
+	mkdir -p $(BUILD_DIR) && cp -r src/html/* $(BUILD_DIR)
 
 # TODO: find a nice way to keep this DRY and dynamic
 cache/packages-017:
