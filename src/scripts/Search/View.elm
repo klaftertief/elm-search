@@ -68,7 +68,7 @@ viewSearchBody : Model -> Html Msg
 viewSearchBody model =
     let
         searchBody =
-            if String.isEmpty model.filter.queryString then
+            if String.isEmpty model.filter.lastQuery then
                 viewSearchIntro
             else
                 viewSearchResults model
@@ -105,9 +105,22 @@ viewSearchIntro =
 
 
 viewSearchResults : Model -> Html Msg
-viewSearchResults { result } =
-    div [ class "searchResult" ]
-        (List.map viewChunk result.chunks)
+viewSearchResults { filter, result } =
+    let
+        viewQuery =
+            div [ class "searchQuery" ]
+                [ text <| "Showing results for: "
+                , b [] [ text filter.lastQuery ]
+                ]
+
+        viewChunks =
+            if not <| List.isEmpty result.chunks then
+                List.map viewChunk result.chunks
+            else
+                [ p [] [ text "No Results Found." ] ]
+    in
+        div [ class "searchResult" ]
+            (viewQuery :: viewChunks)
 
 
 viewChunk : Chunk -> Html Msg

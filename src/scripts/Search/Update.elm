@@ -41,16 +41,9 @@ update msg model =
                         | queryString = queryString
                         , query = queryListFromString queryString
                     }
-
-                resultChunks =
-                    if String.isEmpty queryString then
-                        []
-                    else
-                        model.result.chunks
             in
                 { model
                     | filter = filter
-                    , result = { chunks = resultChunks }
                 }
 
         SetFilterQueryStringAndRunFilter queryString ->
@@ -58,4 +51,11 @@ update msg model =
                 |> update RunFilter
 
         RunFilter ->
-            { model | result = runFilter model.filter model.index }
+            let
+                newFilter filter =
+                    { filter | lastQuery = model.filter.queryString }
+            in
+                { model
+                    | result = runFilter model.filter model.index
+                    , filter = newFilter model.filter
+                }

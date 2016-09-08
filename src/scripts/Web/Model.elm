@@ -70,6 +70,7 @@ parseSearchString searchString =
             in
                 { queryString = queryString
                 , query = query
+                , lastQuery = ""
                 }
 
         _ ->
