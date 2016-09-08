@@ -117,6 +117,12 @@ code {
     font-weight: normal;
 }
 
+.searchQuery {
+  padding-left: 1rem;
+  padding-right: 1rem;
+  padding-bottom: 1rem;
+}
+
 .searchChunk {
     width: 100%;
     margin: 0 auto 1.5rem auto;

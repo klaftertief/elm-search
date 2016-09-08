@@ -22,6 +22,7 @@ type alias Index =
 type alias Filter =
     { queryString : String
     , query : List Query
+    , lastQuery : String
     }
 
 
@@ -55,6 +56,7 @@ initialFilter : Filter
 initialFilter =
     { queryString = ""
     , query = []
+    , lastQuery = ""
     }
 
 
