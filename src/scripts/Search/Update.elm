@@ -2,7 +2,6 @@ module Search.Update exposing (..)
 
 import Docs.Package as Package exposing (Package)
 import Search.Model as Model exposing (..)
-import String
 
 
 init : Filter -> List Package -> Model
