@@ -1,9 +1,5 @@
 .PHONY: install server watch clean help build download local publish cache/packages-017 cache/packages-016
 
-# Add binaries of local npm packages to the PATH
-PATH := $(PWD)/bin:$(PWD)/node_modules/.bin:$(PATH)
-SHELL := /bin/bash
-
 ELM_ENTRY := src/scripts/Web.elm
 ELM_FILES = $(shell find src -type f -name '*.elm')
 
