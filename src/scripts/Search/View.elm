@@ -52,8 +52,8 @@ viewSearchForm { filter, index, result } =
                 [ name "q"
                 , type' "search"
                 , onInput SetFilterQueryString
-                , value filter.queryString
-                , disabled isDisabled
+                , defaultValue filter.queryString
+                , autofocus True
                 ]
                 []
             , button

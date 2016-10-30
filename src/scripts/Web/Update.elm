@@ -63,7 +63,21 @@ update msg model =
                     in
                         ( Ready newSearch, cmd )
 
-                _ ->
+                Loading filter ->
+                    case searchMsg of
+                        Search.SetFilterQueryString queryString ->
+                            ( Loading
+                                { filter
+                                    | queryString = queryString
+                                    , query = Search.queryListFromString queryString
+                                }
+                            , Cmd.none
+                            )
+
+                        _ ->
+                            ( Loading filter, Cmd.none )
+
+                Failed _ ->
                     ( model, Cmd.none )
 
         LocationSearchChange queryString ->
