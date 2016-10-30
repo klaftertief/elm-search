@@ -35,17 +35,17 @@ toQueryString { queryString } =
             else
                 [ ( "q", queryString ) ]
     in
-        "?" ++ String.join "&" (List.map queryPair pairs)
+        Http.url "" pairs
 
 
-queryPair : ( String, String ) -> String
-queryPair ( key, value ) =
-    Http.uriEncode key ++ "=" ++ Http.uriEncode value
+decodeQuery : String -> String
+decodeQuery query =
+    String.join "%20" (String.split "+" query)
 
 
 parseSearchString : String -> Search.Filter
 parseSearchString searchString =
-    case String.uncons searchString of
+    case String.uncons (decodeQuery searchString) of
         Just ( '?', rest ) ->
             let
                 parts =
@@ -63,7 +63,8 @@ parseSearchString searchString =
                         |> Dict.fromList
 
                 queryString =
-                    Dict.get "q" parts |> Maybe.withDefault ""
+                    Dict.get "q" parts
+                        |> Maybe.withDefault ""
 
                 query =
                     Search.queryListFromString queryString
