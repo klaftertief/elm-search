@@ -12,7 +12,7 @@ simple : (Chunk -> String) -> String -> Chunk -> Float
 simple extract query chunk =
     if query == (extract chunk) then
         noPenalty
-    else if String.contains query (extract chunk) then
+    else if String.contains (String.toLower query) (String.toLower <| extract chunk) then
         mediumPenalty * (1 - (toFloat (String.length query) / toFloat (String.length (extract chunk))))
     else
         maxPenalty
