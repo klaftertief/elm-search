@@ -1,4 +1,4 @@
-.PHONY: install server watch clean help build download local publish cache/packages-017 cache/packages-016
+.PHONY: install server watch clean help build download local publish cache/packages-017 cache/packages-018
 
 ELM_ENTRY := src/scripts/Web.elm
 ELM_FILES = $(shell find src -type f -name '*.elm')
@@ -31,7 +31,7 @@ LOCAL_PACKAGES = $(shell <elm-stuff/exact-dependencies.json bin/jq -r 'to_entrie
 
 build: $(BUILD_DIR) $(COMPILE_TARGETS) ## Compiles project files
 
-download: $(BUILD_DIR) cache $(BUILD_DIR)/0.16/index.json $(BUILD_DIR)/0.17/index.json ## Downloads docs files
+download: $(BUILD_DIR) cache $(BUILD_DIR)/0.18/index.json $(BUILD_DIR)/0.17/index.json ## Downloads docs files
 
 local: $(BUILD_DIR) $(BUILD_DIR)/local/index.json ## Downloads docs files from locally installed packages
 
@@ -71,13 +71,13 @@ $(BUILD_DIR)/0.17/index.json: cache/packages-017
 	@$(MAKE) $(shell cat $<)
 	@bin/jq '(input_filename|ltrimstr("cache/packages/")|rtrimstr("/documentation.json")|capture("(?<name>^.+)\/(?<version>\\d+\\.\\d+\\.\\d+$$)")) + {docs: .} | select(.docs[0]["generated-with-elm-version"] | startswith("0.17"))?' $(shell cat $<) | bin/jq -s '.' > $@
 
-cache/packages-016: cache
-	@echo $(call publishedPackages,0.16) > $@
+cache/packages-018: cache
+	@echo $(call publishedPackages,0.18) > $@
 
-$(BUILD_DIR)/0.16/index.json: cache/packages-016
-	@mkdir -p $(BUILD_DIR)/0.16
+$(BUILD_DIR)/0.18/index.json: cache/packages-018
+	@mkdir -p $(BUILD_DIR)/0.18
 	@$(MAKE) $(shell cat $<)
-	@bin/jq '(input_filename|ltrimstr("cache/packages/")|rtrimstr("/documentation.json")|capture("(?<name>^.+)\/(?<version>\\d+\\.\\d+\\.\\d+$$)")) + {docs: .} | select(.docs[0]["generated-with-elm-version"] | startswith("0.16"))?' $(shell cat $<) | bin/jq -s '.' > $@
+	@bin/jq '(input_filename|ltrimstr("cache/packages/")|rtrimstr("/documentation.json")|capture("(?<name>^.+)\/(?<version>\\d+\\.\\d+\\.\\d+$$)")) + {docs: .} | select(.docs[0]["generated-with-elm-version"] | startswith("0.18"))?' $(shell cat $<) | bin/jq -s '.' > $@
 
 $(BUILD_DIR)/local/index.json: $(LOCAL_PACKAGES)
 	@mkdir -p $(BUILD_DIR)/local
