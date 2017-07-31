@@ -1,13 +1,13 @@
 module Web exposing (..)
 
-import Html.App as Html
+import Html
 import Ports
 import Web.Model as Search exposing (..)
 import Web.Update as Search
 import Web.View as Search
 
 
-main : Program Flags
+main : Program Flags Model Msg
 main =
     Html.programWithFlags
         { init = Search.init

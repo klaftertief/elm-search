@@ -1,7 +1,8 @@
 module Docs.Name exposing (..)
 
-import Json.Decode as Decode exposing (Decoder, (:=))
+import Json.Decode as Decode exposing (Decoder)
 import String
+import Utils.Json
 
 
 type alias Name =
@@ -19,12 +20,12 @@ nameToString { home, name } =
 
 decoder : Decoder Name
 decoder =
-    Decode.customDecoder Decode.string fromString
+    Utils.Json.customDecoder Decode.string fromString
 
 
 fromString : String -> Result String Name
 fromString str =
-    case (List.reverse (String.split "." str)) of
+    case List.reverse (String.split "." str) of
         name :: home ->
             Ok (Name (List.reverse home |> String.join ".") name)
 

@@ -2,12 +2,13 @@ module Docs.Type exposing (..)
 
 import Char
 import Dict exposing (Dict)
-import Html exposing (..)
-import Json.Decode as Decode exposing (Decoder, (:=))
-import String
 import Docs.Name as Name exposing (Name)
-import Parse.Combinators exposing (..)
+import Html exposing (..)
+import Json.Decode as Decode exposing (Decoder)
+import Parse.Combinators as Parser exposing (..)
+import String
 import Utils.Code as Code exposing (arrow, colon, padded, space)
+import Utils.Json
 
 
 type Type
@@ -43,13 +44,13 @@ toHtml context tipe =
                 argsHtml =
                     List.concatMap (\arg -> toHtml Func arg ++ padded arrow) args
             in
-                maybeAddParens (argsHtml ++ toHtml Func result)
+            maybeAddParens (argsHtml ++ toHtml Func result)
 
         Var name ->
             [ text name ]
 
         Apply name [] ->
-            [ text (name.name) ]
+            [ text name.name ]
 
         Apply name args ->
             let
@@ -67,7 +68,7 @@ toHtml context tipe =
                 argsHtml =
                     List.concatMap (\arg -> space :: toHtml App arg) args
             in
-                maybeAddParens (text (name.name) :: argsHtml)
+            maybeAddParens (text name.name :: argsHtml)
 
         Tuple args ->
             List.map (toHtml Other) args
@@ -90,7 +91,7 @@ toHtml context tipe =
                         Just extName ->
                             text extName :: text " | " :: fieldsHtml
             in
-                text "{ " :: recordInsides ++ [ text " }" ]
+            text "{ " :: recordInsides ++ [ text " }" ]
 
 
 fieldToHtml : ( String, Type ) -> List (Html msg)
@@ -117,7 +118,7 @@ length context tipe =
                 argLengths =
                     List.map (\t -> 4 + length Func t) args
             in
-                parens + List.sum argLengths + length Func result
+            parens + List.sum argLengths + length Func result
 
         Var name ->
             String.length name
@@ -141,7 +142,7 @@ length context tipe =
                 argsLength =
                     List.sum (List.map (\t -> 1 + length App t) args)
             in
-                parens + String.length name + argsLength
+            parens + String.length name + argsLength
 
         Tuple args ->
             List.sum (List.map (\t -> 2 + length Other t) args)
@@ -162,12 +163,12 @@ length context tipe =
                         Just extName ->
                             2 + String.length extName
             in
-                recordLength + extLength
+            recordLength + extLength
 
 
 decoder : Decoder Type
 decoder =
-    Decode.customDecoder Decode.string parse
+    Utils.Json.customDecoder Decode.string parse
 
 
 
@@ -197,10 +198,10 @@ nextMappingValue : Mapping -> String
 nextMappingValue mapping =
     let
         base =
-            (Dict.size mapping) - (Dict.size defaultMapping)
+            Dict.size mapping - Dict.size defaultMapping
 
         code =
-            (base % 26) + (Char.toCode 'a')
+            (base % 26) + Char.toCode 'a'
 
         string =
             String.fromChar (Char.fromCode code)
@@ -208,7 +209,7 @@ nextMappingValue mapping =
         times =
             (base // 26) + 1
     in
-        String.repeat times string
+    String.repeat times string
 
 
 updateMapping : Type -> Mapping -> Mapping
@@ -222,21 +223,21 @@ updateMapping tipe mapping =
                     (nextMappingValue mapping)
                     mapping
     in
-        case tipe of
-            Function args result ->
-                List.foldl updateMapping mapping (List.append args [ result ])
+    case tipe of
+        Function args result ->
+            List.foldl updateMapping mapping (List.append args [ result ])
 
-            Var name ->
-                updateMappingFor name
+        Var name ->
+            updateMappingFor name
 
-            Apply name args ->
-                List.foldl updateMapping mapping args
+        Apply name args ->
+            List.foldl updateMapping mapping args
 
-            Tuple args ->
-                List.foldl updateMapping mapping args
+        Tuple args ->
+            List.foldl updateMapping mapping args
 
-            Record fields ext ->
-                List.foldl updateMapping mapping (List.map (\( _, t ) -> t) fields)
+        Record fields ext ->
+            List.foldl updateMapping mapping (List.map (\( _, t ) -> t) fields)
 
 
 normalize : Type -> Type
@@ -247,34 +248,34 @@ normalize tipe =
 normalizeWithMapping : Mapping -> Type -> Type
 normalizeWithMapping mapping tipe =
     let
-        normalize' =
+        normalize_ =
             normalizeWithMapping mapping
     in
-        case tipe of
-            Function args result ->
-                Function (List.map normalize' args)
-                    (normalize' result)
+    case tipe of
+        Function args result ->
+            Function (List.map normalize_ args)
+                (normalize_ result)
 
-            Var name ->
-                let
-                    name' =
-                        case Dict.get name mapping of
-                            Just n ->
-                                n
+        Var name ->
+            let
+                name_ =
+                    case Dict.get name mapping of
+                        Just n ->
+                            n
 
-                            Nothing ->
-                                name
-                in
-                    Var name'
+                        Nothing ->
+                            name
+            in
+            Var name_
 
-            Apply name args ->
-                Apply name (List.map normalize' args)
+        Apply name args ->
+            Apply name (List.map normalize_ args)
 
-            Tuple args ->
-                Tuple (List.map normalize' args)
+        Tuple args ->
+            Tuple (List.map normalize_ args)
 
-            Record fields ext ->
-                Record (List.map (\( k, v ) -> ( k, normalize' v )) fields) ext
+        Record fields ext ->
+            Record (List.map (\( k, v ) -> ( k, normalize_ v )) fields) ext
 
 
 
@@ -293,7 +294,7 @@ parse tipeString =
 elmVarWith : Parser Char -> Parser String
 elmVarWith starter =
     map2 (::) starter (zeroOrMore varChar)
-        |> map String.fromList
+        |> Parser.map String.fromList
 
 
 varChar : Parser Char
@@ -303,7 +304,7 @@ varChar =
 
 spaces : Parser ()
 spaces =
-    map (always ()) (zeroOrMore (char ' '))
+    Parser.map (always ()) (zeroOrMore (char ' '))
 
 
 commasLeading : Parser a -> Parser (List a)
@@ -317,7 +318,7 @@ commasLeading parser =
 
 var : Parser Type
 var =
-    map Var (elmVarWith lower)
+    Parser.map Var (elmVarWith lower)
 
 
 
@@ -332,12 +333,13 @@ name =
 nameHelp : List String -> Parser Name
 nameHelp seen =
     elmVarWith upper
-        `andThen`
-            \str ->
+        |> andThen
+            (\str ->
                 oneOf
                     [ ignore1 (char '.') (nameHelp (str :: seen))
                     , succeed (Name (String.join "." (List.reverse seen)) str)
                     ]
+            )
 
 
 apply : Parser Type
@@ -351,7 +353,7 @@ applyTerm : Parser Type
 applyTerm =
     lazy <|
         \_ ->
-            oneOf [ var, map (\n -> Apply n []) name, record, parenTipe ]
+            oneOf [ var, Parser.map (\n -> Apply n []) name, record, parenTipe ]
 
 
 
@@ -364,7 +366,7 @@ record =
         \_ ->
             middle (ignore1 (char '{') spaces)
                 (oneOf
-                    [ elmVarWith lower `andThen` recordHelp
+                    [ elmVarWith lower |> andThen recordHelp
                     , succeed (Record [] Nothing)
                     ]
                 )
@@ -380,7 +382,7 @@ recordHelp lowerName =
                     [ map2 (\t rest -> Record (( lowerName, t ) :: rest) Nothing)
                         (ignore2 (char ':') spaces tipe)
                         (commasLeading field)
-                    , map (\fields -> Record fields (Just lowerName))
+                    , Parser.map (\fields -> Record fields (Just lowerName))
                         (ignore2 (char '|') spaces (map2 (::) field (commasLeading field)))
                     ]
 
@@ -440,7 +442,7 @@ parenTipe : Parser Type
 parenTipe =
     lazy <|
         \_ ->
-            map tuplize <|
+            Parser.map tuplize <|
                 middle (ignore1 (char '(') spaces)
                     (oneOf
                         [ map2 (::) tipe (commasLeading tipe)

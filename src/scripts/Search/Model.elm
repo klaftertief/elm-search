@@ -1,7 +1,7 @@
 module Search.Model exposing (..)
 
-import Docs.Type as Type
 import Docs.Package as Package exposing (Package)
+import Docs.Type as Type
 import Search.Chunk as Chunk exposing (Chunk)
 import Search.Distance as Distance
 import String
@@ -118,9 +118,9 @@ runFilter { query } { chunks } =
                         |> filterByDistance (Distance.lowPenalty / 2)
                         |> prioritizeChunks
                         |> List.sortBy (\( d, c ) -> ( d, c.context.name, c.context.moduleName, c.context.packageName ))
-                        |> List.map snd
+                        |> List.map Tuple.second
     in
-        { chunks = resultChunks }
+    { chunks = resultChunks }
 
 
 distanceByQuery : Query -> List ( Float, Chunk ) -> List ( Float, Chunk )
@@ -143,12 +143,12 @@ distanceByQuery query chunks =
                 Module name ->
                     Distance.simple (.context >> .moduleName) name
     in
-        List.map (\( d, c ) -> ( d + distance c, c )) chunks
+    List.map (\( d, c ) -> ( d + distance c, c )) chunks
 
 
 filterByDistance : Float -> List ( Float, Chunk ) -> List ( Float, Chunk )
 filterByDistance distance weightedChunks =
-    List.filter (fst >> (>=) distance) weightedChunks
+    List.filter (Tuple.first >> (>=) distance) weightedChunks
 
 
 prioritizeChunks : List ( Float, Chunk ) -> List ( Float, Chunk )
@@ -165,14 +165,14 @@ prioritizeChunk ( distance, chunk ) =
         priority =
             Distance.lowPenalty
     in
-        if userName == "elm-lang" && packageName == "core" then
-            ( distance - priority / 2, chunk )
-        else if userName == "elm-lang" then
-            ( distance - priority / 3, chunk )
-        else if userName == "elm-community" then
-            ( distance - priority / 4, chunk )
-        else
-            ( distance, chunk )
+    if userName == "elm-lang" && packageName == "core" then
+        ( distance - priority / 2, chunk )
+    else if userName == "elm-lang" then
+        ( distance - priority / 3, chunk )
+    else if userName == "elm-community" then
+        ( distance - priority / 4, chunk )
+    else
+        ( distance, chunk )
 
 
 indexedPair : (a -> b) -> a -> ( b, a )

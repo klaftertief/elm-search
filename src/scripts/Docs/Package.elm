@@ -1,9 +1,10 @@
 module Docs.Package exposing (..)
 
-import Json.Decode as Decode exposing (Decoder, (:=))
 import Docs.Module as Module exposing (Module)
 import Docs.Version as Version exposing (Version)
+import Json.Decode as Decode exposing (Decoder)
 import String
+import Utils.Json
 
 
 type alias Package =
@@ -20,10 +21,10 @@ decoder =
         make ( user, name ) version modules =
             Package user name version modules
     in
-        Decode.object3 make
-            ("name" := Decode.customDecoder Decode.string userNameFromString)
-            ("version" := Version.decoder)
-            ("docs" := Decode.list Module.decoder)
+    Decode.map3 make
+        (Decode.field "name" (Utils.Json.customDecoder Decode.string userNameFromString))
+        (Decode.field "version" Version.decoder)
+        (Decode.field "docs" (Decode.list Module.decoder))
 
 
 userNameFromString : String -> Result String ( String, String )

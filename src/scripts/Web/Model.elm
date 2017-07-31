@@ -1,8 +1,8 @@
 module Web.Model exposing (..)
 
 import Dict
-import Http
 import Docs.Package as Package exposing (Package)
+import Http
 import Search.Model as Search
 import String
 
@@ -28,14 +28,10 @@ type alias Flags =
 
 toQueryString : Search.Filter -> String
 toQueryString { queryString } =
-    let
-        pairs =
-            if String.isEmpty queryString then
-                []
-            else
-                [ ( "q", queryString ) ]
-    in
-        Http.url "" pairs
+    if String.isEmpty queryString then
+        ""
+    else
+        "?q=" ++ Http.encodeUri queryString
 
 
 decodeQuery : String -> String
@@ -55,7 +51,9 @@ parseSearchString searchString =
                             (\pair ->
                                 case pair of
                                     [ k, v ] ->
-                                        Just ( Http.uriDecode k, Http.uriDecode v )
+                                        Maybe.map2 (,)
+                                            (Http.decodeUri k)
+                                            (Http.decodeUri v)
 
                                     _ ->
                                         Nothing
@@ -69,10 +67,10 @@ parseSearchString searchString =
                 query =
                     Search.queryListFromString queryString
             in
-                { queryString = queryString
-                , query = query
-                , lastQuery = ""
-                }
+            { queryString = queryString
+            , query = query
+            , lastQuery = ""
+            }
 
         _ ->
             Search.initialFilter

@@ -17,4 +17,4 @@ myOptions =
         options =
             Markdown.defaultOptions
     in
-        { options | defaultHighlighting = Just "elm" }
+    { options | defaultHighlighting = Just "elm" }

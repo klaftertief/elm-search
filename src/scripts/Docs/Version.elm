@@ -1,7 +1,8 @@
 module Docs.Version exposing (..)
 
-import Json.Decode as Decode exposing (Decoder, (:=))
+import Json.Decode as Decode exposing (Decoder)
 import String
+import Utils.Json
 
 
 type alias Version =
@@ -15,7 +16,7 @@ vsnToString ( major, minor, patch ) =
 
 decoder : Decoder Version
 decoder =
-    Decode.customDecoder Decode.string fromString
+    Utils.Json.customDecoder Decode.string fromString
 
 
 fromString : String -> Result String Version
