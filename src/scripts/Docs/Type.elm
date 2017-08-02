@@ -1,11 +1,21 @@
-module Docs.Type exposing (..)
+module Docs.Type
+    exposing
+        ( Context(..)
+        , Type(..)
+        , decoder
+        , length
+        , normalize
+        , parse
+        , reserverdVars
+        , toHtml
+        )
 
 import Char
 import Dict exposing (Dict)
 import Docs.Name as Name exposing (Name)
+import Elm.Documentation.Type as Type
 import Html exposing (..)
 import Json.Decode as Decode exposing (Decoder)
-import Parse.Combinators as Parser exposing (..)
 import String
 import Utils.Code as Code exposing (arrow, colon, padded, space)
 import Utils.Json
@@ -166,9 +176,40 @@ length context tipe =
             recordLength + extLength
 
 
+parse : String -> Result String Type
+parse =
+    Decode.decodeString decoder
+
+
 decoder : Decoder Type
 decoder =
-    Utils.Json.customDecoder Decode.string parse
+    let
+        toInternal functionArgs elmType =
+            case elmType of
+                Type.Var name ->
+                    Var name
+
+                Type.Lambda first ((Type.Lambda _ _) as next) ->
+                    toInternal (newScope first :: functionArgs) next
+
+                Type.Lambda almostLast last ->
+                    Function
+                        (List.reverse (newScope almostLast :: functionArgs))
+                        (newScope last)
+
+                Type.Tuple args ->
+                    Tuple (List.map newScope args)
+
+                Type.Type name args ->
+                    Apply { name = name, home = "" } (List.map newScope args)
+
+                Type.Record args extensible ->
+                    Record (List.map (Tuple.mapSecond newScope) args) extensible
+
+        newScope =
+            toInternal []
+    in
+    Decode.andThen (Decode.succeed << newScope) Type.decoder
 
 
 
@@ -276,187 +317,3 @@ normalizeWithMapping mapping tipe =
 
         Record fields ext ->
             Record (List.map (\( k, v ) -> ( k, normalize_ v )) fields) ext
-
-
-
--- PARSE
-
-
-parse : String -> Result String Type
-parse tipeString =
-    run tipe tipeString
-
-
-
--- HELPERS
-
-
-elmVarWith : Parser Char -> Parser String
-elmVarWith starter =
-    map2 (::) starter (zeroOrMore varChar)
-        |> Parser.map String.fromList
-
-
-varChar : Parser Char
-varChar =
-    satisfy (\c -> Char.isLower c || Char.isUpper c || c == '_' || c == '\'' || Char.isDigit c)
-
-
-spaces : Parser ()
-spaces =
-    Parser.map (always ()) (zeroOrMore (char ' '))
-
-
-commasLeading : Parser a -> Parser (List a)
-commasLeading parser =
-    zeroOrMore (ignore3 spaces (char ',') spaces parser)
-
-
-
--- TYPE VARIABLES
-
-
-var : Parser Type
-var =
-    Parser.map Var (elmVarWith lower)
-
-
-
--- TYPE APPLICATIONS
-
-
-name : Parser Name
-name =
-    nameHelp []
-
-
-nameHelp : List String -> Parser Name
-nameHelp seen =
-    elmVarWith upper
-        |> andThen
-            (\str ->
-                oneOf
-                    [ ignore1 (char '.') (nameHelp (str :: seen))
-                    , succeed (Name (String.join "." (List.reverse seen)) str)
-                    ]
-            )
-
-
-apply : Parser Type
-apply =
-    lazy <|
-        \_ ->
-            map2 Apply name (zeroOrMore (ignore1 spaces applyTerm))
-
-
-applyTerm : Parser Type
-applyTerm =
-    lazy <|
-        \_ ->
-            oneOf [ var, Parser.map (\n -> Apply n []) name, record, parenTipe ]
-
-
-
--- RECORDS
-
-
-record : Parser Type
-record =
-    lazy <|
-        \_ ->
-            middle (ignore1 (char '{') spaces)
-                (oneOf
-                    [ elmVarWith lower |> andThen recordHelp
-                    , succeed (Record [] Nothing)
-                    ]
-                )
-                (ignore1 spaces (char '}'))
-
-
-recordHelp : String -> Parser Type
-recordHelp lowerName =
-    lazy <|
-        \_ ->
-            ignore1 spaces <|
-                oneOf
-                    [ map2 (\t rest -> Record (( lowerName, t ) :: rest) Nothing)
-                        (ignore2 (char ':') spaces tipe)
-                        (commasLeading field)
-                    , Parser.map (\fields -> Record fields (Just lowerName))
-                        (ignore2 (char '|') spaces (map2 (::) field (commasLeading field)))
-                    ]
-
-
-field : Parser ( String, Type )
-field =
-    lazy <|
-        \_ ->
-            map2 (,) (elmVarWith lower) (ignore3 spaces (char ':') spaces tipe)
-
-
-
--- FUNCTIONS
-
-
-tipe : Parser Type
-tipe =
-    lazy <|
-        \_ ->
-            map2 (buildFunction []) tipeTerm arrowTerms
-
-
-buildFunction : List Type -> Type -> List Type -> Type
-buildFunction args currentType remainingTypes =
-    case remainingTypes of
-        [] ->
-            if List.isEmpty args then
-                currentType
-            else
-                case currentType of
-                    -- This is a hacky way to normalise redundant parens for functions that return functions
-                    Function functionArgs functionType ->
-                        Function (List.reverse args ++ functionArgs) functionType
-
-                    _ ->
-                        Function (List.reverse args) currentType
-
-        t :: ts ->
-            buildFunction (currentType :: args) t ts
-
-
-arrowTerms : Parser (List Type)
-arrowTerms =
-    lazy <|
-        \_ ->
-            zeroOrMore (ignore3 spaces (string "->") spaces tipeTerm)
-
-
-tipeTerm : Parser Type
-tipeTerm =
-    lazy <|
-        \_ ->
-            oneOf [ var, apply, record, parenTipe ]
-
-
-parenTipe : Parser Type
-parenTipe =
-    lazy <|
-        \_ ->
-            Parser.map tuplize <|
-                middle (ignore1 (char '(') spaces)
-                    (oneOf
-                        [ map2 (::) tipe (commasLeading tipe)
-                        , succeed []
-                        ]
-                    )
-                    (ignore1 spaces (char ')'))
-
-
-tuplize : List Type -> Type
-tuplize args =
-    case args of
-        [ t ] ->
-            t
-
-        _ ->
-            Tuple args
