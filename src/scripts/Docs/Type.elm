@@ -201,10 +201,14 @@ decoder =
                     Tuple (List.map newScope args)
 
                 Type.Type name args ->
-                    Apply { name = name, home = "" } (List.map newScope args)
+                    Apply (toName name) (List.map newScope args)
 
                 Type.Record args extensible ->
                     Record (List.map (Tuple.mapSecond newScope) args) extensible
+
+        toName str =
+            Name.fromString str
+                |> Result.withDefault { name = str, home = "" }
 
         newScope =
             toInternal []
