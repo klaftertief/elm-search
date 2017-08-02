@@ -13,12 +13,12 @@ init filter packages =
         _ =
             List.length model.index.chunks
     in
-        case filter.query of
-            [ query ] ->
-                update RunFilter model
+    case filter.query of
+        [ query ] ->
+            update RunFilter model
 
-            _ ->
-                model
+        _ ->
+            model
 
 
 update : Msg -> Model -> Model
@@ -41,9 +41,9 @@ update msg model =
                         , query = queryListFromString queryString
                     }
             in
-                { model
-                    | filter = filter
-                }
+            { model
+                | filter = filter
+            }
 
         SetFilterQueryStringAndRunFilter queryString ->
             update (SetFilterQueryString queryString) model
@@ -54,7 +54,7 @@ update msg model =
                 newFilter filter =
                     { filter | lastQuery = model.filter.queryString }
             in
-                { model
-                    | result = runFilter model.filter model.index
-                    , filter = newFilter model.filter
-                }
+            { model
+                | result = runFilter model.filter model.index
+                , filter = newFilter model.filter
+            }

@@ -1,10 +1,10 @@
 module Search.View exposing (..)
 
+import Docs.Type as Type exposing (Type)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Logo
-import Docs.Type as Type exposing (Type)
 import Search.Chunk as Chunk exposing (Chunk)
 import Search.Model as Model exposing (..)
 import String
@@ -40,28 +40,28 @@ viewSearchForm { filter, index, result } =
         isDisabled =
             List.isEmpty index.chunks
     in
-        Html.form
-            [ classList
-                [ ( "searchForm", True )
-                , ( "searchFormDisabled", isDisabled )
-                ]
-            , action "."
-            , onSubmit RunFilter
+    Html.form
+        [ classList
+            [ ( "searchForm", True )
+            , ( "searchFormDisabled", isDisabled )
             ]
-            [ input
-                [ name "q"
-                , type' "search"
-                , onInput SetFilterQueryString
-                , defaultValue filter.queryString
-                , autofocus True
-                ]
-                []
-            , button
-                [ type' "submit"
-                , disabled isDisabled
-                ]
-                [ text "Search" ]
+        , action "."
+        , onSubmit RunFilter
+        ]
+        [ input
+            [ name "q"
+            , type_ "search"
+            , onInput SetFilterQueryString
+            , defaultValue filter.queryString
+            , autofocus True
             ]
+            []
+        , button
+            [ type_ "submit"
+            , disabled isDisabled
+            ]
+            [ text "Search" ]
+        ]
 
 
 viewSearchBody : Model -> Html Msg
@@ -73,8 +73,8 @@ viewSearchBody model =
             else
                 viewSearchResults model
     in
-        div [ class "searchBody" ]
-            [ searchBody ]
+    div [ class "searchBody" ]
+        [ searchBody ]
 
 
 viewSearchIntro : Html Msg
@@ -96,12 +96,12 @@ viewSearchIntro =
                     [ text query ]
                 ]
     in
-        div [ class "searchIntro" ]
-            [ h1 [] [ text "Welcome to Elm Search" ]
-            , p [] [ text "Search the modules of the latest Elm packages by either function name or by approximate type signature." ]
-            , h2 [] [ text "Example queries" ]
-            , ul [] (List.map exampleSearchItem exampleQueries)
-            ]
+    div [ class "searchIntro" ]
+        [ h1 [] [ text "Welcome to Elm Search" ]
+        , p [] [ text "Search the modules of the latest Elm packages by either function name or by approximate type signature." ]
+        , h2 [] [ text "Example queries" ]
+        , ul [] (List.map exampleSearchItem exampleQueries)
+        ]
 
 
 viewSearchResults : Model -> Html Msg
@@ -119,8 +119,8 @@ viewSearchResults { filter, result } =
             else
                 [ p [] [ text "No Results Found." ] ]
     in
-        div [ class "searchResult" ]
-            (viewQuery :: viewChunks)
+    div [ class "searchResult" ]
+        (viewQuery :: viewChunks)
 
 
 viewChunk : Chunk -> Html Msg
@@ -139,7 +139,7 @@ viewChunk chunk =
                 ]
             , div [ class "chunkModule" ]
                 [ a [ href (Chunk.pathToModule chunk.context) ]
-                    [ text (chunk.context.moduleName) ]
+                    [ text chunk.context.moduleName ]
                 ]
             ]
         ]
@@ -179,4 +179,4 @@ longFunctionAnnotation args result =
             [ text "    ", colon, text "  " ]
                 :: List.repeat (List.length args) [ text "    ", arrow, space ]
     in
-        List.map2 (++) starters tipeHtml
+    List.map2 (++) starters tipeHtml

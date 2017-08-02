@@ -17,20 +17,21 @@ viewWithSize s =
         size =
             toString s
     in
-        svg
-            [ width size
-            , height size
-            , viewBox "2 2 132 132"
-            , Svg.Attributes.style "overflow: visible;"
+    svg
+        [ width size
+        , height size
+        , viewBox "2 2 132 132"
+        , Svg.Attributes.style "overflow: visible;"
+        ]
+        [ g
+            [ stroke "#fff"
+            , strokeWidth "2"
+            , strokeLinejoin "round"
+
+            --, transform "rotate(90 64 64)"
             ]
-            [ g
-                [ stroke "#fff"
-                , strokeWidth "2"
-                , strokeLinejoin "round"
-                  --, transform "rotate(90 64 64)"
-                ]
-                parts
-            ]
+            parts
+        ]
 
 
 parts : List (Svg msg)
@@ -47,12 +48,12 @@ parts =
 
 halfHypothenuse : Float
 halfHypothenuse =
-    128 / (sqrt 2)
+    128 / sqrt 2
 
 
 quarterHypothenuse : Float
 quarterHypothenuse =
-    128 / 2 / (sqrt 2)
+    128 / 2 / sqrt 2
 
 
 orange : String
@@ -85,11 +86,11 @@ type alias Transformation =
 toTransform : Transformation -> String
 toTransform { movementX, movementY, rotation } =
     "translate("
-        ++ (toString movementX)
+        ++ toString movementX
         ++ " "
-        ++ (toString movementY)
+        ++ toString movementY
         ++ ") rotate("
-        ++ (toString rotation)
+        ++ toString rotation
         ++ ")"
 
 
@@ -148,11 +149,12 @@ greenDiamond transformation flip =
     polygon
         [ points "0,0 64,0 96,32 32,32"
         , fill green
-        , transform
-            <| (toTransform transformation)
-            ++ if flip then
-                " scale(1 -1)"
-               else
-                ""
+        , transform <|
+            toTransform transformation
+                ++ (if flip then
+                        " scale(1 -1)"
+                    else
+                        ""
+                   )
         ]
         []

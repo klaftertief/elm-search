@@ -1,12 +1,12 @@
 module Web.Update exposing (..)
 
+import Docs.Package as Package
 import Http
 import Json.Decode as Decode
-import Task
-import Docs.Package as Package
 import Ports
 import Search.Model as Search
 import Search.Update as Search
+import Task
 import Web.Model as Model exposing (..)
 
 
@@ -16,9 +16,9 @@ init { index, search } =
         filter =
             parseSearchString search
     in
-        ( Loading filter
-        , getPackages index
-        )
+    ( Loading filter
+    , getPackages index
+    )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -42,9 +42,9 @@ update msg model =
                 search =
                     Search.init filter packages
             in
-                ( Ready search
-                , Cmd.none
-                )
+            ( Ready search
+            , Cmd.none
+            )
 
         SearchMsg searchMsg ->
             case model of
@@ -61,7 +61,7 @@ update msg model =
                                 _ ->
                                     Cmd.none
                     in
-                        ( Ready newSearch, cmd )
+                    ( Ready newSearch, cmd )
 
                 Loading filter ->
                     case searchMsg of
@@ -95,7 +95,7 @@ update msg model =
                             else
                                 search
                     in
-                        ( Ready newSearch, Cmd.none )
+                    ( Ready newSearch, Cmd.none )
 
                 _ ->
                     ( model, Cmd.none )
@@ -108,9 +108,14 @@ getPackages url =
             [ Decode.map Just Package.decoder, Decode.succeed Nothing ]
                 |> Decode.oneOf
                 |> Decode.list
-    in
-        Http.get decodeSafe url
-            |> Task.perform Fail
-                (\maybePackages ->
+
+        toMsg result =
+            case result of
+                Err e ->
+                    Fail e
+
+                Ok maybePackages ->
                     Load (List.filterMap identity maybePackages)
-                )
+    in
+    Http.get url decodeSafe
+        |> Http.send toMsg

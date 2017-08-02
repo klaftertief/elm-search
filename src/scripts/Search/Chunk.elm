@@ -1,10 +1,10 @@
 module Search.Chunk exposing (..)
 
-import String
 import Docs.Entry as Entry exposing (Entry)
-import Docs.Type as Type exposing (Type)
 import Docs.Package as Package exposing (Package)
+import Docs.Type as Type exposing (Type)
 import Docs.Version as Version exposing (Version)
+import String
 
 
 type alias Chunk =

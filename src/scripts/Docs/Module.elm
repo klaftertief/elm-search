@@ -1,8 +1,8 @@
 module Docs.Module exposing (..)
 
-import Json.Decode as Decode exposing (Decoder, (:=))
 import Docs.Entry as Entry exposing (Entry)
 import Docs.Version as Version exposing (Version)
+import Json.Decode as Decode exposing (Decoder)
 
 
 type alias Module =
@@ -14,12 +14,13 @@ type alias Module =
 
 decoder : Decoder Module
 decoder =
-    Decode.object3 Module
-        ("name" := Decode.string)
-        ("values" := Decode.list Entry.decoder)
-        ("generated-with-elm-version"
-            := Decode.oneOf
+    Decode.map3 Module
+        (Decode.field "name" Decode.string)
+        (Decode.field "values" (Decode.list Entry.decoder))
+        (Decode.field "generated-with-elm-version"
+            (Decode.oneOf
                 [ Decode.map Just Version.decoder
                 , Decode.succeed Nothing
                 ]
+            )
         )

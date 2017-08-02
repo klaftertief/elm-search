@@ -1,16 +1,16 @@
 module Search.Distance exposing (..)
 
 import Dict exposing (Dict)
-import String
-import List.Extra
 import Docs.Name as Name exposing (Name)
 import Docs.Type as Type exposing (..)
+import List.Extra
 import Search.Chunk as Chunk exposing (Chunk)
+import String
 
 
 simple : (Chunk -> String) -> String -> Chunk -> Float
 simple extract query chunk =
-    if query == (extract chunk) then
+    if query == extract chunk then
         noPenalty
     else if String.contains (String.toLower query) (String.toLower <| extract chunk) then
         mediumPenalty * (1 - (toFloat (String.length query) / toFloat (String.length (extract chunk))))
@@ -55,7 +55,7 @@ distance needle hay =
                 resultDistance =
                     distance resultN resultH
             in
-                (argsDistance + resultDistance) / 2
+            (argsDistance + resultDistance) / 2
 
         -- `Var String`
         -- `a` ~> `Var "a"`
@@ -113,20 +113,20 @@ distanceList needle hay =
         diffLength =
             maxLength - sharedLength
     in
-        if diffLength > 1 then
-            maxPenalty
-        else
-            -- TODO: optimize, maybe add penalty for permutations
-            List.Extra.permutations needle
-                |> List.map
-                    (\curr ->
-                        List.map2 distance curr hay
-                            |> List.sum
-                            |> (+) (toFloat diffLength * maxPenalty)
-                            |> (flip (/)) (toFloat maxLength)
-                    )
-                |> List.minimum
-                |> Maybe.withDefault maxPenalty
+    if diffLength > 1 then
+        maxPenalty
+    else
+        -- TODO: optimize, maybe add penalty for permutations
+        List.Extra.permutations needle
+            |> List.map
+                (\curr ->
+                    List.map2 distance curr hay
+                        |> List.sum
+                        |> (+) (toFloat diffLength * maxPenalty)
+                        |> flip (/) (toFloat maxLength)
+                )
+            |> List.minimum
+            |> Maybe.withDefault maxPenalty
 
 
 distanceName : String -> String -> Float
@@ -155,15 +155,15 @@ distanceVarApply varName applyName =
         maybeReservedVarTypeList =
             Dict.get varName reserverdVars
     in
-        case maybeReservedVarTypeList of
-            Just typeList ->
-                if List.any ((==) applyName.name) typeList then
-                    lowPenalty
-                else
-                    maxPenalty
+    case maybeReservedVarTypeList of
+        Just typeList ->
+            if List.any ((==) applyName.name) typeList then
+                lowPenalty
+            else
+                maxPenalty
 
-            Nothing ->
-                mediumPenalty
+        Nothing ->
+            mediumPenalty
 
 
 distanceApply : ( Name, List Type ) -> ( Name, List Type ) -> Float

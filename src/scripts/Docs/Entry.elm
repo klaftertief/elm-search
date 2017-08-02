@@ -1,7 +1,7 @@
 module Docs.Entry exposing (..)
 
-import Json.Decode as Decode exposing (Decoder, (:=))
 import Docs.Type as Type exposing (Type)
+import Json.Decode as Decode exposing (Decoder)
 
 
 type alias Entry =
@@ -13,7 +13,7 @@ type alias Entry =
 
 decoder : Decoder Entry
 decoder =
-    Decode.object3 Entry
-        ("name" := Decode.string)
-        ("comment" := Decode.string)
-        ("type" := Type.decoder)
+    Decode.map3 Entry
+        (Decode.field "name" Decode.string)
+        (Decode.field "comment" Decode.string)
+        (Decode.field "type" Type.decoder)
