@@ -6,7 +6,6 @@ import Json.Decode as Decode
 import Ports
 import Search.Model as Search
 import Search.Update as Search
-import Task
 import Web.Model as Model exposing (..)
 
 
