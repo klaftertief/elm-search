@@ -12,6 +12,7 @@ import Dict exposing (Dict)
 import Docs.Name as Name exposing (Name)
 import Elm.Documentation.Type as Type
 import Json.Decode as Decode exposing (Decoder)
+import Json.Encode as Encode
 import String
 import Utils.Json
 
@@ -26,7 +27,7 @@ type Type
 
 parse : String -> Result String Type
 parse =
-    Decode.decodeString decoder
+    Decode.decodeValue decoder << Encode.string
 
 
 decoder : Decoder Type
