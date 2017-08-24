@@ -13,8 +13,6 @@ import Docs.Name as Name exposing (Name)
 import Elm.Documentation.Type as Type
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
-import String
-import Utils.Json
 
 
 type Type
@@ -32,37 +30,37 @@ parse =
 
 decoder : Decoder Type
 decoder =
-    let
-        toInternal functionArgs elmType =
-            case elmType of
-                Type.Var name ->
-                    Var name
+    Decode.andThen (Decode.succeed << toInternal []) Type.decoder
 
-                Type.Lambda first ((Type.Lambda _ _) as next) ->
-                    toInternal (newScope first :: functionArgs) next
 
-                Type.Lambda almostLast last ->
-                    Function
-                        (List.reverse (newScope almostLast :: functionArgs))
-                        (newScope last)
+toInternal : List Type -> Type.Type -> Type
+toInternal functionArgs elmType =
+    case elmType of
+        Type.Var name ->
+            Var name
 
-                Type.Tuple args ->
-                    Tuple (List.map newScope args)
+        Type.Lambda first ((Type.Lambda _ _) as next) ->
+            toInternal (toInternal [] first :: functionArgs) next
 
-                Type.Type name args ->
-                    Apply (toName name) (List.map newScope args)
+        Type.Lambda almostLast last ->
+            Function
+                (List.reverse (toInternal [] almostLast :: functionArgs))
+                (toInternal [] last)
 
-                Type.Record args extensible ->
-                    Record (List.map (Tuple.mapSecond newScope) args) extensible
+        Type.Tuple args ->
+            Tuple (List.map (toInternal []) args)
 
-        toName str =
-            Name.fromString str
-                |> Result.withDefault { name = str, home = "" }
+        Type.Type name args ->
+            Apply (toName name) (List.map (toInternal []) args)
 
-        newScope =
-            toInternal []
-    in
-    Decode.andThen (Decode.succeed << newScope) Type.decoder
+        Type.Record args extensible ->
+            Record (List.map (Tuple.mapSecond (toInternal [])) args) extensible
+
+
+toName : String -> Name.Name
+toName str =
+    Name.fromString str
+        |> Result.withDefault { name = str, home = "" }
 
 
 
