@@ -8,15 +8,11 @@ import String
 
 
 type Model
-    = Loading Search.Filter
-    | Failed Http.Error
-    | Ready Search.Model
+    = Ready Search.Model
 
 
 type Msg
-    = Fail Http.Error
-    | Load (List Package)
-    | SearchMsg Search.Msg
+    = SearchMsg Search.Msg
     | LocationSearchChange String
 
 

@@ -1,18 +1,30 @@
 {
   "name": "elm-search",
   "version": "1.0.0",
-  "description": "",
+  "description": "an API search engine for all published Elm packages",
   "main": "index.js",
   "directories": {
     "test": "tests"
   },
-  "devDependencies": {
-    "elm": "^0.18.0"
-  },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "elm": "elm"
+    "compile-setup": "elm make src/scripts/Setup.elm --yes --output build/setup.js",
+    "compile-main": "elm make build/Main.elm --yes --output build/main.js",
+    "build-main": "./index.js ./build/setup.js ./build/Main.elm",
+    "make": "npm run compile-setup && npm run build-main && npm run compile-main"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/klaftertief/elm-search.git"
   },
   "author": "",
-  "license": "ISC"
+  "license": "BSD-3-Clause",
+  "bugs": {
+    "url": "https://github.com/klaftertief/elm-search/issues"
+  },
+  "homepage": "https://github.com/klaftertief/elm-search#readme",
+  "devDependencies": {
+    "elm": "^0.18.0",
+    "elm-test": "^0.18.9",
+    "xhr2": "^0.1.4"
+  }
 }
