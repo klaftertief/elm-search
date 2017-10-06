@@ -66,7 +66,7 @@ toInternalHelp functionArgs elmType =
 toName : String -> Name.Name
 toName str =
     Name.fromString str
-        |> Result.withDefault { name = str, home = "" }
+        |> Maybe.withDefault { name = str, home = "" }
 
 
 

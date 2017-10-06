@@ -1,7 +1,6 @@
 module Search.Chunk exposing (..)
 
-import Docs.Entry as Entry exposing (Entry)
-import Docs.Package as Package exposing (Package)
+import Docs.Package exposing (Entry, Package)
 import Docs.Type as Type exposing (Type)
 import Docs.Version as Version exposing (Version)
 import String
@@ -50,7 +49,7 @@ toChunk package moduleName elmVersion { name, docs, tipe } =
 
 identifierHome : Context -> String
 identifierHome { userName, packageName, packageVersion } =
-    [ userName, packageName, Version.vsnToString packageVersion ]
+    [ userName, packageName, Version.toString packageVersion ]
         |> String.join "/"
 
 
@@ -61,7 +60,7 @@ rootUrl =
 
 pathToPackage : Context -> String
 pathToPackage { userName, packageName, packageVersion } =
-    [ rootUrl, "packages", userName, packageName, Version.vsnToString packageVersion ]
+    [ rootUrl, "packages", userName, packageName, Version.toString packageVersion ]
         |> String.join "/"
 
 

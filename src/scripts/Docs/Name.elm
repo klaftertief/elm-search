@@ -1,44 +1,46 @@
-module Docs.Name exposing (..)
+module Docs.Name exposing (Name, decoder, fromString, pathTo)
 
-import Json.Decode as Decode exposing (Decoder)
-import String
-import Utils.Json
+import Json.Decode as Decode
 
 
 type alias Name =
-    { home : String
-    , name : String
+    { name : String
+    , home : String
     }
 
 
-nameToString : Name -> String
-nameToString { home, name } =
-    [ home, name ]
-        |> List.filter (not << String.isEmpty)
-        |> String.join "."
-
-
-decoder : Decoder Name
+decoder : Decode.Decoder Name
 decoder =
-    Utils.Json.customDecoder Decode.string fromString
+    Decode.string
+        |> Decode.andThen (fromString >> parseToDecoder)
 
 
-fromString : String -> Result String Name
+fromString : String -> Maybe Name
 fromString str =
     case List.reverse (String.split "." str) of
-        name :: home ->
-            Ok (Name (List.reverse home |> String.join ".") name)
+        name :: homeSegements ->
+            List.reverse homeSegements
+                |> String.join "."
+                |> Name name
+                |> Just
 
         _ ->
-            Err (str ++ " is not a valid Elm name")
+            Nothing
+
+
+parseToDecoder : Maybe Name -> Decode.Decoder Name
+parseToDecoder =
+    let
+        errorMessage =
+            "names look like `maybe_nested.module.name`"
+    in
+    Maybe.map Decode.succeed
+        >> Maybe.withDefault (Decode.fail errorMessage)
 
 
 pathTo : Name -> String
 pathTo { home, name } =
-    String.map dotToDash
-        home
-        ++ "#"
-        ++ name
+    String.map dotToDash home ++ "#" ++ name
 
 
 dotToDash : Char -> Char

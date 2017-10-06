@@ -1,39 +1,36 @@
-module Docs.Version exposing (..)
+module Docs.Version exposing (Version, decoder, fromRaw, toString)
 
-import Json.Decode as Decode exposing (Decoder)
-import String
-import Utils.Json
+import Json.Decode as Decode
 
 
-type alias Version =
-    ( Int, Int, Int )
+type Version
+    = Semantic Int Int Int
 
 
-vsnToString : Version -> String
-vsnToString ( major, minor, patch ) =
-    toString major ++ "." ++ toString minor ++ "." ++ toString patch
+fromRaw : Int -> Int -> Int -> Version
+fromRaw =
+    Semantic
 
 
-decoder : Decoder Version
+toString : Version -> String
+toString (Semantic major minor patch) =
+    Basics.toString major
+        ++ "."
+        ++ Basics.toString minor
+        ++ "."
+        ++ Basics.toString patch
+
+
+decoder : Decode.Decoder Version
 decoder =
-    Utils.Json.customDecoder Decode.string fromString
+    Decode.andThen decoderHelp Decode.string
 
 
-fromString : String -> Result String Version
-fromString str =
-    case all (List.map String.toInt (String.split "." str)) of
-        Ok [ major, minor, patch ] ->
-            Ok ( major, minor, patch )
+decoderHelp : String -> Decode.Decoder Version
+decoderHelp str =
+    case List.map String.toInt (String.split "." str) of
+        [ Ok major, Ok minor, Ok patch ] ->
+            Decode.succeed (Semantic major minor patch)
 
         _ ->
-            Err (str ++ " is not a valid Elm version")
-
-
-all : List (Result x a) -> Result x (List a)
-all list =
-    case list of
-        [] ->
-            Ok []
-
-        x :: xs ->
-            Result.map2 (::) x (all xs)
+            Decode.fail "versions look like `major.minor.patch`"
