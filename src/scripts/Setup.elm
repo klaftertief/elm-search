@@ -10,6 +10,8 @@ import Elm.Documentation as ElmDocs
 import Generate
 import Http
 import Json.Decode as Decode
+import Set
+import Task
 
 
 type alias Model =
@@ -24,9 +26,6 @@ type Msg
     | Next Package
 
 
-port done : String -> Cmd msg
-
-
 main : Program Never Model Msg
 main =
     Platform.program
@@ -38,11 +37,35 @@ main =
 
 init : ( Model, Cmd Msg )
 init =
-    ( Model [] Nothing ( 0, 18, 0 )
-    , Decode.list decodeEmptyPackage
-        |> Http.get "http://package.elm-lang.org/all-packages?elm-package-version=0.18"
-        |> Http.send (ensureOk All)
+    let
+        version =
+            ( 0, 18, 0 )
+
+        getNewPackageNames =
+            Decode.list Decode.string
+                |> Http.get "http://package.elm-lang.org/new-packages"
+                |> Http.toTask
+
+        getAllPackages =
+            Decode.list decodeEmptyPackage
+                |> Http.get "http://package.elm-lang.org/all-packages"
+                |> Http.toTask
+    in
+    ( Model [] Nothing version
+    , Task.map2 onlyNewPackages getNewPackageNames getAllPackages
+        |> Task.attempt (ensureOk All)
     )
+
+
+onlyNewPackages : List String -> List Package -> List Package
+onlyNewPackages newPackageNames =
+    let
+        new =
+            Set.fromList newPackageNames
+    in
+    List.filter <|
+        \{ user, name } ->
+            Set.member (user ++ "/" ++ name) new
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -75,11 +98,7 @@ fetchModules version package =
     let
         url =
             "http://package.elm-lang.org/packages/"
-                ++ package.user
-                ++ "/"
-                ++ package.name
-                ++ "/"
-                ++ Docs.Version.vsnToString package.version
+                ++ Docs.Package.identifier package
                 ++ "/documentation.json"
     in
     if Blacklist.contains package then
@@ -147,3 +166,11 @@ ensureOk func result =
 dec : Int -> Int
 dec x =
     x - 1
+
+
+subscriptions : Model -> Sub Msg
+subscriptions model =
+    Sub.none
+
+
+port done : String -> Cmd msg
