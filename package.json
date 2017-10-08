@@ -9,7 +9,7 @@
   "scripts": {
     "compile-setup": "elm make src/scripts/Setup.elm --yes --output build/setup.js",
     "compile-main": "elm make build/Main.elm --yes --output build/main.js",
-    "build-main": "./index.js ./build/setup.js ./build/Main.elm",
+    "build-main": "./index.js ./build/setup.js ./build/cache/ ./build/Main.elm",
     "make": "npm run compile-setup && npm run build-main && npm run compile-main"
   },
   "repository": {

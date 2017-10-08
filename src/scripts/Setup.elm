@@ -1,15 +1,12 @@
 port module Setup exposing (main)
 
 import Blacklist
-import Docs.Entry exposing (Entry)
-import Docs.Module exposing (Module)
-import Docs.Package exposing (Package)
-import Docs.Type
+import Docs.Package exposing (Entry, Module, Package)
 import Docs.Version exposing (Version)
-import Elm.Documentation as ElmDocs
 import Generate
 import Http
 import Json.Decode as Decode
+import Json.Encode as Encode
 import Set
 import Task
 
@@ -22,17 +19,10 @@ type alias Model =
 
 
 type Msg
-    = All (List Partial)
+    = All (List Package)
+    | Local Package
+    | Fetch Package
     | Response Decode.Value Package
-    | Local Decode.Value Partial
-    | Fetch Partial
-
-
-type alias Partial =
-    { user : String
-    , name : String
-    , version : Version
-    }
 
 
 main : Program Never Model Msg
@@ -40,7 +30,7 @@ main =
     Platform.program
         { init = init
         , update = update
-        , subscriptions = \_ -> Sub.none
+        , subscriptions = subscriptions
         }
 
 
@@ -48,7 +38,7 @@ init : ( Model, Cmd Msg )
 init =
     let
         elmVersion =
-            ( 0, 18, 0 )
+            Docs.Version.fromRaw 0 18 0
 
         getNewPackageNames =
             Decode.list Decode.string
@@ -56,17 +46,17 @@ init =
                 |> Http.toTask
 
         getAllPackages =
-            Decode.list decodePartial
+            Decode.list Docs.Package.remoteMetaDataDecoder
                 |> Http.get "http://package.elm-lang.org/all-packages"
                 |> Http.toTask
     in
     ( Model [] -1 elmVersion
     , Task.map2 onlyNewPackages getNewPackageNames getAllPackages
-        |> Task.attempt (ensureOk All)
+        |> Task.attempt (All << ensureOk)
     )
 
 
-onlyNewPackages : List String -> List Partial -> List Partial
+onlyNewPackages : List String -> List Package -> List Package
 onlyNewPackages newPackageNames =
     let
         new =
@@ -80,148 +70,126 @@ onlyNewPackages newPackageNames =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        All partials ->
+        All packages ->
             let
                 newModel =
-                    { model | remaining = List.length partials - Blacklist.length }
+                    { model | remaining = List.length packages - Blacklist.length }
             in
-            ( newModel, Cmd.batch (List.map checkCache partials) )
+            ( newModel, Cmd.batch (List.map checkCache packages) )
+
+        Local package ->
+            let
+                newModel =
+                    withNew package model
+            in
+            ( newModel, attemptFinish newModel )
+
+        Fetch package ->
+            ( model, fetchModules model.elmVersion package )
 
         Response json package ->
             let
                 newModel =
-                    addToState package model
+                    withNew package model
+
+                cache =
+                    outbox <|
+                        Encode.object
+                            [ ( "tag", Encode.string "CACHE" )
+                            , ( "package", Docs.Package.simpleEncoder package json )
+                            ]
             in
-            ( newModel, Cmd.batch [ cache json, attemptFinish newModel ] )
-
-        Local json partial ->
-            let
-                newModel =
-                    addToState (localModules model.elmVersion partial json) model
-            in
-            ( newModel, attemptFinish newModel )
-
-        Fetch partial ->
-            ( model, fetchModules model.elmVersion partial )
+            ( newModel, Cmd.batch [ cache, attemptFinish newModel ] )
 
 
-addToState : Package -> Model -> Model
-addToState package model =
+withNew : Package -> Model -> Model
+withNew package model =
     { model
         | packages = package :: model.packages
         , remaining = model.remaining - 1
     }
 
 
+checkCache : Package -> Cmd Msg
+checkCache package =
+    outbox <|
+        Encode.object
+            [ ( "tag", Encode.string "CHECK_CACHE" )
+            , ( "package", Docs.Package.simpleEncoder package Docs.Package.empty )
+            ]
+
+
 attemptFinish : Model -> Cmd Msg
 attemptFinish { remaining, packages } =
     if remaining == 0 then
-        done <| Generate.elm packages
-    else
-        Cmd.none
-
-
-fetchModules : Version -> Partial -> Cmd Msg
-fetchModules elmVersion partial =
-    let
-        url =
-            String.join "/"
-                [ "http://package.elm-lang.org/packages"
-                , partial.user
-                , partial.name
-                , Docs.Version.vsnToString partial.version
-                , "documentation.json"
+        outbox <|
+            Encode.object
+                [ ( "tag", Encode.string "DONE" )
+                , ( "code", Encode.string <| Generate.elm packages )
                 ]
-    in
-    if Blacklist.contains partial then
+    else
+        Cmd.none
+
+
+fetchModules : Version -> Package -> Cmd Msg
+fetchModules elmVersion package =
+    if Blacklist.contains package then
         Cmd.none
     else
-        Http.get url (decodePackageModules elmVersion partial)
-            |> Http.send (ensureOk Response)
+        let
+            url =
+                String.join "/"
+                    [ "http://package.elm-lang.org/packages"
+                    , Docs.Package.identifier package
+                    , "documentation.json"
+                    ]
+
+            decoder =
+                Decode.map2 Response
+                    Decode.value
+                    (Docs.Package.withModulesDecoder elmVersion package)
+        in
+        Http.get url decoder
+            |> Http.send ensureOk
 
 
-localModules : Version -> Partial -> Decode.Value -> Package
-localModules elmVersion partial json =
-    let
-        packageDecoder =
-            decodePackageModules elmVersion partial
-    in
-    Decode.decodeValue packageDecoder json |> ensureOk
-
-
-decodePartial : Decode.Decoder Partial
-decodePartial =
-    Decode.map2 (,)
-        (Decode.field "name" Decode.string)
-        (Decode.field "versions" <| Decode.index 0 Docs.Version.decoder)
-        |> Decode.andThen decodePartialHelp
-
-
-decodePartialHelp : ( String, Version ) -> Decode.Decoder Partial
-decodePartialHelp ( fullName, version ) =
-    case String.split "/" fullName of
-        [ user, name ] ->
-            Decode.succeed <| Partial user name version
-
-        _ ->
-            Decode.fail "names must look like `user/project`"
-
-
-decodePackageModules : Version -> Partial -> Decode.Decoder Package
-decodePackageModules elmVersion { user, name, version } =
-    ElmDocs.decoder
-        |> Decode.map (elmDocsToModule elmVersion)
-        |> Decode.list
-        |> Decode.map (Package user name version)
-
-
-elmDocsToModule : Version -> ElmDocs.Documentation -> Module
-elmDocsToModule elmVersion { name, values } =
-    Module name (List.map elmValueToEntry values) (Just elmVersion)
-
-
-elmValueToEntry : ElmDocs.Value -> Entry
-elmValueToEntry { name, tipe, comment } =
-    let
-        internalName =
-            case name of
-                ElmDocs.Name str ->
-                    str
-
-                ElmDocs.Op str _ _ ->
-                    str
-    in
-    Entry internalName comment (Docs.Type.toInternal tipe)
-
-
-ensureOk : (a -> b) -> Result x a -> b
-ensureOk func result =
+ensureOk : Result x a -> a
+ensureOk result =
     case result of
         Ok value ->
-            func value
+            value
 
-        Err x ->
-            Debug.crash <| toString x
+        Err _ ->
+            Debug.crash "fatal error"
 
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Sub.batch
-        [ fromCache (uncurry Local)
-        , fromServer Fetch
-        ]
+    let
+        decoder =
+            Decode.andThen
+                (actionDecoder model.elmVersion)
+                (Decode.field "tag" Decode.string)
+    in
+    inbox <| ensureOk << Decode.decodeValue decoder
 
 
-port done : String -> Cmd msg
+actionDecoder : Version -> String -> Decode.Decoder Msg
+actionDecoder elmVersion tag =
+    case tag of
+        "CACHE_HIT" ->
+            Decode.map Local
+                (Decode.field "package" (Docs.Package.simpleDecoder elmVersion))
+
+        "CACHE_MISS" ->
+            Decode.map Fetch
+                (Decode.field "package" (Docs.Package.simpleDecoder elmVersion))
+
+        _ ->
+            Decode.fail "BAD INCOMING PORT TAG"
 
 
-port cache : Decode.Value -> Cmd msg
+port inbox : (Decode.Value -> msg) -> Sub msg
 
 
-port checkCache : Partial -> Cmd msg
-
-
-port fromCache : (( Decode.Value, Partial ) -> msg) -> Sub msg
-
-
-port fromServer : (Partial -> msg) -> Sub msg
+port outbox : Encode.Value -> Cmd msg
