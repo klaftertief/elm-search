@@ -2,7 +2,6 @@ module Search.Chunk exposing (..)
 
 import Docs.Package exposing (Entry, Package)
 import Docs.Type as Type exposing (Type)
-import Docs.Version as Version exposing (Version)
 import String
 
 
@@ -11,14 +10,14 @@ type alias Chunk =
     , tipe : Type
     , tipeNormalized : Type
     , docs : Maybe String
-    , elmVersion : Maybe Version
+    , elmVersion : Maybe String
     }
 
 
 type alias Context =
     { userName : String
     , packageName : String
-    , packageVersion : Version
+    , packageVersion : String
     , moduleName : String
     , name : String
     }
@@ -37,7 +36,7 @@ packageChunks package =
             )
 
 
-toChunk : Package -> String -> Maybe Version -> Entry -> Chunk
+toChunk : Package -> String -> Maybe String -> Entry -> Chunk
 toChunk package moduleName elmVersion { name, docs, tipe } =
     { context = Context package.user package.name package.version moduleName name
     , tipe = tipe
@@ -49,7 +48,7 @@ toChunk package moduleName elmVersion { name, docs, tipe } =
 
 identifierHome : Context -> String
 identifierHome { userName, packageName, packageVersion } =
-    [ userName, packageName, Version.toString packageVersion ]
+    [ userName, packageName, packageVersion ]
         |> String.join "/"
 
 
@@ -60,7 +59,7 @@ rootUrl =
 
 pathToPackage : Context -> String
 pathToPackage { userName, packageName, packageVersion } =
-    [ rootUrl, "packages", userName, packageName, Version.toString packageVersion ]
+    [ rootUrl, "packages", userName, packageName, packageVersion ]
         |> String.join "/"
 
 

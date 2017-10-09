@@ -1,11 +1,9 @@
 #!/usr/bin/env node
 
 if (process.argv.length !== 5)
-    throw new Error('USAGE: ./index.js COMPILED_SETUP_APP CACHE_DIR MAIN_APP_OUTPUT_PATH');
+    throw new Error('USAGE: ./index.js COMPILED_SETUP_APP CACHE_DIR OUTPUT_APP');
 
-const compiledSetupApp = process.argv[2];
-const cacheDirectory = process.argv[3];
-const mainAppOutputPath = process.argv[4];
+const [,, compiledSetupApp, cacheDirectory, outputApp] = process.argv;
 
 XMLHttpRequest = require('xhr2');
 const fs = require('fs');
@@ -14,12 +12,12 @@ const Elm = require(compiledSetupApp);
 const app = Elm.Setup.worker();
 
 function pathInCache(package) {
-    const baseName = `${package.user}@${package.name}@${package.version}`
+    const baseName = `${package.user}@${package.name}@${package.version}`;
     return path.join(cacheDirectory, baseName + '.json');
 }
 
-function checkCache(package) {
-    fs.readFile(pathInCache(package), (err, data) => {
+function checkForFile(package) {
+    fs.readFile(pathInCache(package), 'utf8', (err, data) => {
         if (err)
             app.ports.inbox.send({ tag: 'CACHE_MISS', package: package });
         else
@@ -33,7 +31,7 @@ function checkCache(package) {
 }
 
 function createFile(filePath, data) {
-    fs.writeFile(filePath, data, err => {
+    fs.writeFile(filePath, data, 'utf8', err => {
         if (err)
             throw new Error(err);
         else
@@ -44,7 +42,7 @@ function createFile(filePath, data) {
 app.ports.outbox.subscribe(action => {
     switch (action.tag) {
         case 'CHECK_CACHE':
-            checkCache(action.package);
+            checkForFile(action.package);
             break;
         case 'CACHE':
             createFile(
@@ -53,7 +51,7 @@ app.ports.outbox.subscribe(action => {
             );
             break;
         case 'DONE':
-            createFile(mainAppOutputPath, action.code);
+            createFile(outputApp, action.code);
             break;
     }
 });

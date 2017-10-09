@@ -2,7 +2,6 @@ port module Setup exposing (main)
 
 import Blacklist
 import Docs.Package exposing (Entry, Module, Package)
-import Docs.Version exposing (Version)
 import Generate
 import Http
 import Json.Decode as Decode
@@ -14,7 +13,7 @@ import Task
 type alias Model =
     { packages : List Package
     , remaining : Int
-    , elmVersion : Version
+    , elmVersion : String
     }
 
 
@@ -38,7 +37,7 @@ init : ( Model, Cmd Msg )
 init =
     let
         elmVersion =
-            Docs.Version.fromRaw 0 18 0
+            "0.18.0"
 
         getNewPackageNames =
             Decode.list Decode.string
@@ -131,7 +130,7 @@ attemptFinish { remaining, packages } =
         Cmd.none
 
 
-fetchModules : Version -> Package -> Cmd Msg
+fetchModules : String -> Package -> Cmd Msg
 fetchModules elmVersion package =
     if Blacklist.contains package then
         Cmd.none
@@ -174,7 +173,7 @@ subscriptions model =
     inbox <| ensureOk << Decode.decodeValue decoder
 
 
-actionDecoder : Version -> String -> Decode.Decoder Msg
+actionDecoder : String -> String -> Decode.Decoder Msg
 actionDecoder elmVersion tag =
     case tag of
         "CACHE_HIT" ->

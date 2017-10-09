@@ -12,7 +12,6 @@ module Docs.Package
         )
 
 import Docs.Type exposing (Type)
-import Docs.Version exposing (Version)
 import Elm.Documentation as ElmDocs
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
@@ -21,7 +20,7 @@ import Json.Encode as Encode
 type alias Package =
     { user : String
     , name : String
-    , version : Version
+    , version : String
     , modules : List Module
     }
 
@@ -29,7 +28,7 @@ type alias Package =
 type alias Module =
     { name : String
     , entries : List Entry
-    , elmVersion : Maybe Version
+    , elmVersion : Maybe String
     }
 
 
@@ -42,7 +41,7 @@ type alias Entry =
 
 identifier : Package -> String
 identifier { user, name, version } =
-    String.join "/" [ user, name, Docs.Version.toString version ]
+    user ++ "/" ++ name ++ "/" ++ version
 
 
 empty : Encode.Value
@@ -55,23 +54,23 @@ simpleEncoder { user, name, version } rawModules =
     Encode.object
         [ ( "user", Encode.string user )
         , ( "name", Encode.string name )
-        , ( "version", Encode.string <| Docs.Version.toString version )
+        , ( "version", Encode.string version )
         , ( "modules", rawModules )
         ]
 
 
-simpleDecoder : Version -> Decoder Package
+simpleDecoder : String -> Decoder Package
 simpleDecoder elmVersion =
     Decode.map4 Package
         (Decode.field "user" Decode.string)
         (Decode.field "name" Decode.string)
-        (Decode.field "version" Docs.Version.decoder)
+        (Decode.field "version" Decode.string)
         (Decode.succeed [])
         |> Decode.andThen
             (Decode.field "modules" << withModulesDecoder elmVersion)
 
 
-withModulesDecoder : Version -> Package -> Decode.Decoder Package
+withModulesDecoder : String -> Package -> Decode.Decoder Package
 withModulesDecoder elmVersion { user, name, version } =
     ElmDocs.decoder
         |> Decode.map (elmDocsToModule elmVersion)
@@ -83,11 +82,11 @@ remoteMetaDataDecoder : Decode.Decoder Package
 remoteMetaDataDecoder =
     Decode.map2 (,)
         (Decode.field "name" Decode.string)
-        (Decode.field "versions" <| Decode.index 0 Docs.Version.decoder)
+        (Decode.field "versions" <| Decode.index 0 Decode.string)
         |> Decode.andThen remoteMetaDataDecoderHelp
 
 
-remoteMetaDataDecoderHelp : ( String, Version ) -> Decode.Decoder Package
+remoteMetaDataDecoderHelp : ( String, String ) -> Decode.Decoder Package
 remoteMetaDataDecoderHelp ( fullName, version ) =
     case String.split "/" fullName of
         [ user, name ] ->
@@ -97,7 +96,7 @@ remoteMetaDataDecoderHelp ( fullName, version ) =
             Decode.fail "package names must look like `user/project`"
 
 
-elmDocsToModule : Version -> ElmDocs.Documentation -> Module
+elmDocsToModule : String -> ElmDocs.Documentation -> Module
 elmDocsToModule elmVersion { name, values } =
     Module name (List.map elmValueToEntry values) (Just elmVersion)
 
