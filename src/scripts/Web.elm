@@ -1,4 +1,4 @@
-port module Web exposing (program)
+module Web exposing (program)
 
 import Dict
 import Docs.Package exposing (Package)
@@ -10,9 +10,9 @@ import Search.Update as Search
 import Search.View as Search
 
 
-program : List Package -> Program Flags Model Msg
+program : List Package -> Program Never Model Msg
 program packages =
-    Html.programWithFlags
+    Html.program
         { init = init packages
         , view = view
         , update = update
@@ -27,12 +27,6 @@ type Model
 type Msg
     = SearchMsg Search.Msg
     | LocationSearchChange String
-
-
-type alias Flags =
-    { index : String
-    , search : String
-    }
 
 
 toQueryString : Search.Filter -> String
@@ -85,11 +79,11 @@ decodePair pair =
             Nothing
 
 
-init : List Package -> Flags -> ( Model, Cmd Msg )
-init packages { index, search } =
+init : List Package -> ( Model, Cmd Msg )
+init packages =
     let
         searchModel =
-            Search.init (parseSearchString search) packages
+            Search.init Search.initialFilter packages
     in
     ( Ready searchModel, Cmd.none )
 
@@ -141,7 +135,11 @@ subscriptions _ =
     query LocationSearchChange
 
 
-port query : (String -> msg) -> Sub msg
+query : (String -> msg) -> Sub msg
+query _ =
+    Sub.none
 
 
-port pushQuery : String -> Cmd msg
+pushQuery : String -> Cmd msg
+pushQuery _ =
+    Cmd.none

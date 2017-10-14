@@ -27,20 +27,7 @@
   </footer>
   <script src="scripts/search.js"></script>
   <script>
-    var app = Elm.Web.embed(
-      document.getElementById('main'),
-      { index : '0.18/index.json'
-      , search : window.location.search || ""
-      }
-    );
-
-    window.onpopstate = function(event) {
-      app.ports.query.send(window.location.search);
-    };
-    app.ports.pushQuery.subscribe(function(query) {
-      window.history.pushState({}, "", query);
-      app.ports.query.send(window.location.search);
-    });
+    var app = Elm.Web.embed(document.getElementById('main'));
   </script>
 </body>
 </html>
