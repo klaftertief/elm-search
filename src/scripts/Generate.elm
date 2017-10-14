@@ -8,15 +8,22 @@ elm : List Package -> String
 elm packages =
     String.join "\n"
         [ "module Main exposing (..)"
-        , ""
         , "import Web"
-        , "import Docs.Type exposing (Type(..))"
-        , ""
-        , "main ="
-        , "  Web.program"
-        , "    [ " ++ String.join "\n    , " (List.map fromPackage packages)
-        , "    ]"
+        , "import Docs.Type"
+        , "main = Web.program <| " ++ chunkedPackages 50 packages []
         ]
+
+
+chunkedPackages : Int -> List Package -> List String -> String
+chunkedPackages size packages acc =
+    case List.take size packages of
+        [] ->
+            String.join " ++ " acc
+
+        chunk ->
+            chunkedPackages size
+                (List.drop size packages)
+                (list fromPackage chunk :: acc)
 
 
 fromPackage : Package -> String
@@ -52,16 +59,16 @@ fromType tipe =
     withParens <|
         case tipe of
             Function args last ->
-                "Function "
+                "Docs.Type.Function "
                     ++ list fromType args
                     ++ " "
                     ++ withParens (fromType last)
 
             Var name ->
-                "Var " ++ string name
+                "Docs.Type.Var " ++ string name
 
             Apply { home, name } args ->
-                "Apply "
+                "Docs.Type.Apply "
                     ++ record
                         [ ( "name", string name )
                         , ( "home", string home )
@@ -70,11 +77,11 @@ fromType tipe =
                     ++ list fromType args
 
             Tuple args ->
-                "Tuple "
+                "Docs.Type.Tuple "
                     ++ list fromType args
 
             Record pairs extensible ->
-                "Record "
+                "Docs.Type.Record "
                     ++ list (tuple string fromType) pairs
                     ++ " "
                     ++ withParens (maybe string extensible)
