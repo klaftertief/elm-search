@@ -6,43 +6,56 @@ import Docs.Type exposing (Type(..))
 
 elm : List Package -> String
 elm packages =
-    String.join "\n"
+    let
+        packageDefs =
+            List.map fromPackage packages
+    in
+    String.join "\n" <|
         [ "module Main exposing (..)"
         , "import Web"
         , "import Docs.Type"
-        , "main = Web.program <| " ++ chunkedPackages 50 packages []
+        , "main = Web.program " ++ chunkedList .inline packageDefs
         ]
+            ++ List.concatMap (List.map assignment << .defs) packageDefs
 
 
-chunkedPackages : Int -> List Package -> List String -> String
-chunkedPackages size packages acc =
-    case List.take size packages of
-        [] ->
-            String.join " ++ " acc
-
-        chunk ->
-            chunkedPackages size
-                (List.drop size packages)
-                (list fromPackage chunk :: acc)
-
-
-fromPackage : Package -> String
+fromPackage : Package -> { defs : List ( String, String ), inline : String }
 fromPackage { user, name, version, modules } =
-    record
-        [ ( "user", string user )
-        , ( "name", string name )
-        , ( "version", string version )
-        , ( "modules", list fromModule modules )
-        ]
+    let
+        moduleDefs =
+            List.map (fromModule user name) modules
+    in
+    { defs =
+        List.map .def moduleDefs
+    , inline =
+        record
+            [ ( "user", string user )
+            , ( "name", string name )
+            , ( "version", string version )
+            , ( "modules", list .inline moduleDefs )
+            ]
+    }
 
 
-fromModule : Module -> String
-fromModule { name, entries, elmVersion } =
-    record
-        [ ( "name", string name )
-        , ( "elmVersion", maybe string elmVersion )
-        , ( "entries", list fromEntry entries )
-        ]
+fromModule :
+    String
+    -> String
+    -> Module
+    -> { def : ( String, String ), inline : String }
+fromModule packageUser packageName { name, entries, elmVersion } =
+    let
+        entryListDefName =
+            safeName <| packageUser ++ "__" ++ packageName ++ "__" ++ name
+    in
+    { def =
+        ( entryListDefName, chunkedList fromEntry entries )
+    , inline =
+        record
+            [ ( "name", string name )
+            , ( "elmVersion", maybe string elmVersion )
+            , ( "entries", entryListDefName )
+            ]
+    }
 
 
 fromEntry : Entry -> String
@@ -139,10 +152,52 @@ list f values =
 record : List ( String, String ) -> String
 record fields =
     "{ "
-        ++ String.join ", " (List.map recordField fields)
+        ++ String.join ", " (List.map assignment fields)
         ++ " }"
 
 
-recordField : ( String, String ) -> String
-recordField ( key, value ) =
-    key ++ " = " ++ value
+assignment : ( String, String ) -> String
+assignment ( left, right ) =
+    left ++ " = " ++ right
+
+
+safeName : String -> String
+safeName str =
+    "v_" ++ String.map replaceUnsafe str
+
+
+replaceUnsafe : Char -> Char
+replaceUnsafe char =
+    if char == '-' || char == '.' then
+        '_'
+    else
+        char
+
+
+{-| This should be unnecessary with 0.19
+<https://github.com/elm-lang/elm-compiler/issues/1521>
+-}
+chunkedList : (a -> String) -> List a -> String
+chunkedList func values =
+    if List.isEmpty values then
+        "[]"
+    else
+        chunkedListHelp func values []
+
+
+chunkSize : Int
+chunkSize =
+    25
+
+
+chunkedListHelp : (a -> String) -> List a -> List String -> String
+chunkedListHelp func values acc =
+    case List.take chunkSize values of
+        [] ->
+            withParens
+                (String.join " ++ " acc)
+
+        chunk ->
+            chunkedListHelp func
+                (List.drop chunkSize values)
+                (list func chunk :: acc)
