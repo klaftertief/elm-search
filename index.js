@@ -11,15 +11,18 @@ const path = require('path');
 const Elm = require(compiledSetupApp);
 const app = Elm.Setup.worker();
 
-function pathInCache(package) {
-    const baseName = `${package.user}@${package.name}@${package.version}`;
+function pathInCache({ user, name, version }) {
+    const baseName = `${user}@${name}@${version}`;
     return path.join(cacheDirectory, baseName + '.json');
 }
 
 function checkForFile(package) {
     fs.readFile(pathInCache(package), 'utf8', (err, data) => {
         if (err)
-            app.ports.inbox.send({ tag: 'CACHE_MISS', package: package });
+            app.ports.inbox.send({
+                tag: 'CACHE_MISS',
+                package: package
+            });
         else
             app.ports.inbox.send({
                 tag: 'CACHE_HIT',
