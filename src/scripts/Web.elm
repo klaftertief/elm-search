@@ -30,8 +30,7 @@ type Msg
 
 
 type alias Flags =
-    { index : String
-    , search : String
+    { search : String
     }
 
 
@@ -86,7 +85,7 @@ decodePair pair =
 
 
 init : List Package -> Flags -> ( Model, Cmd Msg )
-init packages { index, search } =
+init packages { search } =
     let
         searchModel =
             Search.init (parseSearchString search) packages
