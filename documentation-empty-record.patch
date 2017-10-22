@@ -1,0 +1,18 @@
+diff --git a/src/Elm/Documentation/Type.elm b/src/Elm/Documentation/Type.elm
+index 8c09e72..c8b0de1 100644
+--- a/src/Elm/Documentation/Type.elm
++++ b/src/Elm/Documentation/Type.elm
+@@ -250,8 +250,11 @@ spaces =
+ 
+ commaSep : Parser a -> Parser (List a)
+ commaSep parser =
+-  parser
+-    |> Parser.andThen (\first -> commaSepHelp parser [first])
++  Parser.oneOf
++    [ parser
++        |> Parser.andThen (\first -> commaSepHelp parser [first])
++    , Parser.succeed []
++    ]
+ 
+ 
+ commaSepHelp : Parser a -> List a -> Parser (List a)
