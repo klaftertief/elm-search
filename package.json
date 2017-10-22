@@ -2,16 +2,16 @@
   "name": "elm-search",
   "version": "1.0.0",
   "description": "an API search engine for all published Elm packages",
-  "main": "index.js",
+  "main": "src/scripts/index.js",
   "directories": {
     "test": "tests"
   },
   "scripts": {
     "compile-setup": "elm make src/scripts/Setup.elm --yes --output build/setup.js",
     "compile-main": "elm make build/Main.elm --yes --output build/main.js",
-    "build-main": "./index.js ./build/setup.js ./build/cache/ ./build/Main.elm",
+    "build-main": "src/scripts/index.js build/setup.js build/cache/ build/Main.elm",
     "make": "npm run compile-setup && npm run build-main && npm run compile-main",
-    "minify": "uglifyjs ./build/main.js --output ./build/main.min.js"
+    "minify": "uglifyjs build/main.js --output build/main.min.js"
   },
   "repository": {
     "type": "git",

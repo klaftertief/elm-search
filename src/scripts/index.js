@@ -8,12 +8,11 @@ const [,, compiledSetupApp, cacheDirectory, outputApp] = process.argv;
 XMLHttpRequest = require('xhr2');
 const fs = require('fs');
 const path = require('path');
-const Elm = require(compiledSetupApp);
-const app = Elm.Setup.worker();
+const compiledElm = path.relative(__dirname, compiledSetupApp);
+const app = require(compiledElm).Setup.worker();
 
 function pathInCache({ user, name, version }) {
-    const baseName = `${user}@${name}@${version}`;
-    return path.join(cacheDirectory, baseName + '.json');
+    return path.join(cacheDirectory, `${user}@${name}@${version}.json`);
 }
 
 function checkForFile(package) {
