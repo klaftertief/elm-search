@@ -1,0 +1,21 @@
+sudo: false
+
+language: node
+
+branches:
+  only:
+  - develop
+
+cache:
+  directories:
+    - cache
+    - node_modules
+    - elm-stuff/build-artifacts
+
+script:
+  - make
+
+deploy:
+  provider: pages
+  skip_cleanup: true
+  github_token: $GITHUB_TOKEN

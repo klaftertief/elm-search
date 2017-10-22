@@ -1,6 +1,9 @@
 .PHONY: install server watch clean help setup build publish
 
+ELM_TMP_DIR := elm-stuff/generated-code/klaftertief/elm-search
 ELM_SETUP := src/scripts/Setup.elm
+ELM_SETUP_COMPILED := $(ELM_TMP_DIR)/setup.js
+ELM_MAIN := $(ELM_TMP_DIR)/Main.elm
 ELM_FILES = $(shell find src -type f -name '*.elm')
 
 DEVD_VERSION := 0.5
@@ -8,6 +11,7 @@ MODD_VERSION := 0.3
 OS := $(shell uname)
 
 BUILD_DIR := dist
+CACHE_DIR := cache
 INSTALL_TARGETS := bin bin/modd bin/devd node_modules
 COMPILE_TARGETS := scripts styles html
 
@@ -19,14 +23,13 @@ else
 	MODD_URL := "https://github.com/cortesi/modd/releases/download/v${MODD_VERSION}/modd-${MODD_VERSION}-linux64.tgz"
 endif
 
-setup: $(BUILD_DIR) ## Downloads docs files
-	node_modules/.bin/elm-make $(ELM_SETUP) --yes --output $(BUILD_DIR)/setup.js
-	src/scripts/index.js $(BUILD_DIR)/setup.js $(BUILD_DIR)/cache/ $(BUILD_DIR)/Main.elm
+package: clean install setup build ## Creates the deployment artifact
+
+setup: $(ELM_TMP_DIR) ## Downloads docs files
+	node_modules/.bin/elm-make $(ELM_SETUP) --yes --warn --output $(ELM_SETUP_COMPILED)
+	src/scripts/index.js $(ELM_SETUP_COMPILED) $(CACHE_DIR) $(ELM_MAIN)
 
 build: $(BUILD_DIR) $(COMPILE_TARGETS) ## Compiles project files
-
-publish: setup build ## Downloads new packages, builds the app, makes a new commit in the `gh-pages` branch and pushes it to GitHub
-	(cd $(BUILD_DIR) && git add -A && git commit -m "Update app and documentation" && git push origin gh-pages)
 
 install: $(INSTALL_TARGETS) ## Installs prerequisites and generates file/folder structure
 
@@ -44,16 +47,18 @@ help: ## Prints a help guide
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
 styles:
-	mkdir -p $(BUILD_DIR)/styles && cp src/styles/search.css $(BUILD_DIR)/styles
+	mkdir -p $(BUILD_DIR)/styles
+	cp src/styles/search.css $(BUILD_DIR)/styles
 
 scripts: $(ELM_FILES)
-	node_modules/.bin/elm-make $(BUILD_DIR)/Main.elm --yes --output $(BUILD_DIR)/scripts/search.js
-	node_modules/.bin/uglifyjs $(BUILD_DIR)/scripts/search.js --output $(BUILD_DIR)/scripts/search.min.js
+	node_modules/.bin/elm-make $(ELM_MAIN) --yes --output $(BUILD_DIR)/scripts/search.js
+	node_modules/.bin/uglifyjs $(BUILD_DIR)/scripts/search.js --output $(BUILD_DIR)/scripts/search.js
 
 html:
-	mkdir -p $(BUILD_DIR) && cp -r src/html/* $(BUILD_DIR)
+	mkdir -p $(BUILD_DIR)
+	cp -r src/html/* $(BUILD_DIR)
 
-bin $(BUILD_DIR) cache:
+bin $(BUILD_DIR) $(CACHE_DIR) $(ELM_TMP_DIR):
 	mkdir -p $@
 
 bin/devd:
