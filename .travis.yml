@@ -2,10 +2,6 @@ sudo: false
 
 language: node
 
-branches:
-  only:
-    - develop
-
 cache:
   directories:
     - cache
@@ -31,5 +27,8 @@ script:
 
 deploy:
   provider: pages
+  local_dir: dist
   skip_cleanup: true
   github_token: $GITHUB_TOKEN
+  on:
+    branch: develop
