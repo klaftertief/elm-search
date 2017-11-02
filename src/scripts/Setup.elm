@@ -79,7 +79,7 @@ update msg model =
         Local package ->
             let
                 newModel =
-                    withNew package model
+                    keepingTrackOf package model
             in
             ( newModel, attemptFinish newModel )
 
@@ -89,7 +89,7 @@ update msg model =
         Response json package ->
             let
                 newModel =
-                    withNew package model
+                    keepingTrackOf package model
 
                 cache =
                     outbox <|
@@ -101,8 +101,8 @@ update msg model =
             ( newModel, Cmd.batch [ cache, attemptFinish newModel ] )
 
 
-withNew : Package -> Model -> Model
-withNew package model =
+keepingTrackOf : Package -> Model -> Model
+keepingTrackOf package model =
     { model
         | packages = package :: model.packages
         , remaining = model.remaining - 1
