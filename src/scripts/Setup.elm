@@ -128,7 +128,7 @@ safeModuleName { user, name, version } =
         combined =
             user ++ "__" ++ name ++ "__" ++ version
     in
-    "M_" ++ String.map replaceUnsafe combined
+    "M_" ++ String.toLower (String.map replaceUnsafe combined)
 
 
 replaceUnsafe : Char -> Char
