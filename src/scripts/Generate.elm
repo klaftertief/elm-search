@@ -1,147 +1,67 @@
-module Generate exposing (elm)
+module Generate exposing (lowerName, main_, package)
 
-import Docs.Package exposing (Entry, Module, Package)
-import Docs.Type exposing (Type(..))
+import Docs.Package as Package
 
 
-elm : List Package -> String
-elm packages =
+main_ : List String -> String
+main_ moduleNames =
+    String.join "\n" <|
+        "module Main exposing (..)"
+            :: List.map (\name -> "import " ++ name) moduleNames
+            ++ [ "import Web"
+               , "main = Web.program "
+                    ++ chunkedList (\name -> name ++ ".package") moduleNames
+               ]
+
+
+package : String -> Package.Package -> String
+package moduleName { metadata, modules } =
     let
-        packageDefs =
-            List.map fromPackage packages
+        { defs, inline } =
+            fromPackage metadata modules
     in
     String.join "\n" <|
-        [ "module Main exposing (..)"
-        , "import Web"
-        , "import Docs.Type"
-        , "main = Web.program " ++ chunkedList .inline packageDefs
+        [ "module " ++ moduleName ++ " exposing(package)"
+        , "import Docs.Type exposing(..)"
+        , "package = " ++ inline
         ]
-            ++ List.concatMap (List.map assignment << .defs) packageDefs
+            ++ List.map assignment defs
 
 
-fromPackage : Package -> { defs : List ( String, String ), inline : String }
-fromPackage { user, name, version, modules } =
+fromPackage :
+    Package.Metadata
+    -> List Package.Module
+    -> { defs : List ( String, String ), inline : String }
+fromPackage metadata modules =
     let
         moduleDefs =
-            List.map (fromModule user name) modules
+            List.map fromModule modules
     in
     { defs =
         List.map .def moduleDefs
     , inline =
         record
-            [ ( "user", string user )
-            , ( "name", string name )
-            , ( "version", string version )
+            [ ( "metadata", toString metadata )
             , ( "modules", list .inline moduleDefs )
             ]
     }
 
 
-fromModule :
-    String
-    -> String
-    -> Module
-    -> { def : ( String, String ), inline : String }
-fromModule packageUser packageName { name, entries, elmVersion } =
+fromModule : Package.Module -> { def : ( String, String ), inline : String }
+fromModule { name, elmVersion, entries } =
     let
         entryListDefName =
-            safeName <| packageUser ++ "__" ++ packageName ++ "__" ++ name
+            "v_" ++ lowerName name
     in
     { def =
-        ( entryListDefName, chunkedList fromEntry entries )
+        ( entryListDefName, chunkedList toString entries )
     , inline =
         record
-            [ ( "name", string name )
-            , ( "elmVersion", maybe string elmVersion )
+            [ ( "name", toString name )
+            , ( "elmVersion", toString elmVersion )
             , ( "entries", entryListDefName )
             ]
     }
-
-
-fromEntry : Entry -> String
-fromEntry { name, docs, tipe } =
-    record
-        [ ( "name", string name )
-        , ( "docs", string docs )
-        , ( "tipe", fromType tipe )
-        ]
-
-
-fromType : Type -> String
-fromType tipe =
-    withParens <|
-        case tipe of
-            Function args last ->
-                "Docs.Type.Function "
-                    ++ list fromType args
-                    ++ " "
-                    ++ withParens (fromType last)
-
-            Var name ->
-                "Docs.Type.Var " ++ string name
-
-            Apply { home, name } args ->
-                "Docs.Type.Apply "
-                    ++ record
-                        [ ( "name", string name )
-                        , ( "home", string home )
-                        ]
-                    ++ " "
-                    ++ list fromType args
-
-            Tuple args ->
-                "Docs.Type.Tuple "
-                    ++ list fromType args
-
-            Record pairs extensible ->
-                "Docs.Type.Record "
-                    ++ list (tuple string fromType) pairs
-                    ++ " "
-                    ++ withParens (maybe string extensible)
-
-
-withParens : String -> String
-withParens value =
-    "(" ++ value ++ ")"
-
-
-tuple : (a -> String) -> (b -> String) -> ( a, b ) -> String
-tuple f g ( a, b ) =
-    withParens <| f a ++ ", " ++ g b
-
-
-string : String -> String
-string value =
-    "\"" ++ String.foldl stringEscape "" value ++ "\""
-
-
-stringEscape : Char -> String -> String
-stringEscape next acc =
-    String.append acc <|
-        case next of
-            '"' ->
-                "\\\""
-
-            '\\' ->
-                "\\\\"
-
-            '\n' ->
-                "\\n"
-
-            '\t' ->
-                "\\t"
-
-            '\x0D' ->
-                "\\r"
-
-            _ ->
-                String.fromChar next
-
-
-maybe : (a -> String) -> Maybe a -> String
-maybe f =
-    Maybe.map (\value -> "Just " ++ f value)
-        >> Maybe.withDefault "Nothing"
 
 
 list : (a -> String) -> List a -> String
@@ -161,9 +81,9 @@ assignment ( left, right ) =
     left ++ " = " ++ right
 
 
-safeName : String -> String
-safeName str =
-    "v_" ++ String.map replaceUnsafe str
+lowerName : String -> String
+lowerName =
+    String.map replaceUnsafe >> String.toLower
 
 
 replaceUnsafe : Char -> Char
@@ -194,8 +114,7 @@ chunkedListHelp : (a -> String) -> List a -> List String -> String
 chunkedListHelp func values acc =
     case List.take chunkSize values of
         [] ->
-            withParens
-                (String.join " ++ " acc)
+            "(" ++ String.join " ++ " acc ++ ")"
 
         chunk ->
             chunkedListHelp func

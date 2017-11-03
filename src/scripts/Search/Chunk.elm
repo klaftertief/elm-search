@@ -38,7 +38,7 @@ packageChunks package =
 
 toChunk : Package -> String -> Maybe String -> Entry -> Chunk
 toChunk package moduleName elmVersion { name, docs, tipe } =
-    { context = Context package.user package.name package.version moduleName name
+    { context = Context package.metadata.user package.metadata.name package.metadata.version moduleName name
     , tipe = tipe
     , tipeNormalized = Type.normalize tipe
     , docs = List.head (docs |> String.trim |> String.split "\n\n" |> List.filter (not << String.isEmpty))
