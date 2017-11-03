@@ -32,7 +32,7 @@ fromPackage :
     Package.Metadata
     -> List Package.Module
     -> { defs : List ( String, String ), inline : String }
-fromPackage { user, name, version } modules =
+fromPackage metadata modules =
     let
         moduleDefs =
             List.map fromModule modules
@@ -41,9 +41,7 @@ fromPackage { user, name, version } modules =
         List.map .def moduleDefs
     , inline =
         record
-            [ ( "user", toString user )
-            , ( "name", toString name )
-            , ( "version", toString version )
+            [ ( "metadata", toString metadata )
             , ( "modules", list .inline moduleDefs )
             ]
     }
