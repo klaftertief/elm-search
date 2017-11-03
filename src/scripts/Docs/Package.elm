@@ -1,12 +1,12 @@
 module Docs.Package
     exposing
-        ( Complete
-        , Entry
+        ( Entry
+        , Metadata
         , Module
-        , Partial
-        , completeDecoder
+        , Package
+        , decode
         , identifier
-        , remotePartialDecoder
+        , remoteMetadataDecoder
         )
 
 import Docs.Type exposing (Type)
@@ -14,18 +14,16 @@ import Elm.Documentation as ElmDocs
 import Json.Decode as Decode exposing (Decoder)
 
 
-type alias Partial =
-    { user : String
-    , name : String
-    , version : String
+type alias Package =
+    { metadata : Metadata
+    , modules : List Module
     }
 
 
-type alias Complete =
+type alias Metadata =
     { user : String
     , name : String
     , version : String
-    , modules : List Module
     }
 
 
@@ -43,32 +41,32 @@ type alias Entry =
     }
 
 
-identifier : { a | user : String, name : String, version : String } -> String
+identifier : Metadata -> String
 identifier { user, name, version } =
     user ++ "/" ++ name ++ "/" ++ version
 
 
-completeDecoder : String -> Partial -> Decode.Decoder Complete
-completeDecoder elmVersion { user, name, version } =
+decode : String -> Metadata -> Decode.Decoder Package
+decode elmVersion metadata =
     ElmDocs.decoder
         |> Decode.map (elmDocsToModule elmVersion)
         |> Decode.list
-        |> Decode.map (Complete user name version)
+        |> Decode.map (Package metadata)
 
 
-remotePartialDecoder : Decode.Decoder Partial
-remotePartialDecoder =
+remoteMetadataDecoder : Decode.Decoder Metadata
+remoteMetadataDecoder =
     Decode.map2 (,)
         (Decode.field "name" Decode.string)
         (Decode.field "versions" <| Decode.index 0 Decode.string)
-        |> Decode.andThen remotePartialDecoderHelp
+        |> Decode.andThen remoteMetadataHelp
 
 
-remotePartialDecoderHelp : ( String, String ) -> Decode.Decoder Partial
-remotePartialDecoderHelp ( fullName, version ) =
+remoteMetadataHelp : ( String, String ) -> Decode.Decoder Metadata
+remoteMetadataHelp ( fullName, version ) =
     case String.split "/" fullName of
         [ user, name ] ->
-            Decode.succeed <| Partial user name version
+            Decode.succeed <| Metadata user name version
 
         _ ->
             Decode.fail "package names must look like `user/project`"

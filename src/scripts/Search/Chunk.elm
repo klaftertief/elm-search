@@ -1,6 +1,6 @@
 module Search.Chunk exposing (..)
 
-import Docs.Package exposing (Complete, Entry)
+import Docs.Package exposing (Entry, Package)
 import Docs.Type as Type exposing (Type)
 import String
 
@@ -23,7 +23,7 @@ type alias Context =
     }
 
 
-packageChunks : Complete -> List Chunk
+packageChunks : Package -> List Chunk
 packageChunks package =
     package.modules
         |> List.concatMap
@@ -36,9 +36,9 @@ packageChunks package =
             )
 
 
-toChunk : Complete -> String -> Maybe String -> Entry -> Chunk
+toChunk : Package -> String -> Maybe String -> Entry -> Chunk
 toChunk package moduleName elmVersion { name, docs, tipe } =
-    { context = Context package.user package.name package.version moduleName name
+    { context = Context package.metadata.user package.metadata.name package.metadata.version moduleName name
     , tipe = tipe
     , tipeNormalized = Type.normalize tipe
     , docs = List.head (docs |> String.trim |> String.split "\n\n" |> List.filter (not << String.isEmpty))

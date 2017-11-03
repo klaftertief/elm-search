@@ -27,7 +27,7 @@ function createFile(filePath, data) {
 app.ports.lookup.subscribe(msg => {
     fs.access(pathInCache(msg.moduleName), (err) => {
         if (err)
-            app.ports.onMissing.send(msg.identifier);
+            app.ports.onMissing.send(msg.metadata);
     });
 });
 

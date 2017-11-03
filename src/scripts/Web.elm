@@ -1,7 +1,7 @@
 port module Web exposing (program)
 
 import Dict
-import Docs.Package exposing (Complete)
+import Docs.Package exposing (Package)
 import Html exposing (..)
 import Html.Attributes exposing (class)
 import Http
@@ -10,7 +10,7 @@ import Search.Update as Search
 import Search.View as Search
 
 
-program : List Complete -> Program Flags Model Msg
+program : List Package -> Program Flags Model Msg
 program packages =
     Html.programWithFlags
         { init = init packages
@@ -84,7 +84,7 @@ decodePair pair =
             Nothing
 
 
-init : List Complete -> Flags -> ( Model, Cmd Msg )
+init : List Package -> Flags -> ( Model, Cmd Msg )
 init packages { search } =
     let
         searchModel =

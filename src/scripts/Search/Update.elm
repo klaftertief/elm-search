@@ -1,10 +1,10 @@
 module Search.Update exposing (..)
 
-import Docs.Package as Package exposing (Complete)
+import Docs.Package as Package exposing (Package)
 import Search.Model as Model exposing (..)
 
 
-init : Filter -> List Complete -> Model
+init : Filter -> List Package -> Model
 init filter packages =
     let
         model =

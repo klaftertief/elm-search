@@ -16,9 +16,9 @@ type alias Model =
 
 
 type Msg
-    = All (List Package.Partial)
-    | CacheMiss Package.Partial
-    | Response Package.Complete
+    = All (List Package.Metadata)
+    | CacheMiss Package.Metadata
+    | Response Package.Package
 
 
 main : Program Never Model Msg
@@ -42,7 +42,7 @@ init =
                 |> Http.toTask
 
         getAllPackages =
-            Decode.list Package.remotePartialDecoder
+            Decode.list Package.remoteMetadataDecoder
                 |> Http.get "http://package.elm-lang.org/all-packages"
                 |> Http.toTask
     in
@@ -52,7 +52,7 @@ init =
     )
 
 
-onlyNewPackages : List String -> List Package.Partial -> List Package.Partial
+onlyNewPackages : List String -> List Package.Metadata -> List Package.Metadata
 onlyNewPackages newPackageNames =
     let
         new =
@@ -69,18 +69,18 @@ update msg model =
         All partials ->
             ( model, planFileWrites partials )
 
-        CacheMiss partial ->
-            ( model, fetchDocs model.elmVersion partial )
+        CacheMiss metadata ->
+            ( model, fetchDocs model.elmVersion metadata )
 
-        Response complete ->
-            ( model, cacheModule complete )
+        Response package ->
+            ( model, cacheModule package )
 
 
 
 -- COMMANDS
 
 
-planFileWrites : List Package.Partial -> Cmd Msg
+planFileWrites : List Package.Metadata -> Cmd Msg
 planFileWrites partials =
     let
         moduleNames =
@@ -91,39 +91,39 @@ planFileWrites partials =
         |> Cmd.batch
 
 
-fetchDocs : String -> Package.Partial -> Cmd Msg
-fetchDocs elmVersion partial =
-    if Blacklist.contains partial then
+fetchDocs : String -> Package.Metadata -> Cmd Msg
+fetchDocs elmVersion metadata =
+    if Blacklist.contains metadata then
         Cmd.none
     else
         let
             url =
                 String.join "/"
                     [ "http://package.elm-lang.org/packages"
-                    , Package.identifier partial
+                    , Package.identifier metadata
                     , "documentation.json"
                     ]
 
             decoder =
-                Package.completeDecoder elmVersion partial
+                Package.decode elmVersion metadata
         in
         Http.get url decoder
             |> Http.send (ensureOk Response)
 
 
-cacheModule : Package.Complete -> Cmd msg
-cacheModule complete =
+cacheModule : Package.Package -> Cmd msg
+cacheModule package =
     let
         name =
-            safeModuleName complete
+            safeModuleName package.metadata
     in
     Cache.put
         { moduleName = name
-        , code = Generate.package name complete
+        , code = Generate.package name package
         }
 
 
-safeModuleName : { a | user : String, name : String, version : String } -> String
+safeModuleName : Package.Metadata -> String
 safeModuleName { user, name, version } =
     "M_" ++ Generate.lowerName (user ++ "__" ++ name ++ "__" ++ version)
 

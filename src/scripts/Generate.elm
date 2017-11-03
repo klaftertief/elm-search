@@ -1,6 +1,6 @@
 module Generate exposing (lowerName, main_, package)
 
-import Docs.Package exposing (Complete, Entry, Module)
+import Docs.Package as Package
 
 
 main_ : List String -> String
@@ -14,11 +14,11 @@ main_ moduleNames =
                ]
 
 
-package : String -> Complete -> String
-package moduleName complete =
+package : String -> Package.Package -> String
+package moduleName { metadata, modules } =
     let
         { defs, inline } =
-            fromPackage complete
+            fromPackage metadata modules
     in
     String.join "\n" <|
         [ "module " ++ moduleName ++ " exposing(package)"
@@ -28,8 +28,11 @@ package moduleName complete =
             ++ List.map assignment defs
 
 
-fromPackage : Complete -> { defs : List ( String, String ), inline : String }
-fromPackage { user, name, version, modules } =
+fromPackage :
+    Package.Metadata
+    -> List Package.Module
+    -> { defs : List ( String, String ), inline : String }
+fromPackage { user, name, version } modules =
     let
         moduleDefs =
             List.map fromModule modules
@@ -46,7 +49,7 @@ fromPackage { user, name, version, modules } =
     }
 
 
-fromModule : Module -> { def : ( String, String ), inline : String }
+fromModule : Package.Module -> { def : ( String, String ), inline : String }
 fromModule { name, elmVersion, entries } =
     let
         entryListDefName =
