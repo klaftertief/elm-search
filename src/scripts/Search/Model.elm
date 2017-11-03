@@ -1,6 +1,6 @@
 module Search.Model exposing (..)
 
-import Docs.Package as Package exposing (Package)
+import Docs.Package as Package exposing (Complete)
 import Docs.Type as Type
 import Search.Chunk as Chunk exposing (Chunk)
 import Search.Distance as Distance
@@ -66,7 +66,7 @@ initialResult =
 
 
 type Msg
-    = BuildIndex (List Package)
+    = BuildIndex (List Complete)
     | SetFilter Filter
     | SetFilterQueryString String
     | SetFilterQueryStringAndRunFilter String
@@ -99,7 +99,7 @@ queryListFromString string =
         ]
 
 
-buildIndex : List Package -> Index
+buildIndex : List Complete -> Index
 buildIndex packages =
     { chunks = List.concatMap Chunk.packageChunks packages }
 

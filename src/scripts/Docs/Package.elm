@@ -1,23 +1,27 @@
 module Docs.Package
     exposing
-        ( Entry
+        ( Complete
+        , Entry
         , Module
-        , Package
-        , empty
+        , Partial
+        , completeDecoder
         , identifier
-        , remoteMetaDataDecoder
-        , simpleDecoder
-        , simpleEncoder
-        , withModulesDecoder
+        , remotePartialDecoder
         )
 
 import Docs.Type exposing (Type)
 import Elm.Documentation as ElmDocs
 import Json.Decode as Decode exposing (Decoder)
-import Json.Encode as Encode
 
 
-type alias Package =
+type alias Partial =
+    { user : String
+    , name : String
+    , version : String
+    }
+
+
+type alias Complete =
     { user : String
     , name : String
     , version : String
@@ -39,58 +43,32 @@ type alias Entry =
     }
 
 
-identifier : Package -> String
+identifier : { a | user : String, name : String, version : String } -> String
 identifier { user, name, version } =
     user ++ "/" ++ name ++ "/" ++ version
 
 
-empty : Encode.Value
-empty =
-    Encode.list []
-
-
-simpleEncoder : Package -> Encode.Value -> Encode.Value
-simpleEncoder { user, name, version } rawModules =
-    Encode.object
-        [ ( "user", Encode.string user )
-        , ( "name", Encode.string name )
-        , ( "version", Encode.string version )
-        , ( "modules", rawModules )
-        ]
-
-
-simpleDecoder : String -> Decoder Package
-simpleDecoder elmVersion =
-    Decode.map4 Package
-        (Decode.field "user" Decode.string)
-        (Decode.field "name" Decode.string)
-        (Decode.field "version" Decode.string)
-        (Decode.succeed [])
-        |> Decode.andThen
-            (Decode.field "modules" << withModulesDecoder elmVersion)
-
-
-withModulesDecoder : String -> Package -> Decode.Decoder Package
-withModulesDecoder elmVersion { user, name, version } =
+completeDecoder : String -> Partial -> Decode.Decoder Complete
+completeDecoder elmVersion { user, name, version } =
     ElmDocs.decoder
         |> Decode.map (elmDocsToModule elmVersion)
         |> Decode.list
-        |> Decode.map (Package user name version)
+        |> Decode.map (Complete user name version)
 
 
-remoteMetaDataDecoder : Decode.Decoder Package
-remoteMetaDataDecoder =
+remotePartialDecoder : Decode.Decoder Partial
+remotePartialDecoder =
     Decode.map2 (,)
         (Decode.field "name" Decode.string)
         (Decode.field "versions" <| Decode.index 0 Decode.string)
-        |> Decode.andThen remoteMetaDataDecoderHelp
+        |> Decode.andThen remotePartialDecoderHelp
 
 
-remoteMetaDataDecoderHelp : ( String, String ) -> Decode.Decoder Package
-remoteMetaDataDecoderHelp ( fullName, version ) =
+remotePartialDecoderHelp : ( String, String ) -> Decode.Decoder Partial
+remotePartialDecoderHelp ( fullName, version ) =
     case String.split "/" fullName of
         [ user, name ] ->
-            Decode.succeed <| Package user name version []
+            Decode.succeed <| Partial user name version
 
         _ ->
             Decode.fail "package names must look like `user/project`"

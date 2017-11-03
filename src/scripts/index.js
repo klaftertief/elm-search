@@ -11,25 +11,8 @@ const path = require('path');
 const compiledElm = path.relative(__dirname, compiledSetupApp);
 const app = require(compiledElm).Setup.worker();
 
-function pathInCache({ user, name, version }) {
-    return path.join(cacheDirectory, `${user}@${name}@${version}.json`);
-}
-
-function checkForFile(package) {
-    fs.readFile(pathInCache(package), 'utf8', (err, data) => {
-        if (err)
-            app.ports.inbox.send({
-                tag: 'CACHE_MISS',
-                package: package
-            });
-        else
-            app.ports.inbox.send({
-                tag: 'CACHE_HIT',
-                package: Object.assign({}, package, {
-                    modules: JSON.parse(data),
-                }),
-            });
-    });
+function pathInCache(moduleName) {
+    return path.join(cacheDirectory, moduleName + '.elm');
 }
 
 function createFile(filePath, data) {
@@ -41,19 +24,15 @@ function createFile(filePath, data) {
     });
 }
 
-app.ports.outbox.subscribe(action => {
-    switch (action.tag) {
-        case 'CHECK_CACHE':
-            checkForFile(action.package);
-            break;
-        case 'CACHE':
-            createFile(
-                pathInCache(action.package),
-                JSON.stringify(action.package.modules)
-            );
-            break;
-        case 'DONE':
-            createFile(outputApp, action.code);
-            break;
-    }
+app.ports.lookup.subscribe(msg => {
+    fs.access(pathInCache(msg.moduleName), (err) => {
+        if (err)
+            app.ports.onMissing.send(msg.identifier);
+    });
 });
+
+app.ports.put.subscribe(msg => {
+    createFile(pathInCache(msg.moduleName), msg.code);
+});
+
+app.ports.writeOutput.subscribe(code => createFile(outputApp, code));
