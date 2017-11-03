@@ -32,3 +32,6 @@ deploy:
   github_token: $GITHUB_TOKEN
   on:
     branch: develop
+
+notifications:
+  email: false
