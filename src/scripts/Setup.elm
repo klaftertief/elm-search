@@ -3,6 +3,7 @@ port module Setup exposing (main)
 import Blacklist
 import Docs.Package as Package
 import Docs.Package.Cache as Cache
+import Generate
 import Http
 import Json.Decode as Decode
 import Set
@@ -85,7 +86,7 @@ planFileWrites partials =
         moduleNames =
             List.map safeModuleName partials
     in
-    writeOutput (mainModuleCode moduleNames)
+    writeOutput (Generate.main_ moduleNames)
         :: List.map2 Cache.check moduleNames partials
         |> Cmd.batch
 
@@ -118,17 +119,13 @@ cacheModule complete =
     in
     Cache.put
         { moduleName = name
-        , code = packageModuleCode name complete
+        , code = Generate.package name complete
         }
 
 
 safeModuleName : { a | user : String, name : String, version : String } -> String
 safeModuleName { user, name, version } =
-    let
-        combined =
-            user ++ "__" ++ name ++ "__" ++ version
-    in
-    "M_" ++ String.toLower (String.map replaceUnsafe combined)
+    "M_" ++ Generate.lowerName (user ++ "__" ++ name ++ "__" ++ version)
 
 
 replaceUnsafe : Char -> Char
@@ -152,33 +149,6 @@ ensureOk func result =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Cache.onMissing CacheMiss
-
-
-
--- CODE
-
-
-mainModuleCode : List String -> String
-mainModuleCode dependencies =
-    let
-        imports =
-            List.map (\dep -> "import " ++ dep) ("Web" :: dependencies)
-                |> String.join "\n"
-
-        packageList =
-            List.map (\dep -> dep ++ ".package") dependencies
-                |> (\elements -> "[" ++ String.join "," elements ++ "]")
-    in
-    imports ++ "\n\nmain = Web.program " ++ packageList
-
-
-packageModuleCode : String -> Package.Complete -> String
-packageModuleCode name complete =
-    String.join "\n"
-        [ "module " ++ name ++ " exposing(package)"
-        , "import Docs.Type exposing(..)"
-        , "package = " ++ toString complete
-        ]
 
 
 
