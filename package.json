@@ -1,18 +1,21 @@
 {
   "name": "elm-search",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "directories": {
-    "test": "tests"
-  },
-  "devDependencies": {
-    "elm": "^0.18.0"
-  },
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "elm": "elm"
+  "description": "an API search engine for all published Elm packages",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/klaftertief/elm-search.git"
   },
   "author": "",
-  "license": "ISC"
+  "license": "BSD-3-Clause",
+  "bugs": {
+    "url": "https://github.com/klaftertief/elm-search/issues"
+  },
+  "homepage": "https://github.com/klaftertief/elm-search#readme",
+  "devDependencies": {
+    "elm": "^0.18.0",
+    "elm-test": "^0.18.9",
+    "uglify-js": "^3.0.0",
+    "xhr2": "^0.1.4"
+  }
 }

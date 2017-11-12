@@ -5,6 +5,7 @@ module Docs.Type
         , normalize
         , parse
         , reserverdVars
+        , toInternal
         )
 
 import Char
@@ -30,37 +31,42 @@ parse =
 
 decoder : Decoder Type
 decoder =
-    Decode.andThen (Decode.succeed << toInternal []) Type.decoder
+    Decode.andThen (Decode.succeed << toInternal) Type.decoder
 
 
-toInternal : List Type -> Type.Type -> Type
-toInternal functionArgs elmType =
+toInternal : Type.Type -> Type
+toInternal =
+    toInternalHelp []
+
+
+toInternalHelp : List Type -> Type.Type -> Type
+toInternalHelp functionArgs elmType =
     case elmType of
         Type.Var name ->
             Var name
 
         Type.Lambda first ((Type.Lambda _ _) as next) ->
-            toInternal (toInternal [] first :: functionArgs) next
+            toInternalHelp (toInternalHelp [] first :: functionArgs) next
 
         Type.Lambda almostLast last ->
             Function
-                (List.reverse (toInternal [] almostLast :: functionArgs))
-                (toInternal [] last)
+                (List.reverse (toInternalHelp [] almostLast :: functionArgs))
+                (toInternalHelp [] last)
 
         Type.Tuple args ->
-            Tuple (List.map (toInternal []) args)
+            Tuple (List.map (toInternalHelp []) args)
 
         Type.Type name args ->
-            Apply (toName name) (List.map (toInternal []) args)
+            Apply (toName name) (List.map (toInternalHelp []) args)
 
         Type.Record args extensible ->
-            Record (List.map (Tuple.mapSecond (toInternal [])) args) extensible
+            Record (List.map (Tuple.mapSecond (toInternalHelp [])) args) extensible
 
 
 toName : String -> Name.Name
 toName str =
     Name.fromString str
-        |> Result.withDefault { name = str, home = "" }
+        |> Maybe.withDefault { name = str, home = "" }
 
 
 

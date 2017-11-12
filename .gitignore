@@ -1,5 +1,6 @@
 elm-stuff
 /bin/*
 node_modules/
+npm-debug.log
 dist/
 cache/

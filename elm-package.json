@@ -4,7 +4,8 @@
     "repository": "https://github.com/klaftertief/elm-search.git",
     "license": "BSD3",
     "source-directories": [
-        "src/scripts"
+        "src/scripts",
+        "cache"
     ],
     "exposed-modules": [],
     "dependencies": {
