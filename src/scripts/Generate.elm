@@ -52,9 +52,22 @@ fromModule { name, elmVersion, entries } =
     let
         entryListDefName =
             "v_" ++ lowerName name
+
+        entriesWithFirstDocParagraph =
+            List.map
+                (\entry ->
+                    { entry
+                        | docs =
+                            entry.docs
+                                |> String.split "\n\n"
+                                |> List.head
+                                |> Maybe.withDefault ""
+                    }
+                )
+                entries
     in
     { def =
-        ( entryListDefName, chunkedList toString entries )
+        ( entryListDefName, chunkedList toString entriesWithFirstDocParagraph )
     , inline =
         record
             [ ( "name", toString name )
