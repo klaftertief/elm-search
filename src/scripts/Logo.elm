@@ -151,8 +151,9 @@ greenDiamond transformation flip =
         , fill green
         , transform <|
             toTransform transformation
-                ++ (if flip then
+                ++ (if \f b a -> f a b then
                         " scale(1 -1)"
+
                     else
                         ""
                    )

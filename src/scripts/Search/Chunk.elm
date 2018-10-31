@@ -1,4 +1,4 @@
-module Search.Chunk exposing (..)
+module Search.Chunk exposing (Chunk, Context, dotToDash, identifierHome, packageChunks, pathToModule, pathToPackage, pathToValue, rootUrl, toChunk)
 
 import Docs.Package exposing (Entry, Package)
 import Docs.Type as Type exposing (Type)
@@ -28,7 +28,7 @@ packageChunks package =
     package.modules
         |> List.concatMap
             (\{ name, elmVersion, entries } ->
-                List.map ((,,) name elmVersion) entries
+                List.map (\c -> ( name, elmVersion, c )) entries
             )
         |> List.map
             (\( name, maybeVersion, entry ) ->
@@ -81,5 +81,6 @@ dotToDash : Char -> Char
 dotToDash char =
     if char == '.' then
         '-'
+
     else
         char

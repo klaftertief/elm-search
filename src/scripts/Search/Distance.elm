@@ -1,4 +1,4 @@
-module Search.Distance exposing (..)
+module Search.Distance exposing (distance, distanceApply, distanceCanonical, distanceList, distanceName, distanceVarApply, highPenalty, lowPenalty, maxPenalty, mediumPenalty, noPenalty, simple, tipe)
 
 import Dict exposing (Dict)
 import Docs.Name as Name exposing (Name)
@@ -12,8 +12,10 @@ simple : (Chunk -> String) -> String -> Chunk -> Float
 simple extract query chunk =
     if query == extract chunk then
         noPenalty
+
     else if String.contains (String.toLower query) (String.toLower <| extract chunk) then
         mediumPenalty * (1 - (toFloat (String.length query) / toFloat (String.length (extract chunk))))
+
     else
         maxPenalty
 
@@ -115,6 +117,7 @@ distanceList needle hay =
     in
     if diffLength > 1 then
         maxPenalty
+
     else
         -- TODO: optimize, maybe add penalty for permutations
         List.Extra.permutations needle
@@ -123,7 +126,7 @@ distanceList needle hay =
                     List.map2 distance curr hay
                         |> List.sum
                         |> (+) (toFloat diffLength * maxPenalty)
-                        |> flip (/) (toFloat maxLength)
+                        |> (\a -> (/) a (toFloat maxLength))
                 )
             |> List.minimum
             |> Maybe.withDefault maxPenalty
@@ -133,6 +136,7 @@ distanceName : String -> String -> Float
 distanceName needle hay =
     if needle == hay then
         noPenalty
+
     else
         maxPenalty
 
@@ -143,8 +147,10 @@ distanceCanonical needle hay =
     --distanceName needle.name hay.name
     if needle.name == hay.name then
         noPenalty
+
     else if String.contains needle.name hay.name then
         mediumPenalty
+
     else
         maxPenalty
 
@@ -159,6 +165,7 @@ distanceVarApply varName applyName =
         Just typeList ->
             if List.any ((==) applyName.name) typeList then
                 lowPenalty
+
             else
                 maxPenalty
 

@@ -38,6 +38,7 @@ toQueryString : Search.Filter -> String
 toQueryString { queryString } =
     if String.isEmpty queryString then
         ""
+
     else
         "?q=" ++ Http.encodeUri queryString
 
@@ -78,7 +79,7 @@ decodePair : List String -> Maybe ( String, String )
 decodePair pair =
     case pair of
         [ k, v ] ->
-            Maybe.map2 (,) (Http.decodeUri k) (Http.decodeUri v)
+            Maybe.map2 (\a b -> ( a, b )) (Http.decodeUri k) (Http.decodeUri v)
 
         _ ->
             Nothing
@@ -120,6 +121,7 @@ update msg (Ready search) =
                         search
                             |> Search.update (Search.SetFilter filter)
                             |> Search.update Search.RunFilter
+
                     else
                         search
             in

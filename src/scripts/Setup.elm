@@ -95,6 +95,7 @@ fetchDocs : String -> Package.Metadata -> Cmd Msg
 fetchDocs elmVersion metadata =
     if Blacklist.contains metadata then
         Cmd.none
+
     else
         let
             url =
@@ -132,6 +133,7 @@ replaceUnsafe : Char -> Char
 replaceUnsafe char =
     if char == '-' || char == '.' then
         '_'
+
     else
         char
 

@@ -1,13 +1,12 @@
-module Docs.Package
-    exposing
-        ( Entry
-        , Metadata
-        , Module
-        , Package
-        , decode
-        , identifier
-        , remoteMetadataDecoder
-        )
+module Docs.Package exposing
+    ( Entry
+    , Metadata
+    , Module
+    , Package
+    , decode
+    , identifier
+    , remoteMetadataDecoder
+    )
 
 import Docs.Type exposing (Type)
 import Elm.Documentation as ElmDocs
@@ -56,7 +55,7 @@ decode elmVersion metadata =
 
 remoteMetadataDecoder : Decode.Decoder Metadata
 remoteMetadataDecoder =
-    Decode.map2 (,)
+    Decode.map2 (\a b -> ( a, b ))
         (Decode.field "name" Decode.string)
         (Decode.field "versions" <| Decode.index 0 Decode.string)
         |> Decode.andThen remoteMetadataHelp

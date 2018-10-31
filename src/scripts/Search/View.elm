@@ -1,4 +1,4 @@
-module Search.View exposing (..)
+module Search.View exposing (Context(..), annotation, annotationBlock, annotationName, longFunctionAnnotation, typeLength, viewChunk, viewField, viewLogo, viewSearchBody, viewSearchBranding, viewSearchForm, viewSearchHeader, viewSearchIntro, viewSearchResults, viewType)
 
 import Docs.Type as Type exposing (Type)
 import Html exposing (..)
@@ -70,6 +70,7 @@ viewSearchBody model =
         searchBody =
             if String.isEmpty model.filter.lastQuery then
                 viewSearchIntro
+
             else
                 viewSearchResults model
     in
@@ -90,7 +91,7 @@ viewSearchIntro =
         exampleSearchItem query =
             li []
                 [ a
-                    [ style [ ( "cursor", "pointer" ) ]
+                    [ style "cursor" "pointer"
                     , onClick (SetFilterQueryStringAndRunFilter query)
                     ]
                     [ text query ]
@@ -116,6 +117,7 @@ viewSearchResults { filter, result } =
         viewChunks =
             if not <| List.isEmpty result.chunks then
                 List.map viewChunk result.chunks
+
             else
                 [ p [] [ text "No Results Found." ] ]
     in
@@ -156,6 +158,7 @@ annotation chunk =
         Type.Function args result ->
             if String.length chunk.context.name + 3 + typeLength Other chunk.tipe > 64 then
                 [ annotationName chunk ] :: longFunctionAnnotation args result
+
             else
                 [ annotationName chunk :: Code.padded Code.colon ++ viewType Other chunk.tipe ]
 

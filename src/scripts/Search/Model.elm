@@ -1,4 +1,4 @@
-module Search.Model exposing (..)
+module Search.Model exposing (Filter, Index, Model, Msg(..), Query(..), Result, buildIndex, distanceByQuery, filterByDistance, indexedPair, initialFilter, initialIndex, initialModel, initialResult, prioritizeChunk, prioritizeChunks, queryListFromString, runFilter)
 
 import Docs.Package as Package exposing (Package)
 import Docs.Type as Type
@@ -77,13 +77,17 @@ queryListFromString : String -> List Query
 queryListFromString string =
     if String.isEmpty string then
         []
+
     else
         [ if String.startsWith "user:" string then
             User (String.dropLeft 5 string)
+
           else if String.startsWith "package:" string then
             Package (String.dropLeft 8 string)
+
           else if String.startsWith "module:" string then
             Module (String.dropLeft 7 string)
+
           else
             case Type.parse string of
                 Ok tipe ->
@@ -167,10 +171,13 @@ prioritizeChunk ( distance, chunk ) =
     in
     if userName == "elm-lang" && packageName == "core" then
         ( distance - priority / 2, chunk )
+
     else if userName == "elm-lang" then
         ( distance - priority / 3, chunk )
+
     else if userName == "elm-community" then
         ( distance - priority / 4, chunk )
+
     else
         ( distance, chunk )
 

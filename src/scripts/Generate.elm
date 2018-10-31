@@ -103,6 +103,7 @@ replaceUnsafe : Char -> Char
 replaceUnsafe char =
     if char == '-' || char == '.' then
         '_'
+
     else
         char
 
@@ -114,6 +115,7 @@ chunkedList : (a -> String) -> List a -> String
 chunkedList func values =
     if List.isEmpty values then
         "[]"
+
     else
         chunkedListHelp func values []
 
