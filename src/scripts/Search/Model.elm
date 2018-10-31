@@ -121,7 +121,7 @@ runFilter { query } { chunks } =
                         |> List.map (\( d, c ) -> ( d / toFloat (List.length query), c ))
                         |> filterByDistance (Distance.lowPenalty / 2)
                         |> prioritizeChunks
-                        |> List.sortBy (\( d, c ) -> ( d, c.context.name, c.context.moduleName, c.context.packageName ))
+                        |> List.sortBy (\( d, c ) -> ( d, ( c.context.name, c.context.moduleName, c.context.packageName ) ))
                         |> List.map Tuple.second
     in
     { chunks = resultChunks }
@@ -169,10 +169,10 @@ prioritizeChunk ( distance, chunk ) =
         priority =
             Distance.lowPenalty
     in
-    if userName == "elm-lang" && packageName == "core" then
+    if userName == "elm" && packageName == "core" then
         ( distance - priority / 2, chunk )
 
-    else if userName == "elm-lang" then
+    else if userName == "elm" then
         ( distance - priority / 3, chunk )
 
     else if userName == "elm-community" then

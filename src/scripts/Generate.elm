@@ -41,7 +41,7 @@ fromPackage metadata modules =
         List.map .def moduleDefs
     , inline =
         record
-            [ ( "metadata", toString metadata )
+            [ ( "metadata", Package.metadataToString metadata )
             , ( "modules", list .inline moduleDefs )
             ]
     }
@@ -67,11 +67,11 @@ fromModule { name, elmVersion, entries } =
                 entries
     in
     { def =
-        ( entryListDefName, chunkedList toString entriesWithFirstDocParagraph )
+        ( entryListDefName, chunkedList Debug.toString entriesWithFirstDocParagraph )
     , inline =
         record
-            [ ( "name", toString name )
-            , ( "elmVersion", toString elmVersion )
+            [ ( "name", "\"" ++ name ++ "\"" )
+            , ( "elmVersion", Debug.toString elmVersion )
             , ( "entries", entryListDefName )
             ]
     }

@@ -52,7 +52,7 @@ viewSearchForm { filter, index, result } =
             [ name "q"
             , type_ "search"
             , onInput SetFilterQueryString
-            , defaultValue filter.queryString
+            , value filter.queryString
             , autofocus True
             ]
             []
@@ -319,8 +319,8 @@ typeLength context tipe =
 
         Type.Record fields ext ->
             let
-                fieldLength ( field, tipe ) =
-                    String.length field + 3 + typeLength Other tipe
+                fieldLength ( field, tipe_ ) =
+                    String.length field + 3 + typeLength Other tipe_
 
                 recordLength =
                     2 + List.sum (List.map (\ft -> 2 + fieldLength ft) fields)

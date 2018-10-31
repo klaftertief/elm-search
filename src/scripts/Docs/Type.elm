@@ -10,7 +10,7 @@ module Docs.Type exposing
 import Char
 import Dict exposing (Dict)
 import Docs.Name as Name exposing (Name)
-import Elm.Documentation.Type as Type
+import Elm.Type as Type
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 
@@ -23,7 +23,7 @@ type Type
     | Record (List ( String, Type )) (Maybe String)
 
 
-parse : String -> Result String Type
+parse : String -> Result Decode.Error Type
 parse =
     Decode.decodeValue decoder << Encode.string
 
@@ -98,7 +98,7 @@ nextMappingValue mapping =
             Dict.size mapping - Dict.size defaultMapping
 
         code =
-            (modBy 26 base) + Char.toCode 'a'
+            modBy 26 base + Char.toCode 'a'
 
         string =
             String.fromChar (Char.fromCode code)
