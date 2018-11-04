@@ -21,46 +21,30 @@ type Msg
     | Response Package.Package
 
 
-main : Program Never Model Msg
+main : Program () Model Msg
 main =
-    Platform.program
+    Platform.worker
         { init = init
         , update = update
         , subscriptions = subscriptions
         }
 
 
-init : ( Model, Cmd Msg )
-init =
+init : () -> ( Model, Cmd Msg )
+init _ =
     let
         elmVersion =
-            "0.18.0"
-
-        getNewPackageNames =
-            Decode.list Decode.string
-                |> Http.get "http://package.elm-lang.org/new-packages"
-                |> Http.toTask
+            "0.19.0"
 
         getAllPackages =
             Decode.list Package.remoteMetadataDecoder
-                |> Http.get "http://package.elm-lang.org/all-packages"
+                |> Http.get "https://package.elm-lang.org/search.json"
                 |> Http.toTask
     in
     ( Model elmVersion
-    , Task.map2 onlyNewPackages getNewPackageNames getAllPackages
+    , getAllPackages
         |> Task.attempt (ensureOk All)
     )
-
-
-onlyNewPackages : List String -> List Package.Metadata -> List Package.Metadata
-onlyNewPackages newPackageNames =
-    let
-        new =
-            Set.fromList newPackageNames
-    in
-    List.filter <|
-        \{ user, name } ->
-            Set.member (user ++ "/" ++ name) new
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -95,13 +79,14 @@ fetchDocs : String -> Package.Metadata -> Cmd Msg
 fetchDocs elmVersion metadata =
     if Blacklist.contains metadata then
         Cmd.none
+
     else
         let
             url =
                 String.join "/"
                     [ "http://package.elm-lang.org/packages"
                     , Package.identifier metadata
-                    , "documentation.json"
+                    , "docs.json"
                     ]
 
             decoder =
@@ -132,6 +117,7 @@ replaceUnsafe : Char -> Char
 replaceUnsafe char =
     if char == '-' || char == '.' then
         '_'
+
     else
         char
 
@@ -142,8 +128,8 @@ ensureOk func result =
         Ok value ->
             func value
 
-        Err _ ->
-            Debug.crash "fatal error"
+        Err e ->
+            Debug.todo (Debug.toString e)
 
 
 subscriptions : Model -> Sub Msg

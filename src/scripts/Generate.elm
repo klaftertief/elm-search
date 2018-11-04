@@ -41,7 +41,7 @@ fromPackage metadata modules =
         List.map .def moduleDefs
     , inline =
         record
-            [ ( "metadata", toString metadata )
+            [ ( "metadata", Package.metadataToString metadata )
             , ( "modules", list .inline moduleDefs )
             ]
     }
@@ -67,11 +67,11 @@ fromModule { name, elmVersion, entries } =
                 entries
     in
     { def =
-        ( entryListDefName, chunkedList toString entriesWithFirstDocParagraph )
+        ( entryListDefName, chunkedList Debug.toString entriesWithFirstDocParagraph )
     , inline =
         record
-            [ ( "name", toString name )
-            , ( "elmVersion", toString elmVersion )
+            [ ( "name", "\"" ++ name ++ "\"" )
+            , ( "elmVersion", Debug.toString elmVersion )
             , ( "entries", entryListDefName )
             ]
     }
@@ -103,6 +103,7 @@ replaceUnsafe : Char -> Char
 replaceUnsafe char =
     if char == '-' || char == '.' then
         '_'
+
     else
         char
 
@@ -114,6 +115,7 @@ chunkedList : (a -> String) -> List a -> String
 chunkedList func values =
     if List.isEmpty values then
         "[]"
+
     else
         chunkedListHelp func values []
 

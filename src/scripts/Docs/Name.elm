@@ -47,5 +47,6 @@ dotToDash : Char -> Char
 dotToDash char =
     if char == '.' then
         '-'
+
     else
         char

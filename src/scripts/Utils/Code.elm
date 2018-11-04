@@ -1,4 +1,4 @@
-module Utils.Code exposing (..)
+module Utils.Code exposing (addParens, arrow, colon, equals, keyword, padded, space)
 
 -- where
 

@@ -1,16 +1,16 @@
-module Docs.Package
-    exposing
-        ( Entry
-        , Metadata
-        , Module
-        , Package
-        , decode
-        , identifier
-        , remoteMetadataDecoder
-        )
+module Docs.Package exposing
+    ( Entry
+    , Metadata
+    , Module
+    , Package
+    , decode
+    , identifier
+    , metadataToString
+    , remoteMetadataDecoder
+    )
 
 import Docs.Type exposing (Type)
-import Elm.Documentation as ElmDocs
+import Elm.Docs as ElmDocs
 import Json.Decode as Decode exposing (Decoder)
 
 
@@ -25,6 +25,17 @@ type alias Metadata =
     , name : String
     , version : String
     }
+
+
+metadataToString : Metadata -> String
+metadataToString metadata =
+    "{ user = \""
+        ++ metadata.user
+        ++ "\", name = \""
+        ++ metadata.name
+        ++ "\", version = \""
+        ++ metadata.version
+        ++ "\"}"
 
 
 type alias Module =
@@ -56,7 +67,7 @@ decode elmVersion metadata =
 
 remoteMetadataDecoder : Decode.Decoder Metadata
 remoteMetadataDecoder =
-    Decode.map2 (,)
+    Decode.map2 (\a b -> ( a, b ))
         (Decode.field "name" Decode.string)
         (Decode.field "versions" <| Decode.index 0 Decode.string)
         |> Decode.andThen remoteMetadataHelp
@@ -72,20 +83,11 @@ remoteMetadataHelp ( fullName, version ) =
             Decode.fail "package names must look like `user/project`"
 
 
-elmDocsToModule : String -> ElmDocs.Documentation -> Module
+elmDocsToModule : String -> ElmDocs.Module -> Module
 elmDocsToModule elmVersion { name, values } =
     Module name (List.map elmValueToEntry values) (Just elmVersion)
 
 
 elmValueToEntry : ElmDocs.Value -> Entry
 elmValueToEntry { name, tipe, comment } =
-    let
-        internalName =
-            case name of
-                ElmDocs.Name str ->
-                    str
-
-                ElmDocs.Op str _ _ ->
-                    str
-    in
-    Entry internalName comment (Docs.Type.toInternal tipe)
+    Entry name comment (Docs.Type.toInternal tipe)

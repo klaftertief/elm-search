@@ -1,5 +1,6 @@
 port module Web exposing (program)
 
+import Browser
 import Dict
 import Docs.Package exposing (Package)
 import Html exposing (..)
@@ -8,11 +9,12 @@ import Http
 import Search.Model as Search
 import Search.Update as Search
 import Search.View as Search
+import Url
 
 
 program : List Package -> Program Flags Model Msg
 program packages =
-    Html.programWithFlags
+    Browser.element
         { init = init packages
         , view = view
         , update = update
@@ -38,13 +40,14 @@ toQueryString : Search.Filter -> String
 toQueryString { queryString } =
     if String.isEmpty queryString then
         ""
+
     else
-        "?q=" ++ Http.encodeUri queryString
+        "?q=" ++ Url.percentEncode queryString
 
 
 decodeQuery : String -> String
-decodeQuery query =
-    String.join "%20" (String.split "+" query)
+decodeQuery query_ =
+    String.join "%20" (String.split "+" query_)
 
 
 parseSearchString : String -> Search.Filter
@@ -62,11 +65,11 @@ parseSearchString searchString =
                     Dict.get "q" parts
                         |> Maybe.withDefault ""
 
-                query =
+                query_ =
                     Search.queryListFromString queryString
             in
             { queryString = queryString
-            , query = query
+            , query = query_
             , lastQuery = ""
             }
 
@@ -78,7 +81,7 @@ decodePair : List String -> Maybe ( String, String )
 decodePair pair =
     case pair of
         [ k, v ] ->
-            Maybe.map2 (,) (Http.decodeUri k) (Http.decodeUri v)
+            Maybe.map2 (\a b -> ( a, b )) (Url.percentDecode k) (Url.percentDecode v)
 
         _ ->
             Nothing
@@ -120,6 +123,7 @@ update msg (Ready search) =
                         search
                             |> Search.update (Search.SetFilter filter)
                             |> Search.update Search.RunFilter
+
                     else
                         search
             in

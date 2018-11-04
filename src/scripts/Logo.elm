@@ -15,7 +15,7 @@ viewWithSize : Int -> Svg msg
 viewWithSize s =
     let
         size =
-            toString s
+            String.fromInt s
     in
     svg
         [ width size
@@ -86,11 +86,11 @@ type alias Transformation =
 toTransform : Transformation -> String
 toTransform { movementX, movementY, rotation } =
     "translate("
-        ++ toString movementX
+        ++ String.fromFloat movementX
         ++ " "
-        ++ toString movementY
+        ++ String.fromFloat movementY
         ++ ") rotate("
-        ++ toString rotation
+        ++ String.fromFloat rotation
         ++ ")"
 
 
@@ -153,6 +153,7 @@ greenDiamond transformation flip =
             toTransform transformation
                 ++ (if flip then
                         " scale(1 -1)"
+
                     else
                         ""
                    )
