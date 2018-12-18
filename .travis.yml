@@ -1,6 +1,6 @@
 sudo: false
 
-language: node
+language: elm
 
 cache:
   directories:
@@ -10,20 +10,10 @@ cache:
     - elm-stuff/build-artifacts
 
 install:
-  - | # https://github.com/elm-lang/elm-compiler/issues/1473#issuecomment-245704142
-    if [ ! -d sysconfcpus/bin ];
-    then
-      git clone https://github.com/obmarg/libsysconfcpus.git;
-      pushd libsysconfcpus;
-      ./configure --prefix=$TRAVIS_BUILD_DIR/sysconfcpus;
-      make;
-      make install;
-      popd;
-    fi
   - make install
 
 script:
-  - $TRAVIS_BUILD_DIR/sysconfcpus/bin/sysconfcpus -n 2 make clean setup build
+  - make clean setup build
 
 deploy:
   provider: pages
