@@ -69,7 +69,17 @@ remoteMetadataDecoder : Decode.Decoder Metadata
 remoteMetadataDecoder =
     Decode.map2 (\a b -> ( a, b ))
         (Decode.field "name" Decode.string)
-        (Decode.field "versions" <| Decode.index 0 Decode.string)
+        (Decode.field "versions" (Decode.list Decode.string)
+            |> Decode.andThen
+                (\versions ->
+                    case versions |> List.reverse |> List.head of
+                        Just version ->
+                            Decode.succeed version
+
+                        Nothing ->
+                            Decode.fail "no versions available"
+                )
+        )
         |> Decode.andThen remoteMetadataHelp
 
 
