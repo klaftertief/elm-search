@@ -1,4 +1,4 @@
-port module Web exposing (program)
+module Web exposing (program)
 
 import Browser
 import Dict
@@ -104,7 +104,7 @@ update msg (Ready search) =
                 newSearch =
                     Search.update Search.RunFilter search
             in
-            ( Ready newSearch, toQueryString search.filter |> pushQuery )
+            ( Ready newSearch, Cmd.none )
 
         SearchMsg searchMsg ->
             let
@@ -141,10 +141,4 @@ view (Ready search) =
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
-    query LocationSearchChange
-
-
-port query : (String -> msg) -> Sub msg
-
-
-port pushQuery : String -> Cmd msg
+    Sub.none

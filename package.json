@@ -13,9 +13,11 @@
   },
   "homepage": "https://github.com/klaftertief/elm-search#readme",
   "devDependencies": {
-    "elm": "^0.19.0-bugfix2",
+    "elm": "^0.19.0-bugfix6",
     "elm-format": "^0.8.1",
-    "terser": "^3.10.11",
+    "elm-hot": "^1.0.1",
+    "node-elm-compiler": "^5.0.1",
+    "parcel-bundler": "^1.11.0",
     "xhr2": "^0.1.4"
   }
 }
