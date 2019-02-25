@@ -4,7 +4,9 @@ import Dict exposing (Dict)
 import Elm.Docs
 import Elm.Package
 import Elm.Project
+import Elm.Type
 import Json.Decode
+import Json.Encode
 
 
 main : Program () Model Msg
@@ -37,6 +39,7 @@ init _ =
 
 type Msg
     = GotPackageJson Json.Decode.Value
+    | GotSearchRequest String
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -45,17 +48,52 @@ update msg model =
         GotPackageJson packageJson ->
             case Json.Decode.decodeValue packageDecoder packageJson of
                 Ok package ->
+                    -- let
+                    --     _ =
+                    --         Debug.log "added" package.info.name
+                    -- in
                     ( { model | packages = insertPackage package model.packages }
                     , Cmd.none
                     )
 
-                Err _ ->
+                Err err ->
+                    -- let
+                    --     _ =
+                    --         Debug.log "could not add package" (Json.Decode.errorToString err)
+                    -- in
                     ( model, Cmd.none )
+
+        GotSearchRequest queryString ->
+            ( model
+            , result
+                (Json.Encode.object
+                    [ ( "query", Json.Encode.string queryString )
+                    , ( "result"
+                      , model.packages
+                            |> Dict.values
+                            |> List.concatMap .modules
+                            |> List.concatMap .values
+                            |> List.filterMap
+                                (\value ->
+                                    if queryString == value.name then
+                                        Just <| value.name ++ " : " ++ elmTypeToString False value.tipe
+
+                                    else
+                                        Nothing
+                                )
+                            |> Json.Encode.list Json.Encode.string
+                      )
+                    ]
+                )
+            )
 
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
-    addPackage GotPackageJson
+    Sub.batch
+        [ addPackage GotPackageJson
+        , search GotSearchRequest
+        ]
 
 
 
@@ -65,12 +103,19 @@ subscriptions _ =
 port addPackage : (Json.Decode.Value -> msg) -> Sub msg
 
 
+port search : (String -> msg) -> Sub msg
+
+
+port result : Json.Decode.Value -> Cmd msg
+
+
 
 -- PACKAGE
 
 
 type alias Package =
     { info : Elm.Project.PackageInfo
+    , readme : String
     , modules : List Elm.Docs.Module
     }
 
@@ -82,8 +127,9 @@ insertPackage package =
 
 packageDecoder : Json.Decode.Decoder Package
 packageDecoder =
-    Json.Decode.map2 Package
+    Json.Decode.map3 Package
         (Json.Decode.field "package" packageInfoDecoder)
+        (Json.Decode.field "readme" Json.Decode.string)
         (Json.Decode.field "docs" docsDecoder)
 
 
@@ -104,3 +150,47 @@ packageInfoDecoder =
 docsDecoder : Json.Decode.Decoder (List Elm.Docs.Module)
 docsDecoder =
     Json.Decode.list Elm.Docs.decoder
+
+
+elmTypeToString : Bool -> Elm.Type.Type -> String
+elmTypeToString nested tipe =
+    case tipe of
+        Elm.Type.Var name ->
+            name
+
+        Elm.Type.Lambda ((Elm.Type.Lambda fromFrom fromTo) as fromLamda) to ->
+            "(" ++ elmTypeToString False fromLamda ++ ") -> " ++ elmTypeToString False to
+
+        Elm.Type.Lambda from to ->
+            elmTypeToString False from ++ " -> " ++ elmTypeToString False to
+
+        Elm.Type.Tuple [] ->
+            "()"
+
+        Elm.Type.Tuple types ->
+            "( " ++ (types |> List.map (elmTypeToString False) |> String.join ", ") ++ " )"
+
+        Elm.Type.Type name types ->
+            name
+                :: List.map (elmTypeToString True) types
+                |> String.join " "
+                |> (\typeString ->
+                        if nested then
+                            "(" ++ typeString ++ ")"
+
+                        else
+                            typeString
+                   )
+
+        Elm.Type.Record fields (Just extensible) ->
+            "{ " ++ extensible ++ " | " ++ recordFieldsToString fields ++ " }"
+
+        Elm.Type.Record fields Nothing ->
+            "{ " ++ recordFieldsToString fields ++ " }"
+
+
+recordFieldsToString : List ( String, Elm.Type.Type ) -> String
+recordFieldsToString fields =
+    fields
+        |> List.map (\( name, tipe ) -> name ++ " : " ++ elmTypeToString False tipe)
+        |> String.join ", "

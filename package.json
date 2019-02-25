@@ -19,5 +19,9 @@
     "node-elm-compiler": "^5.0.1",
     "parcel-bundler": "^1.11.0",
     "xhr2": "^0.1.4"
+  },
+  "dependencies": {
+    "express": "^4.16.4",
+    "mkdirp": "^0.5.1"
   }
 }
