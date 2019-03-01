@@ -101,13 +101,8 @@ subscriptions _ =
 
 view : Model -> Browser.Document Msg
 view model =
-    { title = "URL Interceptor"
+    { title = "Elm Search"
     , body =
         [ input [ placeholder "Search", onInput EnteredSearchInput ] []
         ]
     }
-
-
-viewLink : String -> Html msg
-viewLink path =
-    li [] [ a [ href path ] [ text path ] ]
