@@ -3,7 +3,10 @@ const path = require("path");
 const Backend = require("./Backend.elm").Elm.Backend;
 const express = require("express");
 const search = Backend.init();
+const cors = require("cors");
 const server = express();
+
+server.use(cors());
 
 const port = 3333;
 const maxDuration = 1000;

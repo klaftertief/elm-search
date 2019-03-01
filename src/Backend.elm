@@ -73,15 +73,15 @@ update msg model =
                             |> Dict.values
                             |> List.concatMap .modules
                             |> List.concatMap .values
-                            |> List.filterMap
+                            |> List.filter (\value -> queryString == value.name)
+                            |> Json.Encode.list
                                 (\value ->
-                                    if queryString == value.name then
-                                        Just <| value.name ++ " : " ++ elmTypeToString False value.tipe
-
-                                    else
-                                        Nothing
+                                    Json.Encode.object
+                                        [ ( "name", Json.Encode.string value.name )
+                                        , ( "comment", Json.Encode.string value.comment )
+                                        , ( "type", Json.Encode.string (elmTypeToString False value.tipe) )
+                                        ]
                                 )
-                            |> Json.Encode.list Json.Encode.string
                       )
                     ]
                 )

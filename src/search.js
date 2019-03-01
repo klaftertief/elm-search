@@ -1,5 +1,3 @@
-import { Elm } from "./Web.elm";
+import { Elm } from "./Frontend.elm";
 
-Elm.Web.init({});
-
-console.log("asd");
+Elm.Frontend.init({});
