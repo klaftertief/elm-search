@@ -1,5 +1,14 @@
-# Elm-search
+# Elm Search
 
-Elm-search is a search engine for all exposed values in the latest versions of all published packages at <http://package.elm-lang.org>. One can either search by name or by approximate type annotation.
+elm-search provides different ways to explore the elm package ecosystem.
 
-**Proper installation instructions, documentation and plans for contributions are coming soon.**
+There is a search for
+
+- values by approximate type signature
+- values by name
+- types and type aliases by name
+- types by name of constructors
+- types by approximate type of contructors
+- type aliases by approximate type
+- infix operators by symbol, approximate type of documentation
+- values, types, type aliases, modules and packages by documentation.
