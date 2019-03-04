@@ -2,7 +2,7 @@
     "type": "application",
     "source-directories": [
         "src",
-        "cache"
+        "vendor"
     ],
     "elm-version": "0.19.0",
     "dependencies": {

@@ -57,10 +57,10 @@ update msg model =
                     )
 
                 Err err ->
-                    -- let
-                    --     _ =
-                    --         Debug.log "could not add package" (Json.Decode.errorToString err)
-                    -- in
+                    let
+                        _ =
+                            Debug.log "could not add package" (Json.Decode.errorToString err)
+                    in
                     ( model, Cmd.none )
 
         GotSearchRequest queryString ->
