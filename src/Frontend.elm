@@ -2,12 +2,15 @@ module Frontend exposing (main)
 
 import Browser
 import Browser.Navigation
+import Elm.Package
 import Elm.Search.Result
+import Elm.Version
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Http
 import Json.Decode
+import Markdown
 import Url
 import Url.Builder
 import Url.Parser exposing ((</>), (<?>))
@@ -203,22 +206,107 @@ viewSearchResultBlock block =
         Elm.Search.Result.Module _ _ _ ->
             Html.div [] [ Html.text "TODO" ]
 
-        Elm.Search.Result.Union _ _ union ->
-            Html.div []
-                [ Html.text ("type " ++ union.name)
-                ]
+        Elm.Search.Result.Union packageIdentifier moduleIdentifier union ->
+            wrapBlock
+                { code =
+                    [ Html.text "type "
+                    , Html.strong []
+                        [ Html.text union.name
+                        , Html.text (" " ++ String.join " " union.args)
+                        ]
+                    , Html.text " = "
+                    , union.tags
+                        |> List.map (\( name, tipes ) -> String.join " " (name :: List.map (Elm.Search.Result.elmTypeToString False) tipes))
+                        |> String.join " | "
+                        |> Html.text
+                    ]
+                , identifier =
+                    [ Html.text
+                        (String.join "/"
+                            [ Elm.Package.toString packageIdentifier.name
+                            , Elm.Version.toString packageIdentifier.version
+                            , moduleIdentifier.name
+                            ]
+                        )
+                    ]
+                , comment = union.comment
+                }
 
-        Elm.Search.Result.Alias _ _ alias_ ->
-            Html.div []
-                [ Html.text ("type alias " ++ alias_.name ++ " = " ++ Elm.Search.Result.elmTypeToString False alias_.tipe)
-                ]
+        Elm.Search.Result.Alias packageIdentifier moduleIdentifier alias_ ->
+            wrapBlock
+                { code =
+                    [ Html.text "type alias "
+                    , Html.strong []
+                        [ Html.text alias_.name
+                        , Html.text (" " ++ String.join " " alias_.args)
+                        ]
+                    , Html.text (" = " ++ Elm.Search.Result.elmTypeToString False alias_.tipe)
+                    ]
+                , identifier =
+                    [ Html.text
+                        (String.join "/"
+                            [ Elm.Package.toString packageIdentifier.name
+                            , Elm.Version.toString packageIdentifier.version
+                            , moduleIdentifier.name
+                            ]
+                        )
+                    ]
+                , comment = alias_.comment
+                }
 
-        Elm.Search.Result.Value _ _ value ->
-            Html.div []
-                [ Html.text (value.name ++ " : " ++ Elm.Search.Result.elmTypeToString False value.tipe)
-                ]
+        Elm.Search.Result.Value packageIdentifier moduleIdentifier value ->
+            wrapBlock
+                { code =
+                    [ Html.strong [] [ Html.text value.name ]
+                    , Html.text (" : " ++ Elm.Search.Result.elmTypeToString False value.tipe)
+                    ]
+                , identifier =
+                    [ Html.text
+                        (String.join "/"
+                            [ Elm.Package.toString packageIdentifier.name
+                            , Elm.Version.toString packageIdentifier.version
+                            , moduleIdentifier.name
+                            ]
+                        )
+                    ]
+                , comment = value.comment
+                }
 
-        Elm.Search.Result.Binop _ _ binop ->
-            Html.div []
-                [ Html.text ("(" ++ binop.name ++ ") : " ++ Elm.Search.Result.elmTypeToString False binop.tipe)
-                ]
+        Elm.Search.Result.Binop packageIdentifier moduleIdentifier binop ->
+            wrapBlock
+                { code =
+                    [ Html.strong [] [ Html.text ("(" ++ binop.name ++ ")") ]
+                    , Html.text (" : " ++ Elm.Search.Result.elmTypeToString False binop.tipe)
+                    ]
+                , identifier =
+                    [ Html.text
+                        (String.join "/"
+                            [ Elm.Package.toString packageIdentifier.name
+                            , Elm.Version.toString packageIdentifier.version
+                            , moduleIdentifier.name
+                            ]
+                        )
+                    ]
+                , comment = binop.comment
+                }
+
+
+wrapBlock :
+    { code : List (Html msg)
+    , identifier : List (Html msg)
+    , comment : String
+    }
+    -> Html msg
+wrapBlock { code, identifier, comment } =
+    Html.div
+        [ Html.Attributes.style "margin" "3rem 1rem" ]
+        [ Html.p [] [ Html.pre [] [ Html.code [] code ] ]
+        , Html.div [] [ Html.em [] identifier ]
+        , Html.div []
+            (comment
+                |> String.lines
+                |> List.head
+                |> Maybe.withDefault ""
+                |> Markdown.toHtml Nothing
+            )
+        ]
