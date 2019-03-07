@@ -66,10 +66,15 @@ update msg model =
                       , model.packages
                             |> Dict.values
                             |> (\packages ->
-                                    searchUnionsByName queryString packages
+                                    []
+                                        ++ searchUnionsByName queryString packages
                                         ++ searchAliasesByName queryString packages
                                         ++ searchValuesByName queryString packages
                                         ++ searchBinopsByName queryString packages
+                                        ++ searchUnionsByComment queryString packages
+                                        ++ searchAliasesByComment queryString packages
+                                        ++ searchValuesByComment queryString packages
+                                        ++ searchBinopsByComment queryString packages
                                )
                             |> Json.Encode.list Elm.Search.Result.encodeBlock
                       )
@@ -148,59 +153,59 @@ docsDecoder =
 
 searchUnionsByName : String -> List Package -> List Elm.Search.Result.Block
 searchUnionsByName =
-    searchPackagesEntriesByName searchPackageUnionsByName
+    searchPackagesEntries (searchPackageEntries searchModuleUnionsByName)
 
 
 searchAliasesByName : String -> List Package -> List Elm.Search.Result.Block
 searchAliasesByName =
-    searchPackagesEntriesByName searchPackageAliasesByName
+    searchPackagesEntries (searchPackageEntries searchModuleAliasesByName)
 
 
 searchValuesByName : String -> List Package -> List Elm.Search.Result.Block
 searchValuesByName =
-    searchPackagesEntriesByName searchPackageValuesByName
+    searchPackagesEntries (searchPackageEntries searchModuleValuesByName)
 
 
 searchBinopsByName : String -> List Package -> List Elm.Search.Result.Block
 searchBinopsByName =
-    searchPackagesEntriesByName searchPackageBinopsByName
+    searchPackagesEntries (searchPackageEntries searchModuleBinopsByName)
 
 
-searchPackagesEntriesByName :
+searchUnionsByComment : String -> List Package -> List Elm.Search.Result.Block
+searchUnionsByComment =
+    searchPackagesEntries (searchPackageEntries searchModuleUnionsByComment)
+
+
+searchAliasesByComment : String -> List Package -> List Elm.Search.Result.Block
+searchAliasesByComment =
+    searchPackagesEntries (searchPackageEntries searchModuleAliasesByComment)
+
+
+searchValuesByComment : String -> List Package -> List Elm.Search.Result.Block
+searchValuesByComment =
+    searchPackagesEntries (searchPackageEntries searchModuleValuesByComment)
+
+
+searchBinopsByComment : String -> List Package -> List Elm.Search.Result.Block
+searchBinopsByComment =
+    searchPackagesEntries (searchPackageEntries searchModuleBinopsByComment)
+
+
+searchPackagesEntries :
     (String -> Package -> List Elm.Search.Result.Block)
     -> String
     -> List Package
     -> List Elm.Search.Result.Block
-searchPackagesEntriesByName searchPackage =
+searchPackagesEntries searchPackage =
     searchPackage >> List.concatMap
 
 
-searchPackageUnionsByName : String -> Package -> List Elm.Search.Result.Block
-searchPackageUnionsByName =
-    searchPackageEntriesByName searchModuleUnionsByName
-
-
-searchPackageAliasesByName : String -> Package -> List Elm.Search.Result.Block
-searchPackageAliasesByName =
-    searchPackageEntriesByName searchModuleAliasesByName
-
-
-searchPackageValuesByName : String -> Package -> List Elm.Search.Result.Block
-searchPackageValuesByName =
-    searchPackageEntriesByName searchModuleValuesByName
-
-
-searchPackageBinopsByName : String -> Package -> List Elm.Search.Result.Block
-searchPackageBinopsByName =
-    searchPackageEntriesByName searchModuleBinopsByName
-
-
-searchPackageEntriesByName :
+searchPackageEntries :
     (String -> Elm.Search.Result.PackageIdentifier -> Elm.Docs.Module -> List Elm.Search.Result.Block)
     -> String
     -> Package
     -> List Elm.Search.Result.Block
-searchPackageEntriesByName searchModule name package =
+searchPackageEntries searchModule name package =
     List.concatMap (searchModule name <| toPackageIdentifier package)
         package.modules
 
@@ -249,6 +254,58 @@ searchModuleEntriesByName cfg name packageIdentifier mod =
     let
         toResult entry =
             if String.toLower entry.name == String.toLower name then
+                Just (cfg.toBlock packageIdentifier (toModuleIdentifier mod) entry)
+
+            else
+                Nothing
+    in
+    List.filterMap toResult (cfg.entries mod)
+
+
+searchModuleUnionsByComment : String -> Elm.Search.Result.PackageIdentifier -> Elm.Docs.Module -> List Elm.Search.Result.Block
+searchModuleUnionsByComment =
+    searchModuleEntriesByComment
+        { entries = .unions
+        , toBlock = Elm.Search.Result.Union
+        }
+
+
+searchModuleAliasesByComment : String -> Elm.Search.Result.PackageIdentifier -> Elm.Docs.Module -> List Elm.Search.Result.Block
+searchModuleAliasesByComment =
+    searchModuleEntriesByComment
+        { entries = .aliases
+        , toBlock = Elm.Search.Result.Alias
+        }
+
+
+searchModuleValuesByComment : String -> Elm.Search.Result.PackageIdentifier -> Elm.Docs.Module -> List Elm.Search.Result.Block
+searchModuleValuesByComment =
+    searchModuleEntriesByComment
+        { entries = .values
+        , toBlock = Elm.Search.Result.Value
+        }
+
+
+searchModuleBinopsByComment : String -> Elm.Search.Result.PackageIdentifier -> Elm.Docs.Module -> List Elm.Search.Result.Block
+searchModuleBinopsByComment =
+    searchModuleEntriesByComment
+        { entries = .binops
+        , toBlock = Elm.Search.Result.Binop
+        }
+
+
+searchModuleEntriesByComment :
+    { entries : Elm.Docs.Module -> List { a | comment : String }
+    , toBlock : Elm.Search.Result.PackageIdentifier -> Elm.Search.Result.ModuleIdentifier -> { a | comment : String } -> Elm.Search.Result.Block
+    }
+    -> String
+    -> Elm.Search.Result.PackageIdentifier
+    -> Elm.Docs.Module
+    -> List Elm.Search.Result.Block
+searchModuleEntriesByComment cfg query packageIdentifier mod =
+    let
+        toResult entry =
+            if String.contains (String.toLower query) (String.toLower entry.comment) then
                 Just (cfg.toBlock packageIdentifier (toModuleIdentifier mod) entry)
 
             else
