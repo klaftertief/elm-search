@@ -71,10 +71,10 @@ update msg model =
                                         ++ searchAliasesByName queryString packages
                                         ++ searchValuesByName queryString packages
                                         ++ searchBinopsByName queryString packages
-                                        ++ searchUnionsByComment queryString packages
-                                        ++ searchAliasesByComment queryString packages
-                                        ++ searchValuesByComment queryString packages
-                                        ++ searchBinopsByComment queryString packages
+                                -- ++ searchUnionsByComment queryString packages
+                                -- ++ searchAliasesByComment queryString packages
+                                -- ++ searchValuesByComment queryString packages
+                                -- ++ searchBinopsByComment queryString packages
                                )
                             |> Json.Encode.list Elm.Search.Result.encodeBlock
                       )

@@ -2,6 +2,8 @@ module Elm.Search.Result exposing
     ( Block(..)
     , ModuleIdentifier
     , PackageIdentifier
+    , blockDecoder
+    , elmTypeToString
     , encodeBlock
     )
 
@@ -11,6 +13,7 @@ import Elm.Package
 import Elm.Project
 import Elm.Type
 import Elm.Version
+import Json.Decode
 import Json.Encode
 
 
@@ -21,6 +24,72 @@ type Block
     | Alias PackageIdentifier ModuleIdentifier Elm.Docs.Alias
     | Value PackageIdentifier ModuleIdentifier Elm.Docs.Value
     | Binop PackageIdentifier ModuleIdentifier Elm.Docs.Binop
+
+
+blockDecoder : Json.Decode.Decoder Block
+blockDecoder =
+    Json.Decode.oneOf
+        [ aliasBlockDecoder
+        , unionBlockDecoder
+        , valueBlockDecoder
+        , binopBlockDecoder
+        ]
+
+
+unionBlockDecoder : Json.Decode.Decoder Block
+unionBlockDecoder =
+    Json.Decode.field "union" Elm.Docs.unionDecoder
+        |> Json.Decode.andThen
+            (\union ->
+                Json.Decode.map2
+                    (\packageIdentifier moduleIdentifier ->
+                        Union packageIdentifier moduleIdentifier union
+                    )
+                    (Json.Decode.field "packageIdentifier" packageIdentifierDecoder)
+                    (Json.Decode.field "moduleIdentifier" moduleIdentifierDecoder)
+            )
+
+
+aliasBlockDecoder : Json.Decode.Decoder Block
+aliasBlockDecoder =
+    Json.Decode.field "alias" Elm.Docs.aliasDecoder
+        |> Json.Decode.andThen
+            (\alias_ ->
+                Json.Decode.map2
+                    (\packageIdentifier moduleIdentifier ->
+                        Alias packageIdentifier moduleIdentifier alias_
+                    )
+                    (Json.Decode.field "packageIdentifier" packageIdentifierDecoder)
+                    (Json.Decode.field "moduleIdentifier" moduleIdentifierDecoder)
+            )
+
+
+valueBlockDecoder : Json.Decode.Decoder Block
+valueBlockDecoder =
+    Json.Decode.field "value" Elm.Docs.valueDecoder
+        |> Json.Decode.andThen
+            (\value ->
+                Json.Decode.map2
+                    (\packageIdentifier moduleIdentifier ->
+                        Value packageIdentifier moduleIdentifier value
+                    )
+                    (Json.Decode.field "packageIdentifier" packageIdentifierDecoder)
+                    (Json.Decode.field "moduleIdentifier" moduleIdentifierDecoder)
+            )
+
+
+binopBlockDecoder : Json.Decode.Decoder Block
+binopBlockDecoder =
+    Json.Decode.field "binop" Elm.Docs.binopDecoder
+        |> Json.Decode.andThen
+            (\binop ->
+                Json.Decode.map2
+                    (\packageIdentifier moduleIdentifier ->
+                        Binop packageIdentifier moduleIdentifier binop
+                    )
+                    (Json.Decode.field "packageIdentifier" packageIdentifierDecoder)
+                    (Json.Decode.field "moduleIdentifier" moduleIdentifierDecoder)
+            )
 
 
 encodeBlock : Block -> Json.Encode.Value
@@ -108,7 +177,23 @@ encodeBinop binop =
         [ ( "name", Json.Encode.string binop.name )
         , ( "comment", Json.Encode.string binop.comment )
         , ( "type", Json.Encode.string (elmTypeToString False binop.tipe) )
+        , ( "associativity", encodeAssociativity binop.associativity )
+        , ( "precedence", Json.Encode.int binop.precedence )
         ]
+
+
+encodeAssociativity : Elm.Docs.Associativity -> Json.Encode.Value
+encodeAssociativity associativity =
+    Json.Encode.string <|
+        case associativity of
+            Elm.Docs.Left ->
+                "left"
+
+            Elm.Docs.None ->
+                "non"
+
+            Elm.Docs.Right ->
+                "right"
 
 
 type alias PackageIdentifier =
@@ -125,6 +210,13 @@ encodePackageIdentifier packageIdentifier =
         ]
 
 
+packageIdentifierDecoder : Json.Decode.Decoder PackageIdentifier
+packageIdentifierDecoder =
+    Json.Decode.map2 PackageIdentifier
+        (Json.Decode.field "name" Elm.Package.decoder)
+        (Json.Decode.field "version" Elm.Version.decoder)
+
+
 type alias ModuleIdentifier =
     { name : String }
 
@@ -134,6 +226,12 @@ encodeModuleIdentifier moduleIdentifier =
     Json.Encode.object
         [ ( "name", Json.Encode.string moduleIdentifier.name )
         ]
+
+
+moduleIdentifierDecoder : Json.Decode.Decoder ModuleIdentifier
+moduleIdentifierDecoder =
+    Json.Decode.map ModuleIdentifier
+        (Json.Decode.field "name" Json.Decode.string)
 
 
 elmTypeToString : Bool -> Elm.Type.Type -> String
@@ -159,7 +257,7 @@ elmTypeToString nested tipe =
                 :: List.map (elmTypeToString True) types
                 |> String.join " "
                 |> (\typeString ->
-                        if nested then
+                        if nested && not (List.isEmpty types) then
                             "(" ++ typeString ++ ")"
 
                         else

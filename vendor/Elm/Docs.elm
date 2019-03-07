@@ -4,6 +4,7 @@ module Elm.Docs exposing
   , Associativity(..)
   , decoder
   , Block(..), toBlocks
+  , aliasDecoder, unionDecoder, binopDecoder, valueDecoder
   )
 
 
