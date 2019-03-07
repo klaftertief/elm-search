@@ -24,7 +24,7 @@ allPackages.forEach(package => {
 });
 
 search.ports.result.subscribe(function(msg) {
-  cache[msg.query] = msg.result;
+  cache[msg.query] = msg;
 });
 
 server.get("/", function(req, res) {
