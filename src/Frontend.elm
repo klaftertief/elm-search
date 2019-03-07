@@ -1,7 +1,7 @@
 module Frontend exposing (main)
 
 import Browser
-import Browser.Navigation as Nav
+import Browser.Navigation
 import Elm.Search.Result
 import Html exposing (..)
 import Html.Attributes exposing (..)
@@ -9,6 +9,9 @@ import Html.Events exposing (..)
 import Http
 import Json.Decode
 import Url
+import Url.Builder
+import Url.Parser exposing ((</>), (<?>))
+import Url.Parser.Query
 
 
 
@@ -28,26 +31,87 @@ main =
 
 
 
+-- ROUTING
+
+
+type Route
+    = Home
+    | Search (Maybe String)
+
+
+routeParser : Url.Parser.Parser (Route -> a) a
+routeParser =
+    Url.Parser.oneOf
+        [ Url.Parser.map Home Url.Parser.top
+        , Url.Parser.map Search (Url.Parser.s "search" <?> Url.Parser.Query.string "q")
+        ]
+
+
+toUrl : Route -> String
+toUrl route =
+    case route of
+        Home ->
+            Url.Builder.absolute [] []
+
+        Search maybeQuery ->
+            Url.Builder.absolute [ "search" ]
+                (case maybeQuery of
+                    Just query ->
+                        [ Url.Builder.string "q" query ]
+
+                    Nothing ->
+                        []
+                )
+
+
+
 -- MODEL
 
 
 type alias Model =
-    { key : Nav.Key
-    , url : Url.Url
+    { key : Browser.Navigation.Key
     , searchInput : String
     , searchResult : List Elm.Search.Result.Block
     }
 
 
-init : () -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
+init : () -> Url.Url -> Browser.Navigation.Key -> ( Model, Cmd Msg )
 init flags url key =
-    ( { key = key
-      , url = url
-      , searchInput = ""
-      , searchResult = []
-      }
-    , Cmd.none
-    )
+    case Url.Parser.parse routeParser url of
+        Just (Search (Just query)) ->
+            ( { key = key
+              , searchInput = query
+              , searchResult = []
+              }
+            , Http.get
+                { url = "http://localhost:3333/search?q=" ++ query
+                , expect = Http.expectJson GotSearchResult searchResultDecoder
+                }
+            )
+
+        Just (Search _) ->
+            ( { key = key
+              , searchInput = ""
+              , searchResult = []
+              }
+            , Cmd.none
+            )
+
+        Just Home ->
+            ( { key = key
+              , searchInput = ""
+              , searchResult = []
+              }
+            , Cmd.none
+            )
+
+        Nothing ->
+            ( { key = key
+              , searchInput = ""
+              , searchResult = []
+              }
+            , Cmd.none
+            )
 
 
 
@@ -67,22 +131,26 @@ update msg model =
         LinkClicked urlRequest ->
             case urlRequest of
                 Browser.Internal url ->
-                    ( model, Nav.pushUrl model.key (Url.toString url) )
+                    ( model, Browser.Navigation.pushUrl model.key (Url.toString url) )
 
                 Browser.External href ->
-                    ( model, Nav.load href )
+                    ( model, Browser.Navigation.load href )
 
         UrlChanged url ->
-            ( { model | url = url }
+            ( model
             , Cmd.none
             )
 
         EnteredSearchInput query ->
             ( { model | searchInput = query }
-            , Http.get
-                { url = "http://localhost:3333/search?q=" ++ query
-                , expect = Http.expectJson GotSearchResult searchResultDecoder
-                }
+            , Cmd.batch
+                [ Http.get
+                    { url = "http://localhost:3333/search?q=" ++ query
+                    , expect = Http.expectJson GotSearchResult searchResultDecoder
+                    }
+                , Browser.Navigation.pushUrl model.key
+                    (Just query |> Search |> toUrl)
+                ]
             )
 
         GotSearchResult (Err err) ->
