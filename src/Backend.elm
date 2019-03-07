@@ -71,10 +71,11 @@ update msg model =
                                         ++ searchAliasesByName queryString packages
                                         ++ searchValuesByName queryString packages
                                         ++ searchBinopsByName queryString packages
-                                -- ++ searchUnionsByComment queryString packages
-                                -- ++ searchAliasesByComment queryString packages
-                                -- ++ searchValuesByComment queryString packages
-                                -- ++ searchBinopsByComment queryString packages
+                                        -- ++ searchUnionsByComment queryString packages
+                                        -- ++ searchAliasesByComment queryString packages
+                                        -- ++ searchValuesByComment queryString packages
+                                        -- ++ searchBinopsByComment queryString packages
+                                        ++ searchUnionsByTageNames queryString packages
                                )
                             |> Json.Encode.list Elm.Search.Result.encodeBlock
                       )
@@ -191,6 +192,11 @@ searchBinopsByComment =
     searchPackagesEntries (searchPackageEntries searchModuleBinopsByComment)
 
 
+searchUnionsByTageNames : String -> List Package -> List Elm.Search.Result.Block
+searchUnionsByTageNames =
+    searchPackagesEntries (searchPackageEntries searchModuleUnionsByTagNames)
+
+
 searchPackagesEntries :
     (String -> Package -> List Elm.Search.Result.Block)
     -> String
@@ -260,6 +266,27 @@ searchModuleEntriesByName cfg name packageIdentifier mod =
                 Nothing
     in
     List.filterMap toResult (cfg.entries mod)
+
+
+searchModuleUnionsByTagNames : String -> Elm.Search.Result.PackageIdentifier -> Elm.Docs.Module -> List Elm.Search.Result.Block
+searchModuleUnionsByTagNames query packageIdentifier mod =
+    let
+        toResult entry =
+            if
+                List.any
+                    (\( name, _ ) -> String.contains (String.toLower query) (String.toLower name))
+                    entry.tags
+            then
+                Just
+                    (Elm.Search.Result.Union packageIdentifier
+                        (toModuleIdentifier mod)
+                        entry
+                    )
+
+            else
+                Nothing
+    in
+    List.filterMap toResult mod.unions
 
 
 searchModuleUnionsByComment : String -> Elm.Search.Result.PackageIdentifier -> Elm.Docs.Module -> List Elm.Search.Result.Block
