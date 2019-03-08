@@ -40,6 +40,7 @@ main =
 type Route
     = Home
     | Search (Maybe String)
+    | Packages
 
 
 routeParser : Url.Parser.Parser (Route -> a) a
@@ -47,6 +48,7 @@ routeParser =
     Url.Parser.oneOf
         [ Url.Parser.map Home Url.Parser.top
         , Url.Parser.map Search (Url.Parser.s "search" <?> Url.Parser.Query.string "q")
+        , Url.Parser.map Packages (Url.Parser.s "packages")
         ]
 
 
@@ -65,6 +67,9 @@ toUrl route =
                     Nothing ->
                         []
                 )
+
+        Packages ->
+            Url.Builder.absolute [ "packages" ] []
 
 
 
@@ -101,6 +106,14 @@ init flags url key =
             )
 
         Just Home ->
+            ( { key = key
+              , searchInput = ""
+              , searchResult = []
+              }
+            , Cmd.none
+            )
+
+        Just Packages ->
             ( { key = key
               , searchInput = ""
               , searchResult = []
@@ -190,7 +203,12 @@ view : Model -> Browser.Document Msg
 view model =
     { title = "Elm Search"
     , body =
-        [ input [ placeholder "Search", onInput EnteredSearchInput ] []
+        [ input
+            [ placeholder "Search"
+            , value model.searchInput
+            , onInput EnteredSearchInput
+            ]
+            []
         , Html.div []
             (List.map viewSearchResultBlock model.searchResult)
         ]
@@ -214,7 +232,13 @@ viewSearchResultBlock block =
                         [ Html.text union.name
                         , Html.text (" " ++ String.join " " union.args)
                         ]
-                    , Html.text " = "
+                    , Html.text
+                        (if List.isEmpty union.tags then
+                            ""
+
+                         else
+                            " = "
+                        )
                     , union.tags
                         |> List.map (\( name, tipes ) -> String.join " " (name :: List.map (Elm.Search.Result.elmTypeToString False) tipes))
                         |> String.join " | "
@@ -304,7 +328,7 @@ wrapBlock { code, identifier, comment } =
         , Html.div [] [ Html.em [] identifier ]
         , Html.div []
             (comment
-                |> String.lines
+                |> String.split "\n\n"
                 |> List.head
                 |> Maybe.withDefault ""
                 |> Markdown.toHtml Nothing

@@ -42,6 +42,8 @@ init _ =
 type Msg
     = GotPackageJson Json.Decode.Value
     | GotSearchRequest String
+    | GotAllPackagesRequest
+    | GotSinglePackageRequest ( String, String )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -83,12 +85,50 @@ update msg model =
                 )
             )
 
+        GotAllPackagesRequest ->
+            ( model
+            , result
+                (Json.Encode.object
+                    [ ( "query", Json.Encode.string "_packages" )
+                    , ( "result"
+                      , model.packages
+                            |> Dict.values
+                            |> List.map (\{ info } -> Elm.Project.Package info)
+                            |> Json.Encode.list Elm.Project.encode
+                      )
+                    ]
+                )
+            )
+
+        GotSinglePackageRequest ( user, name ) ->
+            ( model
+            , result
+                (Json.Encode.object
+                    [ ( "query", Json.Encode.string (String.join "_" [ "_packages", user, name ]) )
+                    , ( "result"
+                      , model.packages
+                            |> Dict.get (user ++ "/" ++ name)
+                            |> Maybe.map
+                                (\{ info, readme } ->
+                                    Json.Encode.object
+                                        [ ( "info", Elm.Project.encode (Elm.Project.Package info) )
+                                        , ( "readme", Json.Encode.string readme )
+                                        ]
+                                )
+                            |> Maybe.withDefault Json.Encode.null
+                      )
+                    ]
+                )
+            )
+
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
     Sub.batch
         [ addPackage GotPackageJson
         , search GotSearchRequest
+        , listPackages (\_ -> GotAllPackagesRequest)
+        , getPackage GotSinglePackageRequest
         ]
 
 
@@ -100,6 +140,12 @@ port addPackage : (Json.Decode.Value -> msg) -> Sub msg
 
 
 port search : (String -> msg) -> Sub msg
+
+
+port listPackages : (() -> msg) -> Sub msg
+
+
+port getPackage : (( String, String ) -> msg) -> Sub msg
 
 
 port result : Json.Decode.Value -> Cmd msg

@@ -53,6 +53,50 @@ server.get("/search", function(req, res) {
   trySend();
 });
 
+server.get("/packages", function(req, res) {
+  const query = "_packages";
+  let duration = 0;
+
+  search.ports.listPackages.send(null);
+
+  function trySend() {
+    if (cache) {
+      const result = cache[query];
+      delete cache[query];
+      res.send(result);
+    } else if (duration >= maxDuration) {
+      res.sendStatus(408);
+    } else {
+      duration += interval;
+      setTimeout(trySend, interval);
+    }
+  }
+
+  trySend();
+});
+
+server.get("/packages/:user/:name", function(req, res) {
+  const query = ["_packages", req.params.user, req.params.name].join("_");
+  let duration = 0;
+
+  search.ports.getPackage.send([req.params.user, req.params.name]);
+
+  function trySend() {
+    if (cache) {
+      const result = cache[query];
+      delete cache[query];
+      res.send(result);
+    } else if (duration >= maxDuration) {
+      res.sendStatus(408);
+    } else {
+      duration += interval;
+      setTimeout(trySend, interval);
+    }
+  }
+
+  trySend();
+});
+
 server.listen(port, () =>
   console.log(`Example app listening on port ${port}!`)
 );
