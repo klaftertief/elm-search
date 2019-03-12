@@ -14,7 +14,8 @@
             "elm/json": "1.1.3",
             "elm/parser": "1.1.0",
             "elm/url": "1.0.0",
-            "pablohirafuji/elm-markdown": "2.0.5"
+            "pablohirafuji/elm-markdown": "2.0.5",
+            "pzp1997/assoc-list": "1.0.0"
         },
         "indirect": {
             "elm/bytes": "1.0.8",
