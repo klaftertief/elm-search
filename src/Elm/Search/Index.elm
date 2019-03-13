@@ -1,4 +1,18 @@
-module Elm.Search.Index exposing (Index)
+module Elm.Search.Index exposing
+    ( Index, empty
+    , addPackage
+    , allPackages, getPackage
+    )
+
+{-| Search Index
+
+@docs Index, empty
+
+@docs addPackage
+
+@docs allPackages, getPackage
+
+-}
 
 import AssocList as Dict exposing (Dict)
 import Elm.Docs
@@ -18,8 +32,8 @@ type Index
         }
 
 
-emptyIndex : Index
-emptyIndex =
+empty : Index
+empty =
     Index
         { packages = Dict.empty
         , modules = Dict.empty
@@ -33,13 +47,12 @@ emptyIndex =
 removePackage : PackageIdentifier -> Index -> Index
 removePackage packageId (Index index) =
     Index
-        { index
-            | packages = Dict.remove packageId index.packages
-            , modules = Dict.filter (\moduleId _ -> moduleIdentifierBelongsToPackage packageId moduleId) index.modules
-            , unions = Dict.filter (\exposedId _ -> exposedIdentifierBelongsToPackage packageId exposedId) index.unions
-            , aliases = Dict.filter (\exposedId _ -> exposedIdentifierBelongsToPackage packageId exposedId) index.aliases
-            , values = Dict.filter (\exposedId _ -> exposedIdentifierBelongsToPackage packageId exposedId) index.values
-            , binops = Dict.filter (\exposedId _ -> exposedIdentifierBelongsToPackage packageId exposedId) index.binops
+        { packages = Dict.remove packageId index.packages
+        , modules = Dict.filter (\moduleId _ -> moduleIdentifierBelongsToPackage packageId moduleId) index.modules
+        , unions = Dict.filter (\exposedId _ -> exposedIdentifierBelongsToPackage packageId exposedId) index.unions
+        , aliases = Dict.filter (\exposedId _ -> exposedIdentifierBelongsToPackage packageId exposedId) index.aliases
+        , values = Dict.filter (\exposedId _ -> exposedIdentifierBelongsToPackage packageId exposedId) index.values
+        , binops = Dict.filter (\exposedId _ -> exposedIdentifierBelongsToPackage packageId exposedId) index.binops
         }
 
 
@@ -61,10 +74,43 @@ addPackage package (Index index) =
 
         packageId =
             PackageIdentifier (packageName ++ "/" ++ packageVersion)
+
+        moduleId mod =
+            ModuleIdentifier packageId mod.name
+
+        exposedId modId { name } =
+            ExposedIdentifier modId name
+
+        newModules =
+            package.modules
+                |> List.map (\mod -> ( moduleId mod, mod ))
+                |> Dict.fromList
+
+        newExposed toExposedList =
+            package.modules
+                |> List.concatMap (\mod -> List.map (Tuple.pair (moduleId mod)) (toExposedList mod))
+                |> List.map (\( modId, e ) -> ( exposedId modId e, e ))
+                |> Dict.fromList
+
+        newUnions =
+            newExposed .unions
+
+        newAliases =
+            newExposed .aliases
+
+        newValues =
+            newExposed .values
+
+        newBinops =
+            newExposed .binops
     in
     Index
-        { index
-            | packages = Dict.insert packageId package.info index.packages
+        { packages = Dict.insert packageId package.info index.packages
+        , modules = Dict.union newModules index.modules
+        , unions = Dict.union newUnions index.unions
+        , aliases = Dict.union newAliases index.aliases
+        , values = Dict.union newValues index.values
+        , binops = Dict.union newBinops index.binops
         }
 
 

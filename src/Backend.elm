@@ -1,10 +1,11 @@
 port module Backend exposing (main)
 
-import Dict exposing (Dict)
+import AssocList as Dict exposing (Dict)
 import Elm.Docs
 import Elm.Module
 import Elm.Package
 import Elm.Project
+import Elm.Search.Index as Index exposing (Index)
 import Elm.Search.Result
 import Elm.Type
 import Json.Decode
@@ -25,12 +26,12 @@ main =
 
 
 type alias Model =
-    { packages : Dict String Package }
+    { index : Index }
 
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( { packages = Dict.empty }
+    ( { index = Index.empty }
     , Cmd.none
     )
 
@@ -52,7 +53,11 @@ update msg model =
         GotPackageJson packageJson ->
             case Json.Decode.decodeValue packageDecoder packageJson of
                 Ok package ->
-                    ( { model | packages = insertPackage package model.packages }
+                    let
+                        _ =
+                            Debug.log "add package" package.info.name
+                    in
+                    ( { model | index = Index.addPackage package model.index }
                     , Cmd.none
                     )
 
@@ -64,23 +69,24 @@ update msg model =
             , result
                 (Json.Encode.object
                     [ ( "query", Json.Encode.string queryString )
-                    , ( "result"
-                      , model.packages
-                            |> Dict.values
-                            |> (\packages ->
-                                    []
-                                        ++ searchUnionsByName queryString packages
-                                        ++ searchAliasesByName queryString packages
-                                        ++ searchValuesByName queryString packages
-                                        ++ searchBinopsByName queryString packages
-                                        -- ++ searchUnionsByComment queryString packages
-                                        -- ++ searchAliasesByComment queryString packages
-                                        -- ++ searchValuesByComment queryString packages
-                                        -- ++ searchBinopsByComment queryString packages
-                                        ++ searchUnionsByTageNames queryString packages
-                               )
-                            |> Json.Encode.list Elm.Search.Result.encodeBlock
-                      )
+
+                    -- , ( "result"
+                    --   , model.packages
+                    --         |> Dict.values
+                    --         |> (\packages ->
+                    --                 []
+                    --                     ++ searchUnionsByName queryString packages
+                    --                     ++ searchAliasesByName queryString packages
+                    --                     ++ searchValuesByName queryString packages
+                    --                     ++ searchBinopsByName queryString packages
+                    --                     -- ++ searchUnionsByComment queryString packages
+                    --                     -- ++ searchAliasesByComment queryString packages
+                    --                     -- ++ searchValuesByComment queryString packages
+                    --                     -- ++ searchBinopsByComment queryString packages
+                    --                     ++ searchUnionsByTageNames queryString packages
+                    --            )
+                    --         |> Json.Encode.list Elm.Search.Result.encodeBlock
+                    --   )
                     ]
                 )
             )
@@ -91,9 +97,9 @@ update msg model =
                 (Json.Encode.object
                     [ ( "query", Json.Encode.string "_packages" )
                     , ( "result"
-                      , model.packages
+                      , Index.allPackages model.index
                             |> Dict.values
-                            |> List.map (\{ info } -> Elm.Project.Package info)
+                            |> List.map Elm.Project.Package
                             |> Json.Encode.list Elm.Project.encode
                       )
                     ]
@@ -105,18 +111,19 @@ update msg model =
             , result
                 (Json.Encode.object
                     [ ( "query", Json.Encode.string (String.join "_" [ "_packages", user, name ]) )
-                    , ( "result"
-                      , model.packages
-                            |> Dict.get (user ++ "/" ++ name)
-                            |> Maybe.map
-                                (\{ info, readme } ->
-                                    Json.Encode.object
-                                        [ ( "info", Elm.Project.encode (Elm.Project.Package info) )
-                                        , ( "readme", Json.Encode.string readme )
-                                        ]
-                                )
-                            |> Maybe.withDefault Json.Encode.null
-                      )
+
+                    -- , ( "result"
+                    --   , model.index
+                    --         |> Index.getPackage (user ++ "/" ++ name)
+                    --         |> Maybe.map
+                    --             (\{ info, readme } ->
+                    --                 Json.Encode.object
+                    --                     [ ( "info", Elm.Project.encode (Elm.Project.Package info) )
+                    --                     , ( "readme", Json.Encode.string readme )
+                    --                     ]
+                    --             )
+                    --         |> Maybe.withDefault Json.Encode.null
+                    --   )
                     ]
                 )
             )
@@ -160,11 +167,6 @@ type alias Package =
     , readme : String
     , modules : List Elm.Docs.Module
     }
-
-
-insertPackage : Package -> Dict String Package -> Dict String Package
-insertPackage package =
-    Dict.insert (Elm.Package.toString package.info.name) package
 
 
 packageDecoder : Json.Decode.Decoder Package
