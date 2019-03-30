@@ -2,6 +2,7 @@ module Elm.Search.Index exposing
     ( Index, empty
     , addPackage
     , allPackages, getPackage
+    , allValues
     )
 
 {-| Search Index
@@ -114,9 +115,9 @@ addPackage package (Index index) =
         }
 
 
-getPackage : PackageIdentifier -> Index -> Maybe Elm.Project.PackageInfo
+getPackage : String -> Index -> Maybe Elm.Project.PackageInfo
 getPackage identifier =
-    allPackages >> Dict.get identifier
+    allPackages >> Dict.get (PackageIdentifier identifier)
 
 
 allPackages : Index -> Dict PackageIdentifier Elm.Project.PackageInfo
