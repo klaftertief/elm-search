@@ -5,16 +5,14 @@ import Browser.Navigation
 import Elm.Package
 import Elm.Search.Result
 import Elm.Version
+import Frontend.Route as Route
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Http
 import Json.Decode
 import Markdown
-import Url
-import Url.Builder
-import Url.Parser exposing ((</>), (<?>))
-import Url.Parser.Query
+import Url exposing (Url)
 
 
 
@@ -34,45 +32,6 @@ main =
 
 
 
--- ROUTING
-
-
-type Route
-    = Home
-    | Search (Maybe String)
-    | Packages
-
-
-routeParser : Url.Parser.Parser (Route -> a) a
-routeParser =
-    Url.Parser.oneOf
-        [ Url.Parser.map Home Url.Parser.top
-        , Url.Parser.map Search (Url.Parser.s "search" <?> Url.Parser.Query.string "q")
-        , Url.Parser.map Packages (Url.Parser.s "packages")
-        ]
-
-
-toUrl : Route -> String
-toUrl route =
-    case route of
-        Home ->
-            Url.Builder.absolute [] []
-
-        Search maybeQuery ->
-            Url.Builder.absolute [ "search" ]
-                (case maybeQuery of
-                    Just query ->
-                        [ Url.Builder.string "q" query ]
-
-                    Nothing ->
-                        []
-                )
-
-        Packages ->
-            Url.Builder.absolute [ "packages" ] []
-
-
-
 -- MODEL
 
 
@@ -85,8 +44,8 @@ type alias Model =
 
 init : () -> Url.Url -> Browser.Navigation.Key -> ( Model, Cmd Msg )
 init flags url key =
-    case Url.Parser.parse routeParser url of
-        Just (Search (Just query)) ->
+    case Route.fromUrl url of
+        Just (Route.Search (Just query)) ->
             ( { key = key
               , searchInput = query
               , searchResult = []
@@ -97,7 +56,7 @@ init flags url key =
                 }
             )
 
-        Just (Search _) ->
+        Just (Route.Search _) ->
             ( { key = key
               , searchInput = ""
               , searchResult = []
@@ -105,7 +64,7 @@ init flags url key =
             , Cmd.none
             )
 
-        Just Home ->
+        Just Route.Home ->
             ( { key = key
               , searchInput = ""
               , searchResult = []
@@ -113,7 +72,7 @@ init flags url key =
             , Cmd.none
             )
 
-        Just Packages ->
+        Just Route.Packages ->
             ( { key = key
               , searchInput = ""
               , searchResult = []
@@ -136,7 +95,7 @@ init flags url key =
 
 type Msg
     = LinkClicked Browser.UrlRequest
-    | UrlChanged Url.Url
+    | UrlChanged Url
     | EnteredSearchInput String
     | GotSearchResult (Result Http.Error (List Elm.Search.Result.Block))
 
@@ -164,8 +123,8 @@ update msg model =
                     { url = "http://localhost:3333/search?q=" ++ query
                     , expect = Http.expectJson GotSearchResult searchResultDecoder
                     }
-                , Browser.Navigation.pushUrl model.key
-                    (Just query |> Search |> toUrl)
+                , Route.pushUrl model.key
+                    (Route.Search <| Just query)
                 ]
             )
 
