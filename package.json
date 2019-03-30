@@ -12,12 +12,17 @@
     "url": "https://github.com/klaftertief/elm-search/issues"
   },
   "homepage": "https://github.com/klaftertief/elm-search#readme",
+  "scripts": {
+    "start-backend": "parcel watch src/backend.js --target node",
+    "start-server": "nodemon dist/backend.js"
+  },
   "devDependencies": {
     "cors": "^2.8.5",
     "elm": "^0.19.0-bugfix6",
     "elm-format": "^0.8.1",
     "elm-hot": "^1.0.1",
     "node-elm-compiler": "^5.0.1",
+    "nodemon": "^1.18.10",
     "parcel-bundler": "^1.11.0",
     "xhr2": "^0.1.4"
   },

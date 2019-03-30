@@ -44,7 +44,7 @@ type Msg
     = GotPackageJson Json.Decode.Value
     | GotSearchRequest String
     | GotAllPackagesRequest
-    | GotSinglePackageRequest ( String, String )
+    | GotSinglePackageRequest ( String, String, String )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -55,7 +55,7 @@ update msg model =
                 Ok package ->
                     let
                         _ =
-                            Debug.log "add package" package.info.name
+                            Debug.log "Added package" package.info.name
                     in
                     ( { model | index = Index.addPackage package model.index }
                     , Cmd.none
@@ -69,6 +69,18 @@ update msg model =
             , result
                 (Json.Encode.object
                     [ ( "query", Json.Encode.string queryString )
+                    , ( "result"
+                      , Index.allValues model.index
+                            |> Dict.values
+                            |> List.filter (.name >> String.contains queryString)
+                            |> List.map
+                                (\v ->
+                                    v.name
+                                        ++ ": "
+                                        ++ (v.tipe |> Elm.Search.Result.elmTypeToString False)
+                                )
+                            |> Json.Encode.list Json.Encode.string
+                      )
 
                     -- , ( "result"
                     --   , model.packages
@@ -106,24 +118,16 @@ update msg model =
                 )
             )
 
-        GotSinglePackageRequest ( user, name ) ->
+        GotSinglePackageRequest ( user, name, version ) ->
             ( model
             , result
                 (Json.Encode.object
-                    [ ( "query", Json.Encode.string (String.join "_" [ "_packages", user, name ]) )
-
-                    -- , ( "result"
-                    --   , model.index
-                    --         |> Index.getPackage (user ++ "/" ++ name)
-                    --         |> Maybe.map
-                    --             (\{ info, readme } ->
-                    --                 Json.Encode.object
-                    --                     [ ( "info", Elm.Project.encode (Elm.Project.Package info) )
-                    --                     , ( "readme", Json.Encode.string readme )
-                    --                     ]
-                    --             )
-                    --         |> Maybe.withDefault Json.Encode.null
-                    --   )
+                    [ ( "query", Json.Encode.string (String.join "_" [ "_packages", user, name, version ]) )
+                    , ( "result"
+                      , Index.getPackage (user ++ "/" ++ name ++ "/" ++ version) model.index
+                            |> Maybe.map (Elm.Project.Package >> Elm.Project.encode)
+                            |> Maybe.withDefault Json.Encode.null
+                      )
                     ]
                 )
             )
@@ -152,7 +156,7 @@ port search : (String -> msg) -> Sub msg
 port listPackages : (() -> msg) -> Sub msg
 
 
-port getPackage : (( String, String ) -> msg) -> Sub msg
+port getPackage : (( String, String, String ) -> msg) -> Sub msg
 
 
 port result : Json.Decode.Value -> Cmd msg

@@ -14,7 +14,10 @@ const interval = 5;
 
 const cache = {};
 
-const allPackages = require("../packages/search.json");
+const allPackages = require("../packages/search.json").filter(package =>
+  package.startsWith("elm/")
+);
+
 allPackages.forEach(package => {
   search.ports.addPackage.send({
     package: require(pathInCache(path.join(package, "elm.json"))),
@@ -75,11 +78,20 @@ server.get("/packages", function(req, res) {
   trySend();
 });
 
-server.get("/packages/:user/:name", function(req, res) {
-  const query = ["_packages", req.params.user, req.params.name].join("_");
+server.get("/packages/:user/:name/:version", function(req, res) {
+  const query = [
+    "_packages",
+    req.params.user,
+    req.params.name,
+    req.params.version
+  ].join("_");
   let duration = 0;
 
-  search.ports.getPackage.send([req.params.user, req.params.name]);
+  search.ports.getPackage.send([
+    req.params.user,
+    req.params.name,
+    req.params.version
+  ]);
 
   function trySend() {
     if (cache) {
