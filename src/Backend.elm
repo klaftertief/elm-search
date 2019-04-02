@@ -8,6 +8,7 @@ import Elm.Project
 import Elm.Search.Index as Index exposing (Index)
 import Elm.Search.Result
 import Elm.Type
+import Elm.Version
 import Json.Decode
 import Json.Encode
 
@@ -71,15 +72,44 @@ update msg model =
                     [ ( "query", Json.Encode.string queryString )
                     , ( "result"
                       , Index.allValues model.index
-                            |> Dict.values
-                            |> List.filter (.name >> String.contains queryString)
-                            |> List.map
-                                (\v ->
-                                    v.name
-                                        ++ ": "
-                                        ++ (v.tipe |> Elm.Search.Result.elmTypeToString False)
+                            |> Dict.filter (\_ { name } -> String.contains queryString name)
+                            |> Dict.map
+                                (\exposedId value ->
+                                    let
+                                        (Index.ExposedIdentifier moduleId _) =
+                                            exposedId
+
+                                        (Index.ModuleIdentifier packageId moduleName) =
+                                            moduleId
+
+                                        (Index.PackageIdentifier packageName) =
+                                            packageId
+
+                                        maybePackageInfo =
+                                            case String.split "/" packageName of
+                                                [ user, name, version ] ->
+                                                    Maybe.map2 Tuple.pair
+                                                        (Elm.Package.fromString (user ++ "/" ++ name))
+                                                        (Elm.Version.fromString version)
+
+                                                _ ->
+                                                    Nothing
+                                    in
+                                    Maybe.map
+                                        (\( packageName_, packageVersion ) ->
+                                            Elm.Search.Result.Value
+                                                { name = packageName_
+                                                , version = packageVersion
+                                                }
+                                                { name = moduleName
+                                                }
+                                                value
+                                        )
+                                        maybePackageInfo
                                 )
-                            |> Json.Encode.list Json.Encode.string
+                            |> Dict.values
+                            |> List.filterMap identity
+                            |> Json.Encode.list Elm.Search.Result.encodeBlock
                       )
 
                     -- , ( "result"

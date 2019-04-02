@@ -42,7 +42,15 @@ init session maybeSearchInput =
         , searchInput = maybeSearchInput
         , searchResult = []
         }
-    , Cmd.none
+    , maybeSearchInput
+        |> Maybe.map
+            (\query ->
+                Http.get
+                    { url = "http://localhost:3333/search?q=" ++ query
+                    , expect = Http.expectJson GotSearchResult searchResultDecoder
+                    }
+            )
+        |> Maybe.withDefault Cmd.none
     )
 
 
@@ -97,15 +105,21 @@ view model =
 
 viewContent : Model -> Html Msg
 viewContent (Model model) =
-    Html.div []
-        [ Html.input
-            [ Html.Attributes.placeholder "Search"
-            , Html.Attributes.value (model.searchInput |> Maybe.withDefault "")
-            , Html.Events.onInput EnteredSearchInput
+    Html.div [ Html.Attributes.class "page-search" ]
+        [ Html.header []
+            [ Html.form [ Html.Events.onSubmit TriggeredSearch ]
+                [ Html.input
+                    [ Html.Attributes.placeholder "(a -> b) -> Maybe a -> Maybe b"
+                    , Html.Attributes.value (model.searchInput |> Maybe.withDefault "")
+                    , Html.Events.onInput EnteredSearchInput
+                    ]
+                    []
+                ]
             ]
-            []
-        , Html.div []
-            (List.map viewSearchResultBlock model.searchResult)
+        , Html.main_ []
+            [ Html.div [ Html.Attributes.class "search-result" ]
+                (List.map viewSearchResultBlock model.searchResult)
+            ]
         ]
 
 
@@ -134,7 +148,7 @@ viewSearchResultBlock block =
                             " = "
                         )
                     , union.tags
-                        |> List.map (\( name, tipes ) -> String.join " " (name :: List.map (Elm.Search.Result.elmTypeToString False) tipes))
+                        |> List.map (\( name, tipes ) -> String.join " " (name :: List.map (Elm.Search.Result.elmTypeToText False) tipes))
                         |> String.join " | "
                         |> Html.text
                     ]
@@ -158,7 +172,7 @@ viewSearchResultBlock block =
                         [ Html.text alias_.name
                         , Html.text (" " ++ String.join " " alias_.args)
                         ]
-                    , Html.text (" = " ++ Elm.Search.Result.elmTypeToString False alias_.tipe)
+                    , Html.text (" = " ++ Elm.Search.Result.elmTypeToText False alias_.tipe)
                     ]
                 , identifier =
                     [ Html.text
@@ -176,7 +190,7 @@ viewSearchResultBlock block =
             wrapBlock
                 { code =
                     [ Html.strong [] [ Html.text value.name ]
-                    , Html.text (" : " ++ Elm.Search.Result.elmTypeToString False value.tipe)
+                    , Html.text (" : " ++ Elm.Search.Result.elmTypeToText False value.tipe)
                     ]
                 , identifier =
                     [ Html.text
@@ -194,7 +208,7 @@ viewSearchResultBlock block =
             wrapBlock
                 { code =
                     [ Html.strong [] [ Html.text ("(" ++ binop.name ++ ")") ]
-                    , Html.text (" : " ++ Elm.Search.Result.elmTypeToString False binop.tipe)
+                    , Html.text (" : " ++ Elm.Search.Result.elmTypeToText False binop.tipe)
                     ]
                 , identifier =
                     [ Html.text
@@ -217,7 +231,7 @@ wrapBlock :
     -> Html msg
 wrapBlock { code, identifier, comment } =
     Html.div
-        [ Html.Attributes.style "margin" "3rem 1rem" ]
+        [ Html.Attributes.class "search-result-item" ]
         [ Html.p [] [ Html.pre [] [ Html.code [] code ] ]
         , Html.div [] [ Html.em [] identifier ]
         , Html.div []

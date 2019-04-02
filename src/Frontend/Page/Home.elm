@@ -61,12 +61,19 @@ view model =
 
 viewContent : Model -> Html Msg
 viewContent (Model model) =
-    Html.input
-        [ Html.Attributes.placeholder "Search"
-        , Html.Attributes.value model.searchInput
-        , Html.Events.onInput EnteredSearchInput
+    Html.div [ Html.Attributes.class "page-home" ]
+        [ Html.h1 [] [ Html.text "Elm Search" ]
+        , Html.form [ Html.Events.onSubmit TriggeredSearch ]
+            [ Html.input
+                [ Html.Attributes.placeholder "(a -> b) -> Maybe a -> Maybe b"
+                , Html.Attributes.value model.searchInput
+                , Html.Events.onInput EnteredSearchInput
+                ]
+                []
+            , Html.p [ Html.Attributes.class "help" ]
+                [ Html.text "Search Elm packages by name or approximate type signature." ]
+            ]
         ]
-        []
 
 
 subscriptions : Model -> Sub Msg

@@ -4,6 +4,7 @@ module Elm.Search.Result exposing
     , PackageIdentifier
     , blockDecoder
     , elmTypeToString
+    , elmTypeToText
     , encodeBlock
     )
 
@@ -276,3 +277,49 @@ recordFieldsToString fields =
     fields
         |> List.map (\( name, tipe ) -> name ++ " : " ++ elmTypeToString False tipe)
         |> String.join ", "
+
+
+elmTypeToText : Bool -> Elm.Type.Type -> String
+elmTypeToText nested tipe =
+    case tipe of
+        Elm.Type.Var name ->
+            name
+                |> String.split "."
+                |> List.reverse
+                |> List.head
+                |> Maybe.withDefault name
+
+        Elm.Type.Lambda ((Elm.Type.Lambda fromFrom fromTo) as fromLamda) to ->
+            "(" ++ elmTypeToText False fromLamda ++ ") -> " ++ elmTypeToText False to
+
+        Elm.Type.Lambda from to ->
+            elmTypeToText False from ++ " -> " ++ elmTypeToText False to
+
+        Elm.Type.Tuple [] ->
+            "()"
+
+        Elm.Type.Tuple types ->
+            "( " ++ (types |> List.map (elmTypeToText False) |> String.join ", ") ++ " )"
+
+        Elm.Type.Type name types ->
+            (name
+                |> String.split "."
+                |> List.reverse
+                |> List.head
+                |> Maybe.withDefault name
+            )
+                :: List.map (elmTypeToText True) types
+                |> String.join " "
+                |> (\typeString ->
+                        if nested && not (List.isEmpty types) then
+                            "(" ++ typeString ++ ")"
+
+                        else
+                            typeString
+                   )
+
+        Elm.Type.Record fields (Just extensible) ->
+            "{ " ++ extensible ++ " | " ++ recordFieldsToString fields ++ " }"
+
+        Elm.Type.Record fields Nothing ->
+            "{ " ++ recordFieldsToString fields ++ " }"

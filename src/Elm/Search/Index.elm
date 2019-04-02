@@ -2,7 +2,7 @@ module Elm.Search.Index exposing
     ( Index, empty
     , addPackage
     , allPackages, getPackage
-    , allValues
+    , ExposedIdentifier(..), ModuleIdentifier(..), PackageIdentifier(..), allValues
     )
 
 {-| Search Index
