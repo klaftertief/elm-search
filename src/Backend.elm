@@ -1,6 +1,6 @@
 port module Backend exposing (main)
 
-import AssocList as Dict exposing (Dict)
+import Dict exposing (Dict)
 import Elm.Docs
 import Elm.Module
 import Elm.Package
@@ -76,19 +76,11 @@ update msg model =
                             |> Dict.map
                                 (\exposedId value ->
                                     let
-                                        (Index.ExposedIdentifier moduleId _) =
-                                            exposedId
-
-                                        (Index.ModuleIdentifier packageId moduleName) =
-                                            moduleId
-
-                                        (Index.PackageIdentifier packageName) =
-                                            packageId
-
                                         maybePackageInfo =
-                                            case String.split "/" packageName of
-                                                [ user, name, version ] ->
-                                                    Maybe.map2 Tuple.pair
+                                            case String.split "/" exposedId of
+                                                user :: name :: version :: m :: _ ->
+                                                    Maybe.map2
+                                                        (\p v -> { p = p, v = v, m = m })
                                                         (Elm.Package.fromString (user ++ "/" ++ name))
                                                         (Elm.Version.fromString version)
 
@@ -96,12 +88,12 @@ update msg model =
                                                     Nothing
                                     in
                                     Maybe.map
-                                        (\( packageName_, packageVersion ) ->
+                                        (\packageInfo ->
                                             Elm.Search.Result.Value
-                                                { name = packageName_
-                                                , version = packageVersion
+                                                { name = packageInfo.p
+                                                , version = packageInfo.v
                                                 }
-                                                { name = moduleName
+                                                { name = packageInfo.m
                                                 }
                                                 value
                                         )

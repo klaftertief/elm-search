@@ -9,6 +9,7 @@ module Frontend.Page.Search exposing
     )
 
 import Elm.Package
+import Elm.Search.Query as SearchQuery
 import Elm.Search.Result
 import Elm.Version
 import Frontend.Route as Route
@@ -117,7 +118,8 @@ viewContent (Model model) =
                 ]
             ]
         , Html.main_ []
-            [ Html.div [ Html.Attributes.class "search-result" ]
+            [ Html.pre [] [ Html.text (Maybe.map SearchQuery.fromString model.searchInput |> Debug.toString) ]
+            , Html.div [ Html.Attributes.class "search-result" ]
                 (List.map viewSearchResultBlock model.searchResult)
             ]
         ]

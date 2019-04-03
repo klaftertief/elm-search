@@ -50,13 +50,13 @@ code {
 }
 
 header {
-  padding: 1.5rem 1.5rem 1.5rem 4.5rem;
+  padding: 1.5rem 1.5rem 1.5rem 6rem;
   background-color: #f9f9f9;
   border-bottom: 1px solid #ccc;
 }
 
 .search-result {
-  padding: 1.5rem 1.5rem 1.5rem 4.5rem;
+  padding: 1.5rem 1.5rem 1.5rem 6rem;
 }
 
 .search-result-item {

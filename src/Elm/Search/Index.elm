@@ -2,7 +2,7 @@ module Elm.Search.Index exposing
     ( Index, empty
     , addPackage
     , allPackages, getPackage
-    , ExposedIdentifier(..), ModuleIdentifier(..), PackageIdentifier(..), allValues
+    , ExposedIdentifier(..), ModuleIdentifier(..), PackageIdentifier(..), allBinops, allValues
     )
 
 {-| Search Index
@@ -15,21 +15,22 @@ module Elm.Search.Index exposing
 
 -}
 
-import AssocList as Dict exposing (Dict)
+import Dict exposing (Dict)
 import Elm.Docs
 import Elm.Package
 import Elm.Project
+import Elm.Search.Query as Query exposing (Query)
 import Elm.Version
 
 
 type Index
     = Index
-        { packages : Dict PackageIdentifier Elm.Project.PackageInfo
-        , modules : Dict ModuleIdentifier Elm.Docs.Module
-        , unions : Dict ExposedIdentifier Elm.Docs.Union
-        , aliases : Dict ExposedIdentifier Elm.Docs.Alias
-        , values : Dict ExposedIdentifier Elm.Docs.Value
-        , binops : Dict ExposedIdentifier Elm.Docs.Binop
+        { packages : Dict String Elm.Project.PackageInfo
+        , modules : Dict String Elm.Docs.Module
+        , unions : Dict String Elm.Docs.Union
+        , aliases : Dict String Elm.Docs.Alias
+        , values : Dict String Elm.Docs.Value
+        , binops : Dict String Elm.Docs.Binop
         }
 
 
@@ -46,14 +47,14 @@ empty =
 
 
 removePackage : PackageIdentifier -> Index -> Index
-removePackage packageId (Index index) =
+removePackage (PackageIdentifier packageId) (Index index) =
     Index
         { packages = Dict.remove packageId index.packages
-        , modules = Dict.filter (\moduleId _ -> moduleIdentifierBelongsToPackage packageId moduleId) index.modules
-        , unions = Dict.filter (\exposedId _ -> exposedIdentifierBelongsToPackage packageId exposedId) index.unions
-        , aliases = Dict.filter (\exposedId _ -> exposedIdentifierBelongsToPackage packageId exposedId) index.aliases
-        , values = Dict.filter (\exposedId _ -> exposedIdentifierBelongsToPackage packageId exposedId) index.values
-        , binops = Dict.filter (\exposedId _ -> exposedIdentifierBelongsToPackage packageId exposedId) index.binops
+        , modules = Dict.filter (\moduleId _ -> String.startsWith moduleId packageId) index.modules
+        , unions = Dict.filter (\exposedId _ -> String.startsWith exposedId packageId) index.unions
+        , aliases = Dict.filter (\exposedId _ -> String.startsWith exposedId packageId) index.aliases
+        , values = Dict.filter (\exposedId _ -> String.startsWith exposedId packageId) index.values
+        , binops = Dict.filter (\exposedId _ -> String.startsWith exposedId packageId) index.binops
         }
 
 
@@ -74,13 +75,13 @@ addPackage package (Index index) =
             Elm.Version.toString package.info.version
 
         packageId =
-            PackageIdentifier (packageName ++ "/" ++ packageVersion)
+            packageName ++ "/" ++ packageVersion
 
         moduleId mod =
-            ModuleIdentifier packageId mod.name
+            packageId ++ "/" ++ mod.name
 
         exposedId modId { name } =
-            ExposedIdentifier modId name
+            modId ++ "/" ++ name
 
         newModules =
             package.modules
@@ -117,60 +118,66 @@ addPackage package (Index index) =
 
 getPackage : String -> Index -> Maybe Elm.Project.PackageInfo
 getPackage identifier =
-    allPackages >> Dict.get (PackageIdentifier identifier)
+    -- allPackages >> Dict.get (packageIdentifierToString identifier)
+    allPackages >> Dict.get identifier
 
 
-allPackages : Index -> Dict PackageIdentifier Elm.Project.PackageInfo
+allPackages : Index -> Dict String Elm.Project.PackageInfo
 allPackages (Index index) =
     index.packages
 
 
 getModule : ModuleIdentifier -> Index -> Maybe Elm.Docs.Module
 getModule identifier =
-    allModules >> Dict.get identifier
+    allModules >> Dict.get (moduleIdentifierToString identifier)
 
 
-allModules : Index -> Dict ModuleIdentifier Elm.Docs.Module
+allModules : Index -> Dict String Elm.Docs.Module
 allModules (Index index) =
     index.modules
 
 
 getUnion : ExposedIdentifier -> Index -> Maybe Elm.Docs.Union
 getUnion identifier =
-    allUnions >> Dict.get identifier
+    allUnions >> Dict.get (exposedIdentifierToString identifier)
 
 
-allUnions : Index -> Dict ExposedIdentifier Elm.Docs.Union
+allUnions : Index -> Dict String Elm.Docs.Union
 allUnions (Index index) =
     index.unions
 
 
 getAlias : ExposedIdentifier -> Index -> Maybe Elm.Docs.Alias
 getAlias identifier =
-    allAlias >> Dict.get identifier
+    allAlias >> Dict.get (exposedIdentifierToString identifier)
 
 
-allAlias : Index -> Dict ExposedIdentifier Elm.Docs.Alias
+allAlias : Index -> Dict String Elm.Docs.Alias
 allAlias (Index index) =
     index.aliases
 
 
 getValue : ExposedIdentifier -> Index -> Maybe Elm.Docs.Value
 getValue identifier =
-    allValues >> Dict.get identifier
+    allValues >> Dict.get (exposedIdentifierToString identifier)
 
 
-allValues : Index -> Dict ExposedIdentifier Elm.Docs.Value
+allValues : Index -> Dict String Elm.Docs.Value
 allValues (Index index) =
     index.values
 
 
+findValuesByName : String -> Index -> Dict String Elm.Docs.Value
+findValuesByName queryString =
+    allValues >> Dict.filter (\_ { name } -> String.contains queryString name)
+
+
 getBinop : ExposedIdentifier -> Index -> Maybe Elm.Docs.Binop
 getBinop identifier =
-    allBinops >> Dict.get identifier
+    allBinops >> Dict.get (exposedIdentifierToString identifier)
 
 
-allBinops : Index -> Dict ExposedIdentifier Elm.Docs.Binop
+allBinops : Index -> Dict String Elm.Docs.Binop
 allBinops (Index index) =
     index.binops
 
@@ -223,11 +230,6 @@ type ModuleIdentifier
     = ModuleIdentifier PackageIdentifier String
 
 
-moduleIdentifierBelongsToPackage : PackageIdentifier -> ModuleIdentifier -> Bool
-moduleIdentifierBelongsToPackage packageId (ModuleIdentifier modulePackageId _) =
-    packageId == modulePackageId
-
-
 moduleIdentifierToString : ModuleIdentifier -> String
 moduleIdentifierToString (ModuleIdentifier packageId moduleId) =
     packageIdentifierToString packageId ++ "/" ++ moduleId
@@ -235,11 +237,6 @@ moduleIdentifierToString (ModuleIdentifier packageId moduleId) =
 
 type ExposedIdentifier
     = ExposedIdentifier ModuleIdentifier String
-
-
-exposedIdentifierBelongsToPackage : PackageIdentifier -> ExposedIdentifier -> Bool
-exposedIdentifierBelongsToPackage packageId (ExposedIdentifier exposedModuleId _) =
-    moduleIdentifierBelongsToPackage packageId exposedModuleId
 
 
 exposedIdentifierToString : ExposedIdentifier -> String
