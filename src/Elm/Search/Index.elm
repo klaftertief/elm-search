@@ -27,13 +27,56 @@ import Elm.Version
 
 type Index
     = Index
-        { packages : Dict String Elm.Project.PackageInfo
-        , modules : Dict String Elm.Docs.Module
-        , unions : Dict String Elm.Docs.Union
-        , aliases : Dict String Elm.Docs.Alias
-        , values : Dict String Elm.Docs.Value
-        , binops : Dict String Elm.Docs.Binop
+        { packages : Dict String PackageBlock
+        , modules : Dict String ModuleBlock
+        , unions : Dict String UnionBlock
+        , aliases : Dict String AliasBlock
+        , values : Dict String ValueBlock
+        , binops : Dict String BinopBlock
         }
+
+
+type alias PackageBlock =
+    { user : String
+    , packageName : String
+    , version : String
+    , info : Elm.Project.PackageInfo
+    }
+
+
+type alias ModuleBlock =
+    { user : String
+    , packageName : String
+    , version : String
+    , moduleName : String
+    , info : Elm.Docs.Module
+    }
+
+
+type alias ExposedBlock a =
+    { user : String
+    , packageName : String
+    , version : String
+    , moduleName : String
+    , exposedName : String
+    , info : a
+    }
+
+
+type alias UnionBlock =
+    ExposedBlock Elm.Docs.Union
+
+
+type alias AliasBlock =
+    ExposedBlock Elm.Docs.Alias
+
+
+type alias ValueBlock =
+    ExposedBlock Elm.Docs.Value
+
+
+type alias BinopBlock =
+    ExposedBlock Elm.Docs.Binop
 
 
 empty : Index
@@ -69,122 +112,148 @@ type alias PackageData =
 
 addPackage : PackageData -> Index -> Index
 addPackage package (Index index) =
-    let
-        packageName =
-            Elm.Package.toString package.info.name
+    case package.info.name |> Elm.Package.toString |> String.split "/" of
+        [ user, packageName ] ->
+            let
+                version =
+                    Elm.Version.toString package.info.version
 
-        packageVersion =
-            Elm.Version.toString package.info.version
+                packageId =
+                    user ++ "/" ++ packageName ++ "/" ++ version
 
-        packageId =
-            packageName ++ "/" ++ packageVersion
+                packageBlock =
+                    { user = user
+                    , packageName = packageName
+                    , version = version
+                    , info = package.info
+                    }
 
-        moduleId mod =
-            packageId ++ "/" ++ mod.name
+                moduleId mod =
+                    packageId ++ "/" ++ mod.name
 
-        exposedId modId { name } =
-            modId ++ "/" ++ name
+                moduleBlock mod =
+                    { user = user
+                    , packageName = packageName
+                    , version = version
+                    , moduleName = mod.name
+                    , info = mod
+                    }
 
-        newModules =
-            package.modules
-                |> List.map (\mod -> ( moduleId mod, mod ))
-                |> Dict.fromList
+                exposedId modId { name } =
+                    modId ++ "/" ++ name
 
-        newExposed toExposedList =
-            package.modules
-                |> List.concatMap (\mod -> List.map (Tuple.pair (moduleId mod)) (toExposedList mod))
-                |> List.map (\( modId, e ) -> ( exposedId modId e, e ))
-                |> Dict.fromList
+                exposedBlock mod info =
+                    { user = user
+                    , packageName = packageName
+                    , version = version
+                    , moduleName = mod.name
+                    , exposedName = info.name
+                    , info = info
+                    }
 
-        newUnions =
-            newExposed .unions
+                newModules =
+                    package.modules
+                        |> List.map (\mod -> ( moduleId mod, moduleBlock mod ))
+                        |> Dict.fromList
 
-        newAliases =
-            newExposed .aliases
+                newExposed toExposedList =
+                    package.modules
+                        |> List.concatMap (\mod -> List.map (Tuple.pair mod) (toExposedList mod))
+                        |> List.map (\( mod, e ) -> ( exposedId (moduleId mod) e, exposedBlock mod e ))
+                        |> Dict.fromList
 
-        newValues =
-            newExposed .values
+                newUnions =
+                    newExposed .unions
 
-        newBinops =
-            newExposed .binops
-    in
-    Index
-        { packages = Dict.insert packageId package.info index.packages
-        , modules = Dict.union newModules index.modules
-        , unions = Dict.union newUnions index.unions
-        , aliases = Dict.union newAliases index.aliases
-        , values = Dict.union newValues index.values
-        , binops = Dict.union newBinops index.binops
-        }
+                newAliases =
+                    newExposed .aliases
+
+                newValues =
+                    newExposed .values
+
+                newBinops =
+                    newExposed .binops
+            in
+            Index
+                { packages = Dict.insert packageId packageBlock index.packages
+                , modules = Dict.union newModules index.modules
+                , unions = Dict.union newUnions index.unions
+                , aliases = Dict.union newAliases index.aliases
+                , values = Dict.union newValues index.values
+                , binops = Dict.union newBinops index.binops
+                }
+
+        _ ->
+            Index index
 
 
-allPackages : Index -> Dict String Elm.Project.PackageInfo
+allPackages : Index -> Dict String PackageBlock
 allPackages (Index index) =
     index.packages
 
 
-getPackage : String -> Index -> Maybe Elm.Project.PackageInfo
+getPackage : String -> Index -> Maybe PackageBlock
 getPackage identifier =
     -- allPackages >> Dict.get (packageIdentifierToString identifier)
     allPackages >> Dict.get identifier
 
 
-allModules : Index -> Dict String Elm.Docs.Module
+allModules : Index -> Dict String ModuleBlock
 allModules (Index index) =
     index.modules
 
 
-getModule : ModuleIdentifier -> Index -> Maybe Elm.Docs.Module
+getModule : ModuleIdentifier -> Index -> Maybe ModuleBlock
 getModule identifier =
     allModules >> Dict.get (moduleIdentifierToString identifier)
 
 
-getUnion : ExposedIdentifier -> Index -> Maybe Elm.Docs.Union
+getUnion : ExposedIdentifier -> Index -> Maybe UnionBlock
 getUnion identifier =
     allUnions >> Dict.get (exposedIdentifierToString identifier)
 
 
-allUnions : Index -> Dict String Elm.Docs.Union
+allUnions : Index -> Dict String UnionBlock
 allUnions (Index index) =
     index.unions
 
 
-getAlias : ExposedIdentifier -> Index -> Maybe Elm.Docs.Alias
+getAlias : ExposedIdentifier -> Index -> Maybe AliasBlock
 getAlias identifier =
     allAlias >> Dict.get (exposedIdentifierToString identifier)
 
 
-allAlias : Index -> Dict String Elm.Docs.Alias
+allAlias : Index -> Dict String AliasBlock
 allAlias (Index index) =
     index.aliases
 
 
-getValue : ExposedIdentifier -> Index -> Maybe Elm.Docs.Value
+getValue : ExposedIdentifier -> Index -> Maybe ValueBlock
 getValue identifier =
     allValues >> Dict.get (exposedIdentifierToString identifier)
 
 
-allValues : Index -> Dict String Elm.Docs.Value
+allValues : Index -> Dict String ValueBlock
 allValues (Index index) =
     index.values
 
 
-findValuesByName : String -> Index -> Dict String Elm.Docs.Value
+findValuesByName : String -> Index -> Dict String ValueBlock
 findValuesByName queryString =
-    allValues >> Dict.filter (\_ { name } -> String.contains queryString name)
+    allValues >> Dict.filter (\_ { info } -> String.contains queryString info.name)
 
 
-findValuesByType : Type -> Index -> Dict String Elm.Docs.Value
+findValuesByType : Type -> Index -> Dict String ValueBlock
 findValuesByType queryType =
-    allValues >> Dict.filter (\_ { tipe } -> TypeDistance.distance queryType tipe < 0.2)
+    allValues >> Dict.filter (\_ { info } -> TypeDistance.distance queryType info.tipe < 0.2)
 
 
-getBinop : ExposedIdentifier -> Index -> Maybe Elm.Docs.Binop
+getBinop : ExposedIdentifier -> Index -> Maybe BinopBlock
 getBinop identifier =
     allBinops >> Dict.get (exposedIdentifierToString identifier)
 
 
-allBinops : Index -> Dict String Elm.Docs.Binop
+allBinops : Index -> Dict String BinopBlock
 allBinops (Index index) =
     index.binops
 
