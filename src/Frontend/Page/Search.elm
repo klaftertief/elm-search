@@ -118,8 +118,7 @@ viewContent (Model model) =
                 ]
             ]
         , Html.main_ []
-            [ Html.pre [] [ Html.text (Maybe.map SearchQuery.fromString model.searchInput |> Debug.toString) ]
-            , Html.div [ Html.Attributes.class "search-result" ]
+            [ Html.div [ Html.Attributes.class "search-result" ]
                 (List.map viewSearchResultBlock model.searchResult)
             ]
         ]

@@ -1,75 +1,51 @@
-module Elm.Search exposing (Score, addScores, scoreComment, scoreName, scoreToFloat)
+module Elm.Search exposing
+    ( valuesByName
+    , valuesByType
+    )
+
+import Dict exposing (Dict)
+import Elm.Docs
+import Elm.Search.Index as Index exposing (Index)
+import Elm.Search.Query as Query exposing (Query)
+import Elm.Search.Result as Result exposing (Block)
+import Elm.Search.Score as Score exposing (Score)
+import Elm.Type exposing (Type)
+import Elm.Type.Distance
 
 
-type Score
-    = Distance Float
-    | Possible
-    | Impossible
+search : List Query -> Index -> List ( Float, Block )
+search queries index =
+    let
+        blocks =
+            indexBlocks index
+    in
+    List.map
+        (\block -> ( bestBlockScore queries block, block ))
+        blocks
 
 
-addScores : Score -> Score -> Score
-addScores s1 s2 =
-    case ( s1, s2 ) of
-        ( Distance d1, Distance d2 ) ->
-            Distance (d1 + d2)
-
-        ( Possible, Distance _ ) ->
-            s2
-
-        ( Distance _, Possible ) ->
-            s1
-
-        ( Possible, Possible ) ->
-            Possible
-
-        ( Impossible, _ ) ->
-            Impossible
-
-        ( _, Impossible ) ->
-            Impossible
+bestBlockScore : List Query -> Block -> Float
+bestBlockScore queries block =
+    List.map (\query -> blockScore query block) queries
+        |> List.minimum
+        |> Maybe.withDefault (1 / 0)
 
 
-scoreToFloat : Score -> Float
-scoreToFloat score =
-    case score of
-        Distance distance ->
-            distance
-
-        Possible ->
-            1 / 0
-
-        Impossible ->
-            1 / 0
+blockScore : Query -> Block -> Float
+blockScore query block =
+    1
 
 
-scoreName : String -> { a | name : String } -> Score
-scoreName query { name } =
-    if query == name then
-        Distance 0
-
-    else if String.toLower query == String.toLower name then
-        Distance 3
-
-    else if String.contains (String.toLower query) (String.toLower name) then
-        Distance 7
-
-    else
-        Impossible
+indexBlocks : Index -> List Block
+indexBlocks index =
+    []
 
 
-scoreComment : String -> { a | comment : String } -> Score
-scoreComment query { comment } =
-    if String.length query < 4 then
-        Possible
+valuesByName : String -> Index -> Dict String Elm.Docs.Value
+valuesByName queryString =
+    Index.allValues >> Dict.filter (\_ { name } -> String.contains queryString name)
 
-    else if query == comment then
-        Distance 0
 
-    else if String.toLower query == String.toLower comment then
-        Distance 1
-
-    else if String.contains (String.toLower query) (String.toLower comment) then
-        Distance 3
-
-    else
-        Impossible
+valuesByType : Type -> Index -> Dict String Elm.Docs.Value
+valuesByType queryType =
+    Index.allValues >> Dict.filter (\_ { tipe } -> Elm.Type.Distance.distance queryType tipe < 0.2)

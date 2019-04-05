@@ -71,8 +71,7 @@ update msg model =
                 (Json.Encode.object
                     [ ( "query", Json.Encode.string queryString )
                     , ( "result"
-                      , Index.allValues model.index
-                            |> Dict.filter (\_ { name } -> String.contains queryString name)
+                      , ((Index.findValuesByName queryString model.index
                             |> Dict.map
                                 (\exposedId value ->
                                     let
@@ -100,6 +99,43 @@ update msg model =
                                         maybePackageInfo
                                 )
                             |> Dict.values
+                         )
+                            ++ (Elm.Type.parse queryString
+                                    |> Result.toMaybe
+                                    |> Maybe.map
+                                        (\tipe ->
+                                            Index.findValuesByType tipe model.index
+                                                |> Dict.map
+                                                    (\exposedId value ->
+                                                        let
+                                                            maybePackageInfo =
+                                                                case String.split "/" exposedId of
+                                                                    user :: name :: version :: m :: _ ->
+                                                                        Maybe.map2
+                                                                            (\p v -> { p = p, v = v, m = m })
+                                                                            (Elm.Package.fromString (user ++ "/" ++ name))
+                                                                            (Elm.Version.fromString version)
+
+                                                                    _ ->
+                                                                        Nothing
+                                                        in
+                                                        Maybe.map
+                                                            (\packageInfo ->
+                                                                Elm.Search.Result.Value
+                                                                    { name = packageInfo.p
+                                                                    , version = packageInfo.v
+                                                                    }
+                                                                    { name = packageInfo.m
+                                                                    }
+                                                                    value
+                                                            )
+                                                            maybePackageInfo
+                                                    )
+                                                |> Dict.values
+                                        )
+                                    |> Maybe.withDefault []
+                               )
+                        )
                             |> List.filterMap identity
                             |> Json.Encode.list Elm.Search.Result.encodeBlock
                       )
@@ -220,208 +256,3 @@ packageInfoDecoder =
 docsDecoder : Json.Decode.Decoder (List Elm.Docs.Module)
 docsDecoder =
     Json.Decode.list Elm.Docs.decoder
-
-
-
--- SEARCH
-
-
-searchUnionsByName : String -> List Package -> List Elm.Search.Result.Block
-searchUnionsByName =
-    searchPackagesEntries (searchPackageEntries searchModuleUnionsByName)
-
-
-searchAliasesByName : String -> List Package -> List Elm.Search.Result.Block
-searchAliasesByName =
-    searchPackagesEntries (searchPackageEntries searchModuleAliasesByName)
-
-
-searchValuesByName : String -> List Package -> List Elm.Search.Result.Block
-searchValuesByName =
-    searchPackagesEntries (searchPackageEntries searchModuleValuesByName)
-
-
-searchBinopsByName : String -> List Package -> List Elm.Search.Result.Block
-searchBinopsByName =
-    searchPackagesEntries (searchPackageEntries searchModuleBinopsByName)
-
-
-searchUnionsByComment : String -> List Package -> List Elm.Search.Result.Block
-searchUnionsByComment =
-    searchPackagesEntries (searchPackageEntries searchModuleUnionsByComment)
-
-
-searchAliasesByComment : String -> List Package -> List Elm.Search.Result.Block
-searchAliasesByComment =
-    searchPackagesEntries (searchPackageEntries searchModuleAliasesByComment)
-
-
-searchValuesByComment : String -> List Package -> List Elm.Search.Result.Block
-searchValuesByComment =
-    searchPackagesEntries (searchPackageEntries searchModuleValuesByComment)
-
-
-searchBinopsByComment : String -> List Package -> List Elm.Search.Result.Block
-searchBinopsByComment =
-    searchPackagesEntries (searchPackageEntries searchModuleBinopsByComment)
-
-
-searchUnionsByTageNames : String -> List Package -> List Elm.Search.Result.Block
-searchUnionsByTageNames =
-    searchPackagesEntries (searchPackageEntries searchModuleUnionsByTagNames)
-
-
-searchPackagesEntries :
-    (String -> Package -> List Elm.Search.Result.Block)
-    -> String
-    -> List Package
-    -> List Elm.Search.Result.Block
-searchPackagesEntries searchPackage =
-    searchPackage >> List.concatMap
-
-
-searchPackageEntries :
-    (String -> Elm.Search.Result.PackageIdentifier -> Elm.Docs.Module -> List Elm.Search.Result.Block)
-    -> String
-    -> Package
-    -> List Elm.Search.Result.Block
-searchPackageEntries searchModule name package =
-    List.concatMap (searchModule name <| toPackageIdentifier package)
-        package.modules
-
-
-searchModuleUnionsByName : String -> Elm.Search.Result.PackageIdentifier -> Elm.Docs.Module -> List Elm.Search.Result.Block
-searchModuleUnionsByName =
-    searchModuleEntriesByName
-        { entries = .unions
-        , toBlock = Elm.Search.Result.Union
-        }
-
-
-searchModuleAliasesByName : String -> Elm.Search.Result.PackageIdentifier -> Elm.Docs.Module -> List Elm.Search.Result.Block
-searchModuleAliasesByName =
-    searchModuleEntriesByName
-        { entries = .aliases
-        , toBlock = Elm.Search.Result.Alias
-        }
-
-
-searchModuleValuesByName : String -> Elm.Search.Result.PackageIdentifier -> Elm.Docs.Module -> List Elm.Search.Result.Block
-searchModuleValuesByName =
-    searchModuleEntriesByName
-        { entries = .values
-        , toBlock = Elm.Search.Result.Value
-        }
-
-
-searchModuleBinopsByName : String -> Elm.Search.Result.PackageIdentifier -> Elm.Docs.Module -> List Elm.Search.Result.Block
-searchModuleBinopsByName =
-    searchModuleEntriesByName
-        { entries = .binops
-        , toBlock = Elm.Search.Result.Binop
-        }
-
-
-searchModuleEntriesByName :
-    { entries : Elm.Docs.Module -> List { a | name : String }
-    , toBlock : Elm.Search.Result.PackageIdentifier -> Elm.Search.Result.ModuleIdentifier -> { a | name : String } -> Elm.Search.Result.Block
-    }
-    -> String
-    -> Elm.Search.Result.PackageIdentifier
-    -> Elm.Docs.Module
-    -> List Elm.Search.Result.Block
-searchModuleEntriesByName cfg name packageIdentifier mod =
-    let
-        toResult entry =
-            if String.toLower entry.name == String.toLower name then
-                Just (cfg.toBlock packageIdentifier (toModuleIdentifier mod) entry)
-
-            else
-                Nothing
-    in
-    List.filterMap toResult (cfg.entries mod)
-
-
-searchModuleUnionsByTagNames : String -> Elm.Search.Result.PackageIdentifier -> Elm.Docs.Module -> List Elm.Search.Result.Block
-searchModuleUnionsByTagNames query packageIdentifier mod =
-    let
-        toResult entry =
-            if
-                List.any
-                    (\( name, _ ) -> String.contains (String.toLower query) (String.toLower name))
-                    entry.tags
-            then
-                Just
-                    (Elm.Search.Result.Union packageIdentifier
-                        (toModuleIdentifier mod)
-                        entry
-                    )
-
-            else
-                Nothing
-    in
-    List.filterMap toResult mod.unions
-
-
-searchModuleUnionsByComment : String -> Elm.Search.Result.PackageIdentifier -> Elm.Docs.Module -> List Elm.Search.Result.Block
-searchModuleUnionsByComment =
-    searchModuleEntriesByComment
-        { entries = .unions
-        , toBlock = Elm.Search.Result.Union
-        }
-
-
-searchModuleAliasesByComment : String -> Elm.Search.Result.PackageIdentifier -> Elm.Docs.Module -> List Elm.Search.Result.Block
-searchModuleAliasesByComment =
-    searchModuleEntriesByComment
-        { entries = .aliases
-        , toBlock = Elm.Search.Result.Alias
-        }
-
-
-searchModuleValuesByComment : String -> Elm.Search.Result.PackageIdentifier -> Elm.Docs.Module -> List Elm.Search.Result.Block
-searchModuleValuesByComment =
-    searchModuleEntriesByComment
-        { entries = .values
-        , toBlock = Elm.Search.Result.Value
-        }
-
-
-searchModuleBinopsByComment : String -> Elm.Search.Result.PackageIdentifier -> Elm.Docs.Module -> List Elm.Search.Result.Block
-searchModuleBinopsByComment =
-    searchModuleEntriesByComment
-        { entries = .binops
-        , toBlock = Elm.Search.Result.Binop
-        }
-
-
-searchModuleEntriesByComment :
-    { entries : Elm.Docs.Module -> List { a | comment : String }
-    , toBlock : Elm.Search.Result.PackageIdentifier -> Elm.Search.Result.ModuleIdentifier -> { a | comment : String } -> Elm.Search.Result.Block
-    }
-    -> String
-    -> Elm.Search.Result.PackageIdentifier
-    -> Elm.Docs.Module
-    -> List Elm.Search.Result.Block
-searchModuleEntriesByComment cfg query packageIdentifier mod =
-    let
-        toResult entry =
-            if String.contains (String.toLower query) (String.toLower entry.comment) then
-                Just (cfg.toBlock packageIdentifier (toModuleIdentifier mod) entry)
-
-            else
-                Nothing
-    in
-    List.filterMap toResult (cfg.entries mod)
-
-
-toModuleIdentifier : Elm.Docs.Module -> Elm.Search.Result.ModuleIdentifier
-toModuleIdentifier mod =
-    { name = mod.name }
-
-
-toPackageIdentifier : Package -> Elm.Search.Result.PackageIdentifier
-toPackageIdentifier package =
-    { name = package.info.name
-    , version = package.info.version
-    }

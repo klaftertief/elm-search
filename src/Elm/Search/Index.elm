@@ -2,7 +2,7 @@ module Elm.Search.Index exposing
     ( Index, empty
     , addPackage
     , allPackages, getPackage
-    , ExposedIdentifier(..), ModuleIdentifier(..), PackageIdentifier(..), allBinops, allValues
+    , ExposedIdentifier(..), ModuleIdentifier(..), PackageIdentifier(..), allBinops, allValues, findValuesByName, findValuesByType
     )
 
 {-| Search Index
@@ -20,6 +20,8 @@ import Elm.Docs
 import Elm.Package
 import Elm.Project
 import Elm.Search.Query as Query exposing (Query)
+import Elm.Type as Type exposing (Type)
+import Elm.Type.Distance as TypeDistance
 import Elm.Version
 
 
@@ -116,25 +118,25 @@ addPackage package (Index index) =
         }
 
 
+allPackages : Index -> Dict String Elm.Project.PackageInfo
+allPackages (Index index) =
+    index.packages
+
+
 getPackage : String -> Index -> Maybe Elm.Project.PackageInfo
 getPackage identifier =
     -- allPackages >> Dict.get (packageIdentifierToString identifier)
     allPackages >> Dict.get identifier
 
 
-allPackages : Index -> Dict String Elm.Project.PackageInfo
-allPackages (Index index) =
-    index.packages
+allModules : Index -> Dict String Elm.Docs.Module
+allModules (Index index) =
+    index.modules
 
 
 getModule : ModuleIdentifier -> Index -> Maybe Elm.Docs.Module
 getModule identifier =
     allModules >> Dict.get (moduleIdentifierToString identifier)
-
-
-allModules : Index -> Dict String Elm.Docs.Module
-allModules (Index index) =
-    index.modules
 
 
 getUnion : ExposedIdentifier -> Index -> Maybe Elm.Docs.Union
@@ -170,6 +172,11 @@ allValues (Index index) =
 findValuesByName : String -> Index -> Dict String Elm.Docs.Value
 findValuesByName queryString =
     allValues >> Dict.filter (\_ { name } -> String.contains queryString name)
+
+
+findValuesByType : Type -> Index -> Dict String Elm.Docs.Value
+findValuesByType queryType =
+    allValues >> Dict.filter (\_ { tipe } -> TypeDistance.distance queryType tipe < 0.2)
 
 
 getBinop : ExposedIdentifier -> Index -> Maybe Elm.Docs.Binop
