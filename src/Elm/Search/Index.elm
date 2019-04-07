@@ -1,17 +1,26 @@
 module Elm.Search.Index exposing
-    ( Index, empty
-    , addPackage
+    ( Index, empty, addPackage
     , allPackages, getPackage
-    , ExposedIdentifier(..), ModuleIdentifier(..), PackageIdentifier(..), allBinops, allValues, findValuesByName, findValuesByType
+    , allModules, getModule
+    , allUnions, getUnion
+    , allAliases, getAlias
+    , allValues, getValue
+    , allBinops, getBinop
+    , PackageIdentifier, ModuleIdentifier, ExposedIdentifier
     )
 
 {-| Search Index
 
-@docs Index, empty
-
-@docs addPackage
+@docs Index, empty, addPackage
 
 @docs allPackages, getPackage
+@docs allModules, getModule
+@docs allUnions, getUnion
+@docs allAliases, getAlias
+@docs allValues, getValue
+@docs allBinops, getBinop
+
+@docs PackageIdentifier, ModuleIdentifier, ExposedIdentifier
 
 -}
 
@@ -37,28 +46,19 @@ type Index
 
 
 type alias PackageBlock =
-    { user : String
-    , packageName : String
-    , version : String
+    { identifier : PackageIdentifier
     , info : Elm.Project.PackageInfo
     }
 
 
 type alias ModuleBlock =
-    { user : String
-    , packageName : String
-    , version : String
-    , moduleName : String
+    { identifier : ModuleIdentifier
     , info : Elm.Docs.Module
     }
 
 
 type alias ExposedBlock a =
-    { user : String
-    , packageName : String
-    , version : String
-    , moduleName : String
-    , exposedName : String
+    { identifier : ExposedIdentifier
     , info : a
     }
 
@@ -92,14 +92,18 @@ empty =
 
 
 removePackage : PackageIdentifier -> Index -> Index
-removePackage (PackageIdentifier packageId) (Index index) =
+removePackage packageId (Index index) =
+    let
+        package =
+            packageIdentifierToString packageId
+    in
     Index
-        { packages = Dict.remove packageId index.packages
-        , modules = Dict.filter (\moduleId _ -> String.startsWith moduleId packageId) index.modules
-        , unions = Dict.filter (\exposedId _ -> String.startsWith exposedId packageId) index.unions
-        , aliases = Dict.filter (\exposedId _ -> String.startsWith exposedId packageId) index.aliases
-        , values = Dict.filter (\exposedId _ -> String.startsWith exposedId packageId) index.values
-        , binops = Dict.filter (\exposedId _ -> String.startsWith exposedId packageId) index.binops
+        { packages = Dict.remove package index.packages
+        , modules = Dict.filter (\moduleId _ -> String.startsWith moduleId package) index.modules
+        , unions = Dict.filter (\exposedId _ -> String.startsWith exposedId package) index.unions
+        , aliases = Dict.filter (\exposedId _ -> String.startsWith exposedId package) index.aliases
+        , values = Dict.filter (\exposedId _ -> String.startsWith exposedId package) index.values
+        , binops = Dict.filter (\exposedId _ -> String.startsWith exposedId package) index.binops
         }
 
 
@@ -122,9 +126,12 @@ addPackage package (Index index) =
                     user ++ "/" ++ packageName ++ "/" ++ version
 
                 packageBlock =
-                    { user = user
-                    , packageName = packageName
-                    , version = version
+                    { identifier =
+                        PackageIdentifier
+                            { user = user
+                            , packageName = packageName
+                            , version = version
+                            }
                     , info = package.info
                     }
 
@@ -132,10 +139,13 @@ addPackage package (Index index) =
                     packageId ++ "/" ++ mod.name
 
                 moduleBlock mod =
-                    { user = user
-                    , packageName = packageName
-                    , version = version
-                    , moduleName = mod.name
+                    { identifier =
+                        ModuleIdentifier
+                            { user = user
+                            , packageName = packageName
+                            , version = version
+                            , moduleName = mod.name
+                            }
                     , info = mod
                     }
 
@@ -143,11 +153,14 @@ addPackage package (Index index) =
                     modId ++ "/" ++ name
 
                 exposedBlock mod info =
-                    { user = user
-                    , packageName = packageName
-                    , version = version
-                    , moduleName = mod.name
-                    , exposedName = info.name
+                    { identifier =
+                        ExposedIdentifier
+                            { user = user
+                            , packageName = packageName
+                            , version = version
+                            , moduleName = mod.name
+                            , exposedName = info.name
+                            }
                     , info = info
                     }
 
@@ -187,106 +200,64 @@ addPackage package (Index index) =
             Index index
 
 
-allPackages : Index -> Dict String PackageBlock
+allPackages : Index -> List PackageBlock
 allPackages (Index index) =
-    index.packages
+    Dict.values index.packages
 
 
-getPackage : String -> Index -> Maybe PackageBlock
-getPackage identifier =
-    -- allPackages >> Dict.get (packageIdentifierToString identifier)
-    allPackages >> Dict.get identifier
+getPackage : PackageIdentifier -> Index -> Maybe PackageBlock
+getPackage identifier (Index index) =
+    Dict.get (packageIdentifierToString identifier) index.packages
 
 
-allModules : Index -> Dict String ModuleBlock
+allModules : Index -> List ModuleBlock
 allModules (Index index) =
-    index.modules
+    Dict.values index.modules
 
 
 getModule : ModuleIdentifier -> Index -> Maybe ModuleBlock
-getModule identifier =
-    allModules >> Dict.get (moduleIdentifierToString identifier)
+getModule identifier (Index index) =
+    Dict.get (moduleIdentifierToString identifier) index.modules
+
+
+allUnions : Index -> List UnionBlock
+allUnions (Index index) =
+    Dict.values index.unions
 
 
 getUnion : ExposedIdentifier -> Index -> Maybe UnionBlock
-getUnion identifier =
-    allUnions >> Dict.get (exposedIdentifierToString identifier)
+getUnion identifier (Index index) =
+    Dict.get (exposedIdentifierToString identifier) index.unions
 
 
-allUnions : Index -> Dict String UnionBlock
-allUnions (Index index) =
-    index.unions
+allAliases : Index -> List AliasBlock
+allAliases (Index index) =
+    Dict.values index.aliases
 
 
 getAlias : ExposedIdentifier -> Index -> Maybe AliasBlock
-getAlias identifier =
-    allAlias >> Dict.get (exposedIdentifierToString identifier)
+getAlias identifier (Index index) =
+    Dict.get (exposedIdentifierToString identifier) index.aliases
 
 
-allAlias : Index -> Dict String AliasBlock
-allAlias (Index index) =
-    index.aliases
+allValues : Index -> List ValueBlock
+allValues (Index index) =
+    Dict.values index.values
 
 
 getValue : ExposedIdentifier -> Index -> Maybe ValueBlock
-getValue identifier =
-    allValues >> Dict.get (exposedIdentifierToString identifier)
+getValue identifier (Index index) =
+    Dict.get (exposedIdentifierToString identifier) index.values
 
 
-allValues : Index -> Dict String ValueBlock
-allValues (Index index) =
-    index.values
-
-
-findValuesByName : String -> Index -> Dict String ValueBlock
-findValuesByName queryString =
-    allValues >> Dict.filter (\_ { info } -> String.contains queryString info.name)
-
-
-findValuesByType : Type -> Index -> Dict String ValueBlock
-findValuesByType queryType =
-    allValues >> Dict.filter (\_ { info } -> TypeDistance.distance queryType info.tipe < 0.2)
+allBinops : Index -> List BinopBlock
+allBinops (Index index) =
+    Dict.values index.binops
 
 
 getBinop : ExposedIdentifier -> Index -> Maybe BinopBlock
-getBinop identifier =
-    allBinops >> Dict.get (exposedIdentifierToString identifier)
-
-
-allBinops : Index -> Dict String BinopBlock
-allBinops (Index index) =
-    index.binops
-
-
-type Block
-    = Package PackageIdentifier Elm.Project.PackageInfo
-    | Module ModuleIdentifier Elm.Docs.Module
-    | Union ExposedIdentifier Elm.Docs.Union
-    | Alias ExposedIdentifier Elm.Docs.Alias
-    | Value ExposedIdentifier Elm.Docs.Value
-    | Binop ExposedIdentifier Elm.Docs.Binop
-
-
-type Score
-    = Score
-
-
-type Query
-    = Query
-
-
-scoreBlockQuery : Query -> Block -> Score
-scoreBlockQuery query block =
-    Score
-
-
-scoreBlockQueries : List Query -> Block -> ( Block, List ( Query, Score ) )
-scoreBlockQueries queries block =
-    ( block
-    , List.map
-        (\query -> ( query, scoreBlockQuery query block ))
-        queries
-    )
+getBinop identifier (Index index) =
+    Dict.get (exposedIdentifierToString identifier) index.binops
 
 
 
@@ -294,27 +265,42 @@ scoreBlockQueries queries block =
 
 
 type PackageIdentifier
-    = PackageIdentifier String
+    = PackageIdentifier
+        { user : String
+        , packageName : String
+        , version : String
+        }
 
 
 packageIdentifierToString : PackageIdentifier -> String
 packageIdentifierToString (PackageIdentifier id) =
-    id
+    String.join "/" [ id.user, id.packageName, id.version ]
 
 
 type ModuleIdentifier
-    = ModuleIdentifier PackageIdentifier String
+    = ModuleIdentifier
+        { user : String
+        , packageName : String
+        , version : String
+        , moduleName : String
+        }
 
 
 moduleIdentifierToString : ModuleIdentifier -> String
-moduleIdentifierToString (ModuleIdentifier packageId moduleId) =
-    packageIdentifierToString packageId ++ "/" ++ moduleId
+moduleIdentifierToString (ModuleIdentifier id) =
+    String.join "/" [ id.user, id.packageName, id.version, id.moduleName ]
 
 
 type ExposedIdentifier
-    = ExposedIdentifier ModuleIdentifier String
+    = ExposedIdentifier
+        { user : String
+        , packageName : String
+        , version : String
+        , moduleName : String
+        , exposedName : String
+        }
 
 
 exposedIdentifierToString : ExposedIdentifier -> String
-exposedIdentifierToString (ExposedIdentifier moduleId exposedId) =
-    moduleIdentifierToString moduleId ++ "/" ++ exposedId
+exposedIdentifierToString (ExposedIdentifier id) =
+    String.join "/" [ id.user, id.packageName, id.version, id.moduleName, id.exposedName ]
