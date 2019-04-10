@@ -8,8 +8,10 @@ module Elm.Search.Index exposing
     , allBinops, getBinop, BinopBlock
     , PackageIdentifier, ModuleIdentifier, ExposedIdentifier
     , packageIdentifierDecoder, moduleIdentifierDecoder, exposedIdentifierDecoder
+    , packageIdentifierToString, moduleIdentifierToString, exposedIdentifierToString
     , encodePackageIdentifier, encodeModuleIdentifier, encodeExposedIdentifier
-    , Block, toBlocks, blockDecoder, encodeBlock
+    , Block(..), toBlocks, blockDecoder, encodeBlock
+    , elmTypeToText
     )
 
 {-| Search Index
@@ -25,9 +27,15 @@ module Elm.Search.Index exposing
 
 @docs PackageIdentifier, ModuleIdentifier, ExposedIdentifier
 @docs packageIdentifierDecoder, moduleIdentifierDecoder, exposedIdentifierDecoder
+@docs packageIdentifierToString, moduleIdentifierToString, exposedIdentifierToString
 @docs encodePackageIdentifier, encodeModuleIdentifier, encodeExposedIdentifier
 
 @docs Block, toBlocks, blockDecoder, encodeBlock
+
+
+## TEMP
+
+@docs elmTypeToText
 
 -}
 
@@ -525,7 +533,7 @@ encodeBlock block =
         Value value ->
             Json.Encode.object
                 [ ( "identifier", encodeExposedIdentifier value.identifier )
-                , ( "alias", encodeValue value.info )
+                , ( "value", encodeValue value.info )
                 ]
 
         Binop binop ->

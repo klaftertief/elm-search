@@ -9,8 +9,8 @@ module Frontend.Page.Search exposing
     )
 
 import Elm.Package
+import Elm.Search.Index as Index
 import Elm.Search.Query as SearchQuery
-import Elm.Search.Result
 import Elm.Version
 import Frontend.Route as Route
 import Frontend.Session as Session exposing (Session)
@@ -26,14 +26,14 @@ type Model
     = Model
         { session : Session
         , searchInput : Maybe String
-        , searchResult : List Elm.Search.Result.Block
+        , searchResult : List Index.Block
         }
 
 
 type Msg
     = EnteredSearchInput String
     | TriggeredSearch
-    | GotSearchResult (Result Http.Error (List Elm.Search.Result.Block))
+    | GotSearchResult (Result Http.Error (List Index.Block))
 
 
 init : Session -> Maybe String -> ( Model, Cmd Msg )
@@ -88,13 +88,18 @@ update msg (Model model) =
             ( Model model, Cmd.none )
 
         GotSearchResult (Ok blocks) ->
+            let
+                _ =
+                    Debug.log "# results" (List.length blocks)
+            in
             ( Model { model | searchResult = blocks }, Cmd.none )
 
 
-searchResultDecoder : Json.Decode.Decoder (List Elm.Search.Result.Block)
+searchResultDecoder : Json.Decode.Decoder (List Index.Block)
 searchResultDecoder =
-    Json.Decode.field "result"
-        (Json.Decode.list Elm.Search.Result.blockDecoder)
+    Json.Decode.field "result" (Json.Decode.list Json.Decode.value)
+        |> Json.Decode.map (List.map (Json.Decode.decodeValue Index.blockDecoder >> Result.toMaybe))
+        |> Json.Decode.map (List.filterMap identity)
 
 
 view : Model -> { title : String, body : Html Msg }
@@ -124,103 +129,79 @@ viewContent (Model model) =
         ]
 
 
-viewSearchResultBlock : Elm.Search.Result.Block -> Html msg
+viewSearchResultBlock : Index.Block -> Html msg
 viewSearchResultBlock block =
     case block of
-        Elm.Search.Result.Package _ _ ->
+        Index.Package _ ->
             Html.div [] [ Html.text "TODO" ]
 
-        Elm.Search.Result.Module _ _ _ ->
+        Index.Module _ ->
             Html.div [] [ Html.text "TODO" ]
 
-        Elm.Search.Result.Union packageIdentifier moduleIdentifier union ->
+        Index.Union union ->
             wrapBlock
                 { code =
                     [ Html.text "type "
                     , Html.strong []
-                        [ Html.text union.name
-                        , Html.text (" " ++ String.join " " union.args)
+                        [ Html.text union.info.name
+                        , Html.text (" " ++ String.join " " union.info.args)
                         ]
                     , Html.text
-                        (if List.isEmpty union.tags then
+                        (if List.isEmpty union.info.tags then
                             ""
 
                          else
                             " = "
                         )
-                    , union.tags
-                        |> List.map (\( name, tipes ) -> String.join " " (name :: List.map (Elm.Search.Result.elmTypeToText False) tipes))
+                    , union.info.tags
+                        |> List.map (\( name, tipes ) -> String.join " " (name :: List.map (Index.elmTypeToText False) tipes))
                         |> String.join " | "
                         |> Html.text
                     ]
                 , identifier =
-                    [ Html.text
-                        (String.join "/"
-                            [ Elm.Package.toString packageIdentifier.name
-                            , Elm.Version.toString packageIdentifier.version
-                            , moduleIdentifier.name
-                            ]
-                        )
+                    [ Html.text (Index.exposedIdentifierToString union.identifier)
                     ]
-                , comment = union.comment
+                , comment = union.info.comment
                 }
 
-        Elm.Search.Result.Alias packageIdentifier moduleIdentifier alias_ ->
+        Index.Alias alias_ ->
             wrapBlock
                 { code =
                     [ Html.text "type alias "
                     , Html.strong []
-                        [ Html.text alias_.name
-                        , Html.text (" " ++ String.join " " alias_.args)
+                        [ Html.text alias_.info.name
+                        , Html.text (" " ++ String.join " " alias_.info.args)
                         ]
-                    , Html.text (" = " ++ Elm.Search.Result.elmTypeToText False alias_.tipe)
+                    , Html.text (" = " ++ Index.elmTypeToText False alias_.info.tipe)
                     ]
                 , identifier =
-                    [ Html.text
-                        (String.join "/"
-                            [ Elm.Package.toString packageIdentifier.name
-                            , Elm.Version.toString packageIdentifier.version
-                            , moduleIdentifier.name
-                            ]
-                        )
+                    [ Html.text (Index.exposedIdentifierToString alias_.identifier)
                     ]
-                , comment = alias_.comment
+                , comment = alias_.info.comment
                 }
 
-        Elm.Search.Result.Value packageIdentifier moduleIdentifier value ->
+        Index.Value value ->
             wrapBlock
                 { code =
-                    [ Html.strong [] [ Html.text value.name ]
-                    , Html.text (" : " ++ Elm.Search.Result.elmTypeToText False value.tipe)
+                    [ Html.strong [] [ Html.text value.info.name ]
+                    , Html.text (" : " ++ Index.elmTypeToText False value.info.tipe)
                     ]
                 , identifier =
-                    [ Html.text
-                        (String.join "/"
-                            [ Elm.Package.toString packageIdentifier.name
-                            , Elm.Version.toString packageIdentifier.version
-                            , moduleIdentifier.name
-                            ]
-                        )
+                    [ Html.text (Index.exposedIdentifierToString value.identifier)
                     ]
-                , comment = value.comment
+                , comment = value.info.comment
                 }
 
-        Elm.Search.Result.Binop packageIdentifier moduleIdentifier binop ->
+        Index.Binop binop ->
             wrapBlock
                 { code =
-                    [ Html.strong [] [ Html.text ("(" ++ binop.name ++ ")") ]
-                    , Html.text (" : " ++ Elm.Search.Result.elmTypeToText False binop.tipe)
+                    [ Html.strong [] [ Html.text ("(" ++ binop.info.name ++ ")") ]
+                    , Html.text (" : " ++ Index.elmTypeToText False binop.info.tipe)
                     ]
                 , identifier =
-                    [ Html.text
-                        (String.join "/"
-                            [ Elm.Package.toString packageIdentifier.name
-                            , Elm.Version.toString packageIdentifier.version
-                            , moduleIdentifier.name
-                            ]
-                        )
+                    [ Html.text (Index.exposedIdentifierToString binop.identifier)
                     ]
-                , comment = binop.comment
+                , comment = binop.info.comment
                 }
 
 

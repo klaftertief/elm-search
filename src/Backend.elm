@@ -5,8 +5,8 @@ import Elm.Docs
 import Elm.Module
 import Elm.Package
 import Elm.Project
+import Elm.Search as Search
 import Elm.Search.Index as Index exposing (Index)
-import Elm.Search.Result
 import Elm.Type
 import Elm.Version
 import Json.Decode
@@ -71,92 +71,10 @@ update msg model =
                 (Json.Encode.object
                     [ ( "query", Json.Encode.string queryString )
                     , ( "result"
-                      , ((Index.findValuesByName queryString model.index
-                            |> Dict.map
-                                (\exposedId value ->
-                                    let
-                                        maybePackageInfo =
-                                            case String.split "/" exposedId of
-                                                user :: name :: version :: m :: _ ->
-                                                    Maybe.map2
-                                                        (\p v -> { p = p, v = v, m = m })
-                                                        (Elm.Package.fromString (user ++ "/" ++ name))
-                                                        (Elm.Version.fromString version)
-
-                                                _ ->
-                                                    Nothing
-                                    in
-                                    Maybe.map
-                                        (\packageInfo ->
-                                            Elm.Search.Result.Value
-                                                { name = packageInfo.p
-                                                , version = packageInfo.v
-                                                }
-                                                { name = packageInfo.m
-                                                }
-                                                value
-                                        )
-                                        maybePackageInfo
-                                )
-                            |> Dict.values
-                         )
-                            ++ (Elm.Type.parse queryString
-                                    |> Result.toMaybe
-                                    |> Maybe.map
-                                        (\tipe ->
-                                            Index.findValuesByType tipe model.index
-                                                |> Dict.map
-                                                    (\exposedId value ->
-                                                        let
-                                                            maybePackageInfo =
-                                                                case String.split "/" exposedId of
-                                                                    user :: name :: version :: m :: _ ->
-                                                                        Maybe.map2
-                                                                            (\p v -> { p = p, v = v, m = m })
-                                                                            (Elm.Package.fromString (user ++ "/" ++ name))
-                                                                            (Elm.Version.fromString version)
-
-                                                                    _ ->
-                                                                        Nothing
-                                                        in
-                                                        Maybe.map
-                                                            (\packageInfo ->
-                                                                Elm.Search.Result.Value
-                                                                    { name = packageInfo.p
-                                                                    , version = packageInfo.v
-                                                                    }
-                                                                    { name = packageInfo.m
-                                                                    }
-                                                                    value
-                                                            )
-                                                            maybePackageInfo
-                                                    )
-                                                |> Dict.values
-                                        )
-                                    |> Maybe.withDefault []
-                               )
-                        )
-                            |> List.filterMap identity
-                            |> Json.Encode.list Elm.Search.Result.encodeBlock
+                      , Search.search [] model.index
+                            |> List.filter (Tuple.first >> (\d -> d < 0.2))
+                            |> Json.Encode.list (Tuple.second >> Index.encodeBlock)
                       )
-
-                    -- , ( "result"
-                    --   , model.packages
-                    --         |> Dict.values
-                    --         |> (\packages ->
-                    --                 []
-                    --                     ++ searchUnionsByName queryString packages
-                    --                     ++ searchAliasesByName queryString packages
-                    --                     ++ searchValuesByName queryString packages
-                    --                     ++ searchBinopsByName queryString packages
-                    --                     -- ++ searchUnionsByComment queryString packages
-                    --                     -- ++ searchAliasesByComment queryString packages
-                    --                     -- ++ searchValuesByComment queryString packages
-                    --                     -- ++ searchBinopsByComment queryString packages
-                    --                     ++ searchUnionsByTageNames queryString packages
-                    --            )
-                    --         |> Json.Encode.list Elm.Search.Result.encodeBlock
-                    --   )
                     ]
                 )
             )
@@ -166,12 +84,7 @@ update msg model =
             , result
                 (Json.Encode.object
                     [ ( "query", Json.Encode.string "_packages" )
-                    , ( "result"
-                      , Index.allPackages model.index
-                            |> Dict.values
-                            |> List.map Elm.Project.Package
-                            |> Json.Encode.list Elm.Project.encode
-                      )
+                    , ( "result", Json.Encode.null )
                     ]
                 )
             )
@@ -181,11 +94,7 @@ update msg model =
             , result
                 (Json.Encode.object
                     [ ( "query", Json.Encode.string (String.join "_" [ "_packages", user, name, version ]) )
-                    , ( "result"
-                      , Index.getPackage (user ++ "/" ++ name ++ "/" ++ version) model.index
-                            |> Maybe.map (Elm.Project.Package >> Elm.Project.encode)
-                            |> Maybe.withDefault Json.Encode.null
-                      )
+                    , ( "result", Json.Encode.null )
                     ]
                 )
             )

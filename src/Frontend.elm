@@ -3,7 +3,6 @@ module Frontend exposing (main)
 import Browser
 import Browser.Navigation as Navigation
 import Elm.Package
-import Elm.Search.Result
 import Elm.Version
 import Frontend.Page.Home as Home
 import Frontend.Page.Packages as Packages
