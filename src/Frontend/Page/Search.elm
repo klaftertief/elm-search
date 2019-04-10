@@ -146,8 +146,19 @@ viewSearchResultBlock block =
                 , comment = package.info.summary
                 }
 
-        Index.Module _ ->
-            Html.div [] [ Html.text "TODO" ]
+        Index.Module module_ ->
+            wrapBlock
+                { code =
+                    [ Html.text "module "
+                    , Html.strong []
+                        [ Html.text (Index.moduleIdentifierToString module_.identifier)
+                        ]
+                    ]
+                , identifier =
+                    [ Html.text (Index.moduleIdentifierToString module_.identifier)
+                    ]
+                , comment = module_.info.comment
+                }
 
         Index.Union union ->
             wrapBlock

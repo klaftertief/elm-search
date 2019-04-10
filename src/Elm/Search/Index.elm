@@ -433,6 +433,7 @@ blockDecoder : Json.Decode.Decoder Block
 blockDecoder =
     Json.Decode.oneOf
         [ packageBlockDecoder
+        , moduleBlockDecoder
         , aliasBlockDecoder
         , unionBlockDecoder
         , valueBlockDecoder
@@ -458,6 +459,22 @@ packageBlockDecoder =
 
                     Elm.Project.Application _ ->
                         Json.Decode.fail "Application not supported"
+            )
+
+
+moduleBlockDecoder : Json.Decode.Decoder Block
+moduleBlockDecoder =
+    Json.Decode.field "module" Elm.Docs.decoder
+        |> Json.Decode.andThen
+            (\info ->
+                Json.Decode.map
+                    (\id ->
+                        Module
+                            { identifier = id
+                            , info = info
+                            }
+                    )
+                    (Json.Decode.field "identifier" moduleIdentifierDecoder)
             )
 
 
@@ -537,7 +554,7 @@ encodeBlock block =
         Module module_ ->
             Json.Encode.object
                 [ ( "identifier", encodeModuleIdentifier module_.identifier )
-                , ( "module", Json.Encode.null )
+                , ( "module", encodeModule module_.info )
                 ]
 
         Union union ->
@@ -563,6 +580,18 @@ encodeBlock block =
                 [ ( "identifier", encodeExposedIdentifier binop.identifier )
                 , ( "binop", encodeBinop binop.info )
                 ]
+
+
+encodeModule : Elm.Docs.Module -> Json.Encode.Value
+encodeModule module_ =
+    Json.Encode.object
+        [ ( "name", Json.Encode.string module_.name )
+        , ( "comment", Json.Encode.string module_.comment )
+        , ( "unions", Json.Encode.list encodeUnion [] )
+        , ( "aliases", Json.Encode.list encodeAlias [] )
+        , ( "values", Json.Encode.list encodeValue [] )
+        , ( "binops", Json.Encode.list encodeBinop [] )
+        ]
 
 
 encodeUnion : Elm.Docs.Union -> Json.Encode.Value
