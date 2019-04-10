@@ -132,8 +132,19 @@ viewContent (Model model) =
 viewSearchResultBlock : Index.Block -> Html msg
 viewSearchResultBlock block =
     case block of
-        Index.Package _ ->
-            Html.div [] [ Html.text "TODO" ]
+        Index.Package package ->
+            wrapBlock
+                { code =
+                    [ Html.text "package "
+                    , Html.strong []
+                        [ Html.text (Index.packageIdentifierToString package.identifier)
+                        ]
+                    ]
+                , identifier =
+                    [ Html.text (Index.packageIdentifierToString package.identifier)
+                    ]
+                , comment = package.info.summary
+                }
 
         Index.Module _ ->
             Html.div [] [ Html.text "TODO" ]

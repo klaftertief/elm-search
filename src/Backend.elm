@@ -7,6 +7,7 @@ import Elm.Package
 import Elm.Project
 import Elm.Search as Search
 import Elm.Search.Index as Index exposing (Index)
+import Elm.Search.Query as Query
 import Elm.Type
 import Elm.Version
 import Json.Decode
@@ -71,8 +72,9 @@ update msg model =
                 (Json.Encode.object
                     [ ( "query", Json.Encode.string queryString )
                     , ( "result"
-                      , Search.search [] model.index
+                      , Search.search (Query.fromString queryString |> Debug.log "q") model.index
                             |> List.filter (Tuple.first >> (\d -> d < 0.2))
+                            |> List.sortBy Tuple.first
                             |> Json.Encode.list (Tuple.second >> Index.encodeBlock)
                       )
                     ]

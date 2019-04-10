@@ -432,11 +432,33 @@ toBlocks index =
 blockDecoder : Json.Decode.Decoder Block
 blockDecoder =
     Json.Decode.oneOf
-        [ aliasBlockDecoder
+        [ packageBlockDecoder
+        , aliasBlockDecoder
         , unionBlockDecoder
         , valueBlockDecoder
         , binopBlockDecoder
         ]
+
+
+packageBlockDecoder : Json.Decode.Decoder Block
+packageBlockDecoder =
+    Json.Decode.field "package" Elm.Project.decoder
+        |> Json.Decode.andThen
+            (\project ->
+                case project of
+                    Elm.Project.Package info ->
+                        Json.Decode.map
+                            (\id ->
+                                Package
+                                    { identifier = id
+                                    , info = info
+                                    }
+                            )
+                            (Json.Decode.field "identifier" packageIdentifierDecoder)
+
+                    Elm.Project.Application _ ->
+                        Json.Decode.fail "Application not supported"
+            )
 
 
 unionBlockDecoder : Json.Decode.Decoder Block
@@ -509,7 +531,7 @@ encodeBlock block =
         Package package ->
             Json.Encode.object
                 [ ( "identifier", encodePackageIdentifier package.identifier )
-                , ( "package", Json.Encode.null )
+                , ( "package", Elm.Project.encode (Elm.Project.Package package.info) )
                 ]
 
         Module module_ ->
