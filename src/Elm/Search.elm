@@ -71,14 +71,14 @@ blockScore q b =
 
         -- BY TEXT
         ( Query.ByText text, Index.Package block ) ->
-            if String.contains text block.info.summary then
+            if String.contains text (String.toLower block.info.summary) then
                 0.1
 
             else
                 1
 
         ( Query.ByText text, Index.Module block ) ->
-            if String.contains text block.info.comment then
+            if String.contains text (String.toLower block.info.comment) then
                 0.1
 
             else
