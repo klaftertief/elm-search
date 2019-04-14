@@ -17,6 +17,7 @@ import Frontend.Session as Session exposing (Session)
 import Html exposing (Html)
 import Html.Attributes
 import Html.Events
+import Html.Lazy
 import Http
 import Json.Decode
 import Markdown
@@ -123,8 +124,12 @@ viewContent (Model model) =
                 ]
             ]
         , Html.main_ []
-            [ Html.div [ Html.Attributes.class "search-result" ]
-                (List.map viewSearchResultBlock model.searchResult)
+            [ Html.Lazy.lazy
+                (\result ->
+                    Html.div [ Html.Attributes.class "search-result" ]
+                        (List.map viewSearchResultBlock result)
+                )
+                model.searchResult
             ]
         ]
 
@@ -239,12 +244,11 @@ wrapBlock { code, identifier, comment } =
         [ Html.p [] [ Html.pre [] [ Html.code [] code ] ]
         , Html.div [] [ Html.em [] identifier ]
         , Html.div []
-            (comment
-                |> String.split "\n\n"
-                |> List.head
-                |> Maybe.withDefault ""
+            [ comment
                 |> Markdown.toHtml Nothing
-            )
+                |> List.head
+                |> Maybe.withDefault (Html.text "")
+            ]
         ]
 
 
