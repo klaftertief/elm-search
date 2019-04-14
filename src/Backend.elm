@@ -75,6 +75,7 @@ update msg model =
                       , Search.search (Query.fromString queryString |> Debug.log "q") model.index
                             |> List.filter (Tuple.first >> (\d -> d < 0.2))
                             |> List.sortBy Tuple.first
+                            |> List.take 20
                             |> Json.Encode.list (Tuple.second >> Index.encodeBlock)
                       )
                     ]
