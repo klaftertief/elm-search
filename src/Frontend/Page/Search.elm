@@ -12,7 +12,6 @@ import Elm.Package
 import Elm.Search.Index as Index
 import Elm.Search.Query as SearchQuery
 import Elm.Version
-import Frontend.Route as Route
 import Frontend.Session as Session exposing (Session)
 import Html exposing (Html)
 import Html.Attributes
@@ -21,6 +20,7 @@ import Html.Lazy
 import Http
 import Json.Decode
 import Markdown
+import Route
 
 
 type Model

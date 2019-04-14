@@ -7,7 +7,6 @@ import Elm.Version
 import Frontend.Page.Home as Home
 import Frontend.Page.Packages as Packages
 import Frontend.Page.Search as Search
-import Frontend.Route as Route exposing (Route)
 import Frontend.Session as Session exposing (Session)
 import Html exposing (..)
 import Html.Attributes exposing (..)
@@ -15,6 +14,7 @@ import Html.Events exposing (..)
 import Http
 import Json.Decode
 import Markdown
+import Route exposing (Route)
 import Url exposing (Url)
 
 

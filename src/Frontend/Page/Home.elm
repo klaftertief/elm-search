@@ -8,11 +8,11 @@ module Frontend.Page.Home exposing
     , view
     )
 
-import Frontend.Route as Route
 import Frontend.Session as Session exposing (Session)
 import Html exposing (Html)
 import Html.Attributes
 import Html.Events
+import Route
 
 
 type Model

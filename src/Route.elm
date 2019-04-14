@@ -1,4 +1,4 @@
-module Frontend.Route exposing (Route(..), fromUrl, href, pushUrl, replaceUrl)
+module Route exposing (Route(..), fromUrl, href, pushUrl, replaceUrl)
 
 import Browser.Navigation as Navigation
 import Html
