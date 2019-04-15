@@ -11,30 +11,18 @@ server.use(cors());
 
 const port = 3333;
 const maxDuration = 1000;
-const interval = 5;
 
 const cache = {};
 
-const allPackages = require("../packages/search.json").filter(package =>
-  package.startsWith("elm/")
-);
-
-allPackages.forEach(package => {
-  search.ports.addPackage.send({
-    package: require(pathInCache(path.join(package, "elm.json"))),
-    readme: require(pathInCache(path.join(package, "readme.json"))).readme,
-    docs: require(pathInCache(path.join(package, "docs.json")))
-  });
-});
-
 search.ports.response.subscribe(function(msg) {
-  cache[msg.query || msg.url] = msg;
+  cache[msg.url] = msg;
 });
 
 api.get("/*", function(req, res) {
   const url = `${req.protocol}://${req.hostname}${req.url}`;
 
   search.ports.request.send(url);
+
   let duration = 0;
 
   function trySend() {
@@ -46,7 +34,7 @@ api.get("/*", function(req, res) {
       res.sendStatus(408);
     } else {
       duration += interval;
-      setTimeout(trySend, interval);
+      setTimeout(trySend);
     }
   }
 
@@ -58,6 +46,19 @@ server.use("/api", api);
 server.listen(port, () =>
   console.log(`Example app listening on port ${port}!`)
 );
+
+// ADD PACKAGES
+const allPackages = require("../packages/search.json").filter(package =>
+  package.startsWith("elm/")
+);
+
+allPackages.forEach(package => {
+  search.ports.addPackage.send({
+    package: require(pathInCache(path.join(package, "elm.json"))),
+    readme: require(pathInCache(path.join(package, "readme.json"))).readme,
+    docs: require(pathInCache(path.join(package, "docs.json")))
+  });
+});
 
 // DOWNLOAD
 
