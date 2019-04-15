@@ -48,7 +48,7 @@ init session maybeSearchInput =
         |> Maybe.map
             (\query ->
                 Http.get
-                    { url = "http://localhost:3333/search?q=" ++ query
+                    { url = "http://localhost:3333/api/search?q=" ++ query
                     , expect = Http.expectJson GotSearchResult searchResultDecoder
                     }
             )
@@ -70,7 +70,7 @@ update msg (Model model) =
                 Just query ->
                     Cmd.batch
                         [ Http.get
-                            { url = "http://localhost:3333/search?q=" ++ query
+                            { url = "http://localhost:3333/api/search?q=" ++ query
                             , expect = Http.expectJson GotSearchResult searchResultDecoder
                             }
                         , Route.pushUrl (Session.navKey model.session)

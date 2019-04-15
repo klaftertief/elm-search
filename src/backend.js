@@ -5,6 +5,7 @@ const express = require("express");
 const search = Backend.init();
 const cors = require("cors");
 const server = express();
+const api = express();
 
 server.use(cors());
 
@@ -30,8 +31,8 @@ search.ports.response.subscribe(function(msg) {
   cache[msg.query || msg.url] = msg;
 });
 
-server.get("/*", function(req, res) {
-  const url = `${req.protocol}://${req.hostname}${req.originalUrl}`;
+api.get("/*", function(req, res) {
+  const url = `${req.protocol}://${req.hostname}${req.url}`;
 
   search.ports.request.send(url);
   let duration = 0;
@@ -51,6 +52,8 @@ server.get("/*", function(req, res) {
 
   trySend();
 });
+
+server.use("/api", api);
 
 server.listen(port, () =>
   console.log(`Example app listening on port ${port}!`)
