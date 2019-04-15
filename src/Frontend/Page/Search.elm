@@ -98,7 +98,7 @@ update msg (Model model) =
 
 searchResultDecoder : Json.Decode.Decoder (List Index.Block)
 searchResultDecoder =
-    Json.Decode.field "result" (Json.Decode.list Json.Decode.value)
+    Json.Decode.field "response" (Json.Decode.list Json.Decode.value)
         |> Json.Decode.map (List.map (Json.Decode.decodeValue Index.blockDecoder >> Result.toMaybe))
         |> Json.Decode.map (List.filterMap identity)
 

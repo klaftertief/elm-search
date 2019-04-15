@@ -26,78 +26,21 @@ allPackages.forEach(package => {
   });
 });
 
-search.ports.result.subscribe(function(msg) {
-  cache[msg.query] = msg;
+search.ports.response.subscribe(function(msg) {
+  cache[msg.query || msg.url] = msg;
 });
 
-server.get("/", function(req, res) {
-  res.send("Hello elm-search!");
-});
+server.get("/*", function(req, res) {
+  const url = `${req.protocol}://${req.hostname}${req.originalUrl}`;
 
-server.get("/search", function(req, res) {
-  const query = req.query.q || "";
+  search.ports.request.send(url);
   let duration = 0;
 
-  search.ports.search.send(query);
-
   function trySend() {
-    if (cache[query]) {
-      const result = cache[query];
-      delete cache[query];
-      res.send(result);
-    } else if (duration >= maxDuration) {
-      res.sendStatus(408);
-    } else {
-      duration += interval;
-      setTimeout(trySend, interval);
-    }
-  }
-
-  trySend();
-});
-
-server.get("/packages", function(req, res) {
-  const query = "_packages";
-  let duration = 0;
-
-  search.ports.listPackages.send(null);
-
-  function trySend() {
-    if (cache) {
-      const result = cache[query];
-      delete cache[query];
-      res.send(result);
-    } else if (duration >= maxDuration) {
-      res.sendStatus(408);
-    } else {
-      duration += interval;
-      setTimeout(trySend, interval);
-    }
-  }
-
-  trySend();
-});
-
-server.get("/packages/:user/:name/:version", function(req, res) {
-  const query = [
-    "_packages",
-    req.params.user,
-    req.params.name,
-    req.params.version
-  ].join("_");
-  let duration = 0;
-
-  search.ports.getPackage.send([
-    req.params.user,
-    req.params.name,
-    req.params.version
-  ]);
-
-  function trySend() {
-    if (cache) {
-      const result = cache[query];
-      delete cache[query];
-      res.send(result);
+    if (cache[url]) {
+      const response = cache[url];
+      delete cache[url];
+      res.send(response);
     } else if (duration >= maxDuration) {
       res.sendStatus(408);
     } else {

@@ -12,6 +12,8 @@ import Elm.Type
 import Elm.Version
 import Json.Decode
 import Json.Encode
+import Route
+import Url
 
 
 main : Program () Model Msg
@@ -44,9 +46,7 @@ init _ =
 
 type Msg
     = GotPackageJson Json.Decode.Value
-    | GotSearchRequest String
-    | GotAllPackagesRequest
-    | GotSinglePackageRequest ( String, String, String )
+    | GotRequest String
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -66,50 +66,75 @@ update msg model =
                 Err err ->
                     ( model, Cmd.none )
 
-        GotSearchRequest queryString ->
-            ( model
-            , result
-                (Json.Encode.object
-                    [ ( "query", Json.Encode.string queryString )
-                    , ( "result"
-                      , Search.search (Query.fromString queryString |> Debug.log "q") model.index
-                            |> List.filter (Tuple.first >> (\d -> d < 0.2))
-                            |> List.sortBy Tuple.first
-                            |> List.take 20
-                            |> Json.Encode.list (Tuple.second >> Index.encodeBlock)
-                      )
-                    ]
-                )
-            )
+        GotRequest url ->
+            let
+                maybeRoute =
+                    Url.fromString url
+                        |> Maybe.andThen Route.fromUrl
+            in
+            case maybeRoute of
+                Just (Route.Search (Just queryString)) ->
+                    ( model
+                    , response
+                        (Json.Encode.object
+                            [ ( "url", Json.Encode.string url )
+                            , ( "response"
+                              , Search.search (Query.fromString queryString |> Debug.log "q") model.index
+                                    |> List.filter (Tuple.first >> (\d -> d < 0.2))
+                                    |> List.sortBy Tuple.first
+                                    |> List.take 20
+                                    |> Json.Encode.list (Tuple.second >> Index.encodeBlock)
+                              )
+                            ]
+                        )
+                    )
 
-        GotAllPackagesRequest ->
-            ( model
-            , result
-                (Json.Encode.object
-                    [ ( "query", Json.Encode.string "_packages" )
-                    , ( "result", Json.Encode.null )
-                    ]
-                )
-            )
+                Just (Route.Search Nothing) ->
+                    ( model
+                    , response
+                        (Json.Encode.object
+                            [ ( "url", Json.Encode.string url )
+                            , ( "response", Json.Encode.string "No query provided" )
+                            ]
+                        )
+                    )
 
-        GotSinglePackageRequest ( user, name, version ) ->
-            ( model
-            , result
-                (Json.Encode.object
-                    [ ( "query", Json.Encode.string (String.join "_" [ "_packages", user, name, version ]) )
-                    , ( "result", Json.Encode.null )
-                    ]
-                )
-            )
+                Just Route.Home ->
+                    ( model
+                    , response
+                        (Json.Encode.object
+                            [ ( "url", Json.Encode.string url )
+                            , ( "response", Json.Encode.string "elm-search home" )
+                            ]
+                        )
+                    )
+
+                Just Route.Packages ->
+                    ( model
+                    , response
+                        (Json.Encode.object
+                            [ ( "url", Json.Encode.string url )
+                            , ( "response", Json.Encode.string "elm-search all packages" )
+                            ]
+                        )
+                    )
+
+                Nothing ->
+                    ( model
+                    , response
+                        (Json.Encode.object
+                            [ ( "url", Json.Encode.string url )
+                            , ( "response", Json.Encode.string "Route not found" )
+                            ]
+                        )
+                    )
 
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
     Sub.batch
         [ addPackage GotPackageJson
-        , search GotSearchRequest
-        , listPackages (\_ -> GotAllPackagesRequest)
-        , getPackage GotSinglePackageRequest
+        , request GotRequest
         ]
 
 
@@ -120,16 +145,10 @@ subscriptions _ =
 port addPackage : (Json.Decode.Value -> msg) -> Sub msg
 
 
-port search : (String -> msg) -> Sub msg
+port request : (String -> msg) -> Sub msg
 
 
-port listPackages : (() -> msg) -> Sub msg
-
-
-port getPackage : (( String, String, String ) -> msg) -> Sub msg
-
-
-port result : Json.Decode.Value -> Cmd msg
+port response : Json.Decode.Value -> Cmd msg
 
 
 
