@@ -1,5 +1,3 @@
-const fs = require("fs");
-const path = require("path");
 const Backend = require("./Backend.elm").Elm.Backend;
 const express = require("express");
 const cors = require("cors");
@@ -13,7 +11,7 @@ server.use(cors());
 const api = express();
 const client = new Client({
   connectionString:
-    process.env.DATABASE_URL || "postgresql://localhost/elm-search"
+    process.env.DATABASE_URL || "postgres://localhost/elm-search"
 });
 client.connect();
 
