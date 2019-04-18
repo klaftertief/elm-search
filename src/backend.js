@@ -5,7 +5,7 @@ const express = require("express");
 const cors = require("cors");
 const { Client } = require("pg");
 
-const port = 3333;
+const port = process.env.PORT || 3333;
 const maxDuration = 1000;
 const search = Backend.init();
 const server = express();
