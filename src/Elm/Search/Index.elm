@@ -134,10 +134,6 @@ type alias PackageData =
 
 addPackage : PackageData -> Index -> Index
 addPackage package (Index index) =
-    let
-        _ =
-            Debug.log "Added package" package.info.name
-    in
     case package.info.name |> Elm.Package.toString |> String.split "/" of
         [ user, packageName ] ->
             let

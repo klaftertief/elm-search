@@ -55,10 +55,6 @@ update msg model =
         GotPackageJson packageJson ->
             case Json.Decode.decodeValue packageDecoder packageJson of
                 Ok package ->
-                    let
-                        _ =
-                            Debug.log "Added package" package.info.name
-                    in
                     ( { model | index = Index.addPackage package model.index }
                     , Cmd.none
                     )

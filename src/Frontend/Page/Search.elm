@@ -82,17 +82,9 @@ update msg (Model model) =
             )
 
         GotSearchResult (Err err) ->
-            let
-                _ =
-                    Debug.log "err" err
-            in
             ( Model model, Cmd.none )
 
         GotSearchResult (Ok blocks) ->
-            let
-                _ =
-                    Debug.log "# results" (List.length blocks)
-            in
             ( Model { model | searchResult = blocks }, Cmd.none )
 
 
