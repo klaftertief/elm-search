@@ -64,7 +64,12 @@ api.get("/*", function(req, res) {
   trySend();
 });
 
+server.get("/$|index.html$", (req, res) =>
+  res.sendFile(__dirname + "/index.html")
+);
 server.use("/api", api);
+server.use("/", express.static("./dist", { fallthrough: true }));
+server.get("*", (req, res) => res.sendFile(__dirname + "/index.html"));
 
 server.listen(port, () =>
   console.log(`elm-search app listening on port ${port}!`)

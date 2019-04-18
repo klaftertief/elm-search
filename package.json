@@ -17,7 +17,7 @@
     "start-download": "parcel watch src/download.js --target node",
     "start-backend": "parcel watch src/backend.js --target node",
     "start-server": "nodemon dist/backend.js",
-    "build": "parcel build src/backend.js --target node",
+    "build": "parcel build src/backend.js --target node && parcel build src/index.html",
     "backend": "node dist/backend.js"
   },
   "heroku-run-build-script": true,
