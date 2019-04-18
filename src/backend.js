@@ -12,7 +12,8 @@ const server = express();
 server.use(cors());
 const api = express();
 const client = new Client({
-  database: "elm-search"
+  connectionString:
+    process.env.DATABASE_URL || "postgresql://localhost/elm-search"
 });
 client.connect();
 
