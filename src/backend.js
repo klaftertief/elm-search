@@ -17,7 +17,7 @@ client.connect();
 
 const query = {
   text:
-    'SELECT "id", "name", "info", "readme", "docs" FROM "public"."packages"  WHERE ("name" ILIKE \'elm/%\') ORDER BY "id" ASC LIMIT 10000'
+    'SELECT "id", "name", "info", "readme", "docs" FROM "packages" LIMIT 10000'
 };
 
 client.query(query, (err, res) => {
