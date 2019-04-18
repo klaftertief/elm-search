@@ -70,7 +70,11 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         GotSearch (Ok packages) ->
-            ( { model | packages = packages }, writeSearch packages ) |> downloadNext
+            ( { model | packages = packages }
+              -- , writeSearch packages
+            , Cmd.none
+            )
+                |> downloadNext
 
         GotSearch (Err err) ->
             ( model, Cmd.none )
@@ -177,8 +181,9 @@ writeInfo : PackageMeta -> Json.Encode.Value -> Cmd msg
 writeInfo meta info =
     writeFile
         (Json.Encode.object
-            [ ( "path", packagePath "elm.json" meta |> Json.Encode.string )
-            , ( "content", info |> Json.Encode.encode 2 |> Json.Encode.string )
+            [ ( "name", packageName meta |> Json.Encode.string )
+            , ( "type", Json.Encode.string "info" )
+            , ( "value", info |> Json.Encode.encode 2 |> Json.Encode.string )
             ]
         )
 
@@ -187,8 +192,9 @@ writeReadme : PackageMeta -> String -> Cmd msg
 writeReadme meta readme =
     writeFile
         (Json.Encode.object
-            [ ( "path", packagePath "readme.json" meta |> Json.Encode.string )
-            , ( "content", Json.Encode.object [ ( "readme", Json.Encode.string readme ) ] |> Json.Encode.encode 2 |> Json.Encode.string )
+            [ ( "name", packageName meta |> Json.Encode.string )
+            , ( "type", Json.Encode.string "readme" )
+            , ( "value", Json.Encode.string readme )
             ]
         )
 
@@ -197,8 +203,9 @@ writeModules : PackageMeta -> Json.Encode.Value -> Cmd msg
 writeModules meta modules =
     writeFile
         (Json.Encode.object
-            [ ( "path", packagePath "docs.json" meta |> Json.Encode.string )
-            , ( "content", modules |> Json.Encode.encode 2 |> Json.Encode.string )
+            [ ( "name", packageName meta |> Json.Encode.string )
+            , ( "type", Json.Encode.string "docs" )
+            , ( "value", modules |> Json.Encode.encode 2 |> Json.Encode.string )
             ]
         )
 
@@ -250,4 +257,12 @@ packagePath file { name, version } =
         [ Elm.Package.toString name
         , Elm.Version.toString version
         , file
+        ]
+
+
+packageName : PackageMeta -> String
+packageName { name, version } =
+    String.join "/"
+        [ Elm.Package.toString name
+        , Elm.Version.toString version
         ]
