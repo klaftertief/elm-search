@@ -3,7 +3,8 @@ const { Client } = require("pg");
 XMLHttpRequest = require("xhr2");
 
 const client = new Client({
-  database: "elm-search"
+  connectionString:
+    process.env.DATABASE_URL || "postgresql://localhost/elm-search"
 });
 client.connect();
 
