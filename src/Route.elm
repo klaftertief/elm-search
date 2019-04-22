@@ -1,6 +1,7 @@
 module Route exposing (Route(..), fromUrl, href, pushUrl, replaceUrl, toString)
 
 import Browser.Navigation as Navigation
+import Elm.Search.Index as Index
 import Html
 import Html.Attributes
 import Url exposing (Url)
@@ -13,6 +14,7 @@ type Route
     = Home
     | Search (Maybe String)
     | Packages
+    | Package Index.PackageIdentifier
 
 
 parser : Parser (Route -> a) a
@@ -21,6 +23,7 @@ parser =
         [ Url.Parser.map Home Url.Parser.top
         , Url.Parser.map Search (Url.Parser.s "search" <?> Url.Parser.Query.string "q")
         , Url.Parser.map Packages (Url.Parser.s "packages")
+        , Url.Parser.map Package (Url.Parser.s "packages" </> Index.packageIdentifierUrlParser)
         ]
 
 
@@ -62,3 +65,8 @@ toString route =
 
         Packages ->
             Url.Builder.absolute [ "packages" ] []
+
+        Package id ->
+            Url.Builder.absolute
+                [ "packages", Index.packageIdentifierToString id ]
+                []

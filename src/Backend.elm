@@ -110,7 +110,25 @@ update msg model =
                     , response
                         (Json.Encode.object
                             [ ( "url", Json.Encode.string url )
-                            , ( "response", Json.Encode.string "elm-search all packages" )
+                            , ( "response"
+                              , Index.allPackages model.index
+                                    |> List.map Index.Package
+                                    |> Json.Encode.list Index.encodeBlock
+                              )
+                            ]
+                        )
+                    )
+
+                Just (Route.Package id) ->
+                    ( model
+                    , response
+                        (Json.Encode.object
+                            [ ( "url", Json.Encode.string url )
+                            , ( "response"
+                              , Index.getPackage id model.index
+                                    |> Maybe.map (Index.Package >> Index.encodeBlock)
+                                    |> Maybe.withDefault Json.Encode.null
+                              )
                             ]
                         )
                     )

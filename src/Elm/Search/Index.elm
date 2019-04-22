@@ -10,6 +10,7 @@ module Elm.Search.Index exposing
     , packageIdentifierDecoder, moduleIdentifierDecoder, exposedIdentifierDecoder
     , packageIdentifierToString, moduleIdentifierToString, exposedIdentifierToString
     , encodePackageIdentifier, encodeModuleIdentifier, encodeExposedIdentifier
+    , packageIdentifierUrlParser
     , Block(..), toBlocks, blockDecoder, encodeBlock
     , elmTypeToText
     , PackageData
@@ -30,6 +31,7 @@ module Elm.Search.Index exposing
 @docs packageIdentifierDecoder, moduleIdentifierDecoder, exposedIdentifierDecoder
 @docs packageIdentifierToString, moduleIdentifierToString, exposedIdentifierToString
 @docs encodePackageIdentifier, encodeModuleIdentifier, encodeExposedIdentifier
+@docs packageIdentifierUrlParser
 
 @docs Block, toBlocks, blockDecoder, encodeBlock
 
@@ -50,6 +52,7 @@ import Elm.Type.Distance as TypeDistance
 import Elm.Version
 import Json.Decode
 import Json.Encode
+import Url.Parser exposing ((</>), Parser)
 
 
 type Index
@@ -317,6 +320,19 @@ packageIdentifierDecoder =
         (Json.Decode.field "user" Json.Decode.string)
         (Json.Decode.field "packageName" Json.Decode.string)
         (Json.Decode.field "version" Json.Decode.string)
+
+
+packageIdentifierUrlParser : Parser (PackageIdentifier -> a) a
+packageIdentifierUrlParser =
+    Url.Parser.map
+        (\user packageName version ->
+            PackageIdentifier
+                { user = user
+                , packageName = packageName
+                , version = version
+                }
+        )
+        (Url.Parser.string </> Url.Parser.string </> Url.Parser.string)
 
 
 type ModuleIdentifier
