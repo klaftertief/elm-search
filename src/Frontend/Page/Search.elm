@@ -69,11 +69,11 @@ update msg (Model model) =
             , case model.searchInput of
                 Just query ->
                     Cmd.batch
-                        [ Http.get
-                            { url = "/api/search?q=" ++ query
-                            , expect = Http.expectJson GotSearchResult searchResultDecoder
-                            }
-                        , Route.pushUrl (Session.navKey model.session)
+                        -- [ Http.get
+                        --     { url = "/api/search?q=" ++ query
+                        --     , expect = Http.expectJson GotSearchResult searchResultDecoder
+                        --     }
+                        [ Route.pushUrl (Session.navKey model.session)
                             (Route.Search <| Just query)
                         ]
 
