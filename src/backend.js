@@ -1,4 +1,5 @@
 const Backend = require("./Backend.elm").Elm.Backend;
+const compression = require("compression");
 const express = require("express");
 const cors = require("cors");
 const { Client } = require("pg");
@@ -61,7 +62,7 @@ api.get("/*", function(req, res) {
       const response = cache[url];
       // delete cache[url];
       delete cache[url];
-      res.send(response);
+      res.json(response);
     } else if (duration >= maxDuration) {
       res.sendStatus(408);
     } else {
@@ -72,6 +73,7 @@ api.get("/*", function(req, res) {
   trySend();
 });
 
+server.use(compression());
 server.get("/$|index.html$", (req, res) =>
   res.sendFile(__dirname + "/index.html")
 );

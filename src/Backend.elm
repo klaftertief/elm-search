@@ -133,6 +133,33 @@ update msg model =
                         )
                     )
 
+                Just Route.ExposedNames ->
+                    ( model
+                    , response
+                        (Json.Encode.object
+                            [ ( "url", Json.Encode.string url )
+                            , ( "response"
+                              , Json.Encode.list identity
+                                    (List.concat
+                                        [ Index.allPackages model.index
+                                            |> List.map (.identifier >> Index.encodePackageIdentifier)
+                                        , Index.allModules model.index
+                                            |> List.map (.identifier >> Index.encodeModuleIdentifier)
+                                        , Index.allUnions model.index
+                                            |> List.map (.identifier >> Index.encodeExposedIdentifier)
+                                        , Index.allAliases model.index
+                                            |> List.map (.identifier >> Index.encodeExposedIdentifier)
+                                        , Index.allValues model.index
+                                            |> List.map (.identifier >> Index.encodeExposedIdentifier)
+                                        , Index.allBinops model.index
+                                            |> List.map (.identifier >> Index.encodeExposedIdentifier)
+                                        ]
+                                    )
+                              )
+                            ]
+                        )
+                    )
+
                 Nothing ->
                     ( model
                     , response

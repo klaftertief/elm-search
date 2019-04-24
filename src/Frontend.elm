@@ -109,6 +109,9 @@ changeRouteTo maybeRoute model =
         Just (Route.Package id) ->
             ( NotFound session, Cmd.none )
 
+        Just Route.ExposedNames ->
+            ( NotFound session, Cmd.none )
+
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =

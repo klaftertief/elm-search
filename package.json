@@ -13,7 +13,7 @@
   },
   "homepage": "https://github.com/klaftertief/elm-search#readme",
   "scripts": {
-    "start-frontend": "parcel serve src/index.html",
+    "start-frontend": "parcel watch src/index.html",
     "start-download": "parcel watch src/download.js --target node",
     "start-backend": "parcel watch src/backend.js --target node",
     "start-server": "nodemon dist/backend.js",
@@ -30,6 +30,7 @@
     "parcel-bundler": "^1.11.0"
   },
   "dependencies": {
+    "compression": "^1.7.4",
     "cors": "^2.8.5",
     "express": "^4.16.4",
     "pg": "^7.10.0",

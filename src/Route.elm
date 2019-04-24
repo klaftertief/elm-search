@@ -15,6 +15,7 @@ type Route
     | Search (Maybe String)
     | Packages
     | Package Index.PackageIdentifier
+    | ExposedNames
 
 
 parser : Parser (Route -> a) a
@@ -24,6 +25,7 @@ parser =
         , Url.Parser.map Search (Url.Parser.s "search" <?> Url.Parser.Query.string "q")
         , Url.Parser.map Packages (Url.Parser.s "packages")
         , Url.Parser.map Package (Url.Parser.s "packages" </> Index.packageIdentifierUrlParser)
+        , Url.Parser.map ExposedNames (Url.Parser.s "exposed-names")
         ]
 
 
@@ -70,3 +72,6 @@ toString route =
             Url.Builder.absolute
                 [ "packages", Index.packageIdentifierToString id ]
                 []
+
+        ExposedNames ->
+            Url.Builder.absolute [ "exposed-names" ] []
