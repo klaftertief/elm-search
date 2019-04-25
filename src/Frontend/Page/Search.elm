@@ -8,6 +8,7 @@ module Frontend.Page.Search exposing
     , view
     )
 
+import Browser.Dom as Dom
 import Elm.Package
 import Elm.Search.Index as Index
 import Elm.Search.Query as SearchQuery
@@ -21,6 +22,7 @@ import Http
 import Json.Decode
 import Markdown
 import Route
+import Task
 
 
 type Model
@@ -28,13 +30,17 @@ type Model
         { session : Session
         , searchInput : Maybe String
         , searchResult : List Index.Block
+        , focusedBlockIdentifier : Maybe String
         }
 
 
 type Msg
-    = EnteredSearchInput String
+    = Forget
+    | EnteredSearchInput String
     | TriggeredSearch
     | GotSearchResult (Result Http.Error (List Index.Block))
+    | TriggeredFocusSelect String
+    | TriggeredFocusDeselect String
 
 
 init : Session -> Maybe String -> ( Model, Cmd Msg )
@@ -43,6 +49,7 @@ init session maybeSearchInput =
         { session = session
         , searchInput = maybeSearchInput
         , searchResult = []
+        , focusedBlockIdentifier = Nothing
         }
     , maybeSearchInput
         |> Maybe.map
@@ -59,6 +66,11 @@ init session maybeSearchInput =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg (Model model) =
     case msg of
+        Forget ->
+            ( Model model
+            , Cmd.none
+            )
+
         EnteredSearchInput query ->
             ( Model { model | searchInput = Just query }
             , Cmd.none
@@ -86,6 +98,17 @@ update msg (Model model) =
 
         GotSearchResult (Ok blocks) ->
             ( Model { model | searchResult = blocks }, Cmd.none )
+
+        TriggeredFocusSelect identifier ->
+            ( Model { model | focusedBlockIdentifier = Just identifier }
+              -- , Dom.getElement identifier
+              --     |> Task.andThen (\info -> Dom.setViewport 0 info.element.y)
+              --     |> Task.attempt (\_ -> Forget)
+            , Cmd.none
+            )
+
+        TriggeredFocusDeselect _ ->
+            ( Model { model | focusedBlockIdentifier = Nothing }, Cmd.none )
 
 
 searchResultDecoder : Json.Decode.Decoder (List Index.Block)
@@ -119,18 +142,20 @@ viewContent (Model model) =
             [ Html.Lazy.lazy
                 (\result ->
                     Html.div [ Html.Attributes.class "search-result" ]
-                        (List.map viewSearchResultBlock result)
+                        (List.map (viewSearchResultBlock model.focusedBlockIdentifier) result)
                 )
                 model.searchResult
             ]
         ]
 
 
-viewSearchResultBlock : Index.Block -> Html msg
-viewSearchResultBlock block =
+viewSearchResultBlock : Maybe String -> Index.Block -> Html Msg
+viewSearchResultBlock focusedIdentifier block =
     case block of
         Index.Package package ->
             wrapBlock
+                (Index.packageIdentifierToString package.identifier)
+                focusedIdentifier
                 { code =
                     [ Html.text "package "
                     , Html.strong []
@@ -145,6 +170,8 @@ viewSearchResultBlock block =
 
         Index.Module module_ ->
             wrapBlock
+                (Index.moduleIdentifierToString module_.identifier)
+                focusedIdentifier
                 { code =
                     [ Html.text "module "
                     , Html.strong []
@@ -159,6 +186,8 @@ viewSearchResultBlock block =
 
         Index.Union union ->
             wrapBlock
+                (Index.exposedIdentifierToString union.identifier)
+                focusedIdentifier
                 { code =
                     [ Html.text "type "
                     , Html.strong []
@@ -185,6 +214,8 @@ viewSearchResultBlock block =
 
         Index.Alias alias_ ->
             wrapBlock
+                (Index.exposedIdentifierToString alias_.identifier)
+                focusedIdentifier
                 { code =
                     [ Html.text "type alias "
                     , Html.strong []
@@ -201,6 +232,8 @@ viewSearchResultBlock block =
 
         Index.Value value ->
             wrapBlock
+                (Index.exposedIdentifierToString value.identifier)
+                focusedIdentifier
                 { code =
                     [ Html.strong [] [ Html.text value.info.name ]
                     , Html.text (" : " ++ Index.elmTypeToText False value.info.tipe)
@@ -213,6 +246,8 @@ viewSearchResultBlock block =
 
         Index.Binop binop ->
             wrapBlock
+                (Index.exposedIdentifierToString binop.identifier)
+                focusedIdentifier
                 { code =
                     [ Html.strong [] [ Html.text ("(" ++ binop.info.name ++ ")") ]
                     , Html.text (" : " ++ Index.elmTypeToText False binop.info.tipe)
@@ -225,22 +260,46 @@ viewSearchResultBlock block =
 
 
 wrapBlock :
-    { code : List (Html msg)
-    , identifier : List (Html msg)
-    , comment : String
-    }
-    -> Html msg
-wrapBlock { code, identifier, comment } =
+    String
+    -> Maybe String
+    ->
+        { code : List (Html Msg)
+        , identifier : List (Html Msg)
+        , comment : String
+        }
+    -> Html Msg
+wrapBlock id focusedId { code, identifier, comment } =
     Html.div
-        [ Html.Attributes.class "search-result-item" ]
-        [ Html.p [] [ Html.pre [] [ Html.code [] code ] ]
-        , Html.div [] [ Html.em [] identifier ]
-        , Html.div []
-            [ comment
-                |> Markdown.toHtml Nothing
-                |> List.head
-                |> Maybe.withDefault (Html.text "")
-            ]
+        ([ Html.Attributes.id id
+         , Html.Attributes.class "search-result-item"
+         ]
+            ++ (if Just id == focusedId then
+                    [ Html.Events.onClick (TriggeredFocusDeselect id)
+                    , Html.Attributes.class "selected"
+                    ]
+
+                else
+                    [ Html.Events.onClick (TriggeredFocusSelect id) ]
+               )
+        )
+        [ Html.div
+            [ Html.Attributes.class "search-result-item-header" ]
+            [ Html.pre [] [ Html.code [] code ] ]
+        , Html.div
+            [ Html.Attributes.class "search-result-item-comment" ]
+            (if Just id == focusedId then
+                Markdown.toHtml Nothing comment
+
+             else
+                [ comment
+                    |> Markdown.toHtml Nothing
+                    |> List.head
+                    |> Maybe.withDefault (Html.text "")
+                ]
+            )
+        , Html.div
+            [ Html.Attributes.class "search-result-item-identifier" ]
+            [ Html.em [] identifier ]
         ]
 
 
