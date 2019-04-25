@@ -70,15 +70,19 @@ update msg model =
             in
             case maybeRoute of
                 Just (Route.Search (Just queryString)) ->
+                    let
+                        ( topBlocks, otherBlocks ) =
+                            Search.search (Query.fromString queryString) model.index
+                                |> List.filter (Tuple.first >> (\d -> d < 0.2))
+                                |> List.sortBy Tuple.first
+                                |> List.partition (Tuple.first >> (\d -> d == 0))
+                    in
                     ( model
                     , response
                         (Json.Encode.object
                             [ ( "url", Json.Encode.string url )
                             , ( "response"
-                              , Search.search (Query.fromString queryString) model.index
-                                    |> List.filter (Tuple.first >> (\d -> d < 0.2))
-                                    |> List.sortBy Tuple.first
-                                    |> List.take 20
+                              , (topBlocks ++ List.take 10 otherBlocks)
                                     |> Json.Encode.list (Tuple.second >> Index.encodeBlock)
                               )
                             ]
