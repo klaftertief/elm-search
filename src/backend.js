@@ -37,40 +37,16 @@ client.query(query, (err, res) => {
   }
 });
 
-const cache = {};
-
-search.ports.response.subscribe(function(msg) {
-  cache[msg.url] = msg;
-});
-
 api.get("/*", function(req, res) {
   const url = `${req.protocol}://${req.hostname}${req.url}`;
 
-  // if (cache[url]) {
-  //   res.send(cache[url]);
-  //   next();
-  // }
+  function send(data) {
+    search.ports.response.unsubscribe(send);
+    res.json(data);
+  }
+  search.ports.response.subscribe(send);
 
   search.ports.request.send(url);
-
-  const start = Date.now();
-
-  function trySend() {
-    const duration = Date.now() - start;
-
-    if (cache[url]) {
-      const response = cache[url];
-      // delete cache[url];
-      delete cache[url];
-      res.json(response);
-    } else if (duration >= maxDuration) {
-      res.sendStatus(408);
-    } else {
-      setTimeout(trySend);
-    }
-  }
-
-  trySend();
 });
 
 server.use(compression());
