@@ -18,8 +18,8 @@ client.connect();
 
 const query = {
   text:
-    'SELECT "id", "name", "info", "readme", "docs" FROM "packages" LIMIT 10000'
-  // 'SELECT "id", "name", "info", "readme", "docs" FROM "public"."packages"  WHERE ("name" ILIKE \'elm/%\') ORDER BY "id" ASC LIMIT 10000'
+    // 'SELECT "id", "name", "info", "readme", "docs" FROM "packages" LIMIT 10000'
+    'SELECT "id", "name", "info", "readme", "docs" FROM "public"."packages"  WHERE ("name" ILIKE \'elm/%\') ORDER BY "id" ASC LIMIT 10000'
 };
 
 client.query(query, (err, res) => {
@@ -43,6 +43,20 @@ api.get("/*", function(req, res) {
   function send(data) {
     search.ports.response.unsubscribe(send);
     res.json(data);
+  }
+  search.ports.response.subscribe(send);
+
+  search.ports.request.send(url);
+});
+
+api.post("/slack", function(req, res) {
+  const url = `${req.protocol}://${req.hostname}${req.url}`;
+  console.log(url);
+
+  function send(data) {
+    search.ports.response.unsubscribe(send);
+    // res.json(data);
+    res.json({});
   }
   search.ports.response.subscribe(send);
 
