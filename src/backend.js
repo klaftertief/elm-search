@@ -51,12 +51,17 @@ api.get("/*", function(req, res) {
 
 api.post("/slack", function(req, res) {
   const url = `${req.protocol}://${req.hostname}${req.url}`;
-  console.log(url);
 
   function send(data) {
     search.ports.response.unsubscribe(send);
-    // res.json(data);
-    res.json({});
+    res.json({
+      text: "It's 80 degrees right now.",
+      attachments: [
+        {
+          text: "Partly cloudy today and tomorrow"
+        }
+      ]
+    });
   }
   search.ports.response.subscribe(send);
 
