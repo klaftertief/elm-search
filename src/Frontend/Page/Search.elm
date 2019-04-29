@@ -20,8 +20,10 @@ import Html.Events
 import Html.Lazy
 import Http
 import Json.Decode
-import Markdown
+import Markdown.Block
+import Markdown.Inline
 import Route
+import SyntaxHighlight
 import Task
 
 
@@ -272,6 +274,7 @@ wrapBlock id focusedId { code, identifier, comment } =
     Html.div
         ([ Html.Attributes.id id
          , Html.Attributes.class "search-result-item"
+         , Html.Attributes.tabindex 0
          ]
             ++ (if Just id == focusedId then
                     [ Html.Events.onClick (TriggeredFocusDeselect id)
@@ -288,11 +291,10 @@ wrapBlock id focusedId { code, identifier, comment } =
         , Html.div
             [ Html.Attributes.class "search-result-item-comment" ]
             (if Just id == focusedId then
-                Markdown.toHtml Nothing comment
+                markdownToHtml comment
 
              else
-                [ comment
-                    |> Markdown.toHtml Nothing
+                [ markdownToHtml comment
                     |> List.head
                     |> Maybe.withDefault (Html.text "")
                 ]
@@ -301,6 +303,40 @@ wrapBlock id focusedId { code, identifier, comment } =
             [ Html.Attributes.class "search-result-item-identifier" ]
             [ Html.em [] identifier ]
         ]
+
+
+markdownToHtml : String -> List (Html msg)
+markdownToHtml markdownString =
+    markdownString
+        |> Markdown.Block.parse Nothing
+        |> List.map markdownBlockToHtml
+        |> List.concat
+
+
+markdownBlockToHtml : Markdown.Block.Block b i -> List (Html msg)
+markdownBlockToHtml block =
+    case block of
+        Markdown.Block.CodeBlock _ code ->
+            [ SyntaxHighlight.elm code
+                |> Result.map (SyntaxHighlight.toBlockHtml Nothing)
+                |> Result.withDefault
+                    (Html.pre []
+                        [ Html.code [] [ Html.text code ] ]
+                    )
+            ]
+
+        _ ->
+            Markdown.Block.defaultHtml
+                (Just markdownBlockToHtml)
+                (Just markdownInlineToHtml)
+                block
+
+
+markdownInlineToHtml : Markdown.Inline.Inline i -> Html msg
+markdownInlineToHtml inline =
+    case inline of
+        _ ->
+            Markdown.Inline.defaultHtml (Just markdownInlineToHtml) inline
 
 
 subscriptions : Model -> Sub Msg

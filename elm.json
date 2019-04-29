@@ -16,6 +16,7 @@
             "elm/url": "1.0.0",
             "elm-community/list-extra": "8.2.0",
             "pablohirafuji/elm-markdown": "2.0.5",
+            "pablohirafuji/elm-syntax-highlight": "3.1.0",
             "pzp1997/assoc-list": "1.0.0"
         },
         "indirect": {
