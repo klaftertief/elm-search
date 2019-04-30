@@ -623,7 +623,13 @@ encodeSlackBlock block =
 
                         Value value ->
                             Json.Encode.string
-                                ([ "<https://package.elm-lang.org|`" ++ (Url.percentEncode <| elmTypeToText False value.info.tipe) ++ "`>"
+                                ([ "<https://package.elm-lang.org|`"
+                                    ++ (elmTypeToText False value.info.tipe
+                                            |> String.replace "&" "&amp;"
+                                            |> String.replace "|" "&#124;"
+                                            |> String.replace ">" "&gt;"
+                                       )
+                                    ++ "`>"
                                  , value.info.comment |> String.split "\n\n" |> List.head |> Maybe.withDefault value.info.comment
                                  , "_" ++ exposedIdentifierToString value.identifier ++ "_"
                                  ]
