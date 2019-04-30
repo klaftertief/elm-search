@@ -114,7 +114,9 @@ update msg model =
                             , ( "text", Json.Encode.string "This is elm-search" )
                             , ( "blocks"
                               , (topBlocks ++ List.take 10 otherBlocks)
-                                    |> Json.Encode.list (Tuple.second >> Index.encodeSlackBlock)
+                                    |> List.map (Tuple.second >> Index.encodeSlackBlock)
+                                    |> List.intersperse (Json.Encode.object [ ( "type", Json.Encode.string "divider" ) ])
+                                    |> Json.Encode.list identity
                               )
                             ]
                         )
