@@ -604,24 +604,29 @@ encodeSlackBlock block =
     Json.Encode.object
         [ ( "type", Json.Encode.string "section" )
         , ( "text"
-          , case block of
-                Package package ->
-                    Json.Encode.string (packageIdentifierToString package.identifier)
+          , Json.Encode.object
+                [ ( "type", Json.Encode.string "mrkdwn" )
+                , ( "text"
+                  , case block of
+                        Package package ->
+                            Json.Encode.string (packageIdentifierToString package.identifier)
 
-                Module module_ ->
-                    Json.Encode.string (moduleIdentifierToString module_.identifier)
+                        Module module_ ->
+                            Json.Encode.string (moduleIdentifierToString module_.identifier)
 
-                Union union ->
-                    Json.Encode.string (exposedIdentifierToString union.identifier)
+                        Union union ->
+                            Json.Encode.string (exposedIdentifierToString union.identifier)
 
-                Alias alias_ ->
-                    Json.Encode.string (exposedIdentifierToString alias_.identifier)
+                        Alias alias_ ->
+                            Json.Encode.string (exposedIdentifierToString alias_.identifier)
 
-                Value value ->
-                    Json.Encode.string (exposedIdentifierToString value.identifier)
+                        Value value ->
+                            Json.Encode.string (exposedIdentifierToString value.identifier)
 
-                Binop binop ->
-                    Json.Encode.string (exposedIdentifierToString binop.identifier)
+                        Binop binop ->
+                            Json.Encode.string (exposedIdentifierToString binop.identifier)
+                  )
+                ]
           )
         ]
 
