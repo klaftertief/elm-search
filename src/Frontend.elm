@@ -102,6 +102,9 @@ changeRouteTo maybeRoute model =
             Search.init session maybeQuery
                 |> updateWith Search SearchMsg model
 
+        Just (Route.Slack _) ->
+            ( NotFound session, Cmd.none )
+
         Just Route.Packages ->
             Packages.init session
                 |> updateWith Packages PackagesMsg model
