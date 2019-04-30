@@ -52,6 +52,7 @@ import Elm.Type.Distance as TypeDistance
 import Elm.Version
 import Json.Decode
 import Json.Encode
+import Url
 import Url.Parser exposing ((</>), Parser)
 
 
@@ -622,7 +623,7 @@ encodeSlackBlock block =
 
                         Value value ->
                             Json.Encode.string
-                                ([ "<https://package.elm-lang.org|`" ++ elmTypeToText False value.info.tipe ++ "`>"
+                                ([ "<https://package.elm-lang.org|`" ++ (Url.percentEncode <| elmTypeToText False value.info.tipe) ++ "`>"
                                  , value.info.comment |> String.split "\n\n" |> List.head |> Maybe.withDefault value.info.comment
                                  , "_" ++ exposedIdentifierToString value.identifier ++ "_"
                                  ]
