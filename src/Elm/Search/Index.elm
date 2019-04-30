@@ -621,7 +621,13 @@ encodeSlackBlock block =
                             Json.Encode.string (exposedIdentifierToString alias_.identifier)
 
                         Value value ->
-                            Json.Encode.string (exposedIdentifierToString value.identifier)
+                            Json.Encode.string
+                                ([ elmTypeToString False value.info.tipe
+                                 , value.info.comment
+                                 , "__" ++ exposedIdentifierToString value.identifier ++ "__"
+                                 ]
+                                    |> String.join "\n\n"
+                                )
 
                         Binop binop ->
                             Json.Encode.string (exposedIdentifierToString binop.identifier)
