@@ -623,8 +623,8 @@ encodeSlackBlock block =
                         Value value ->
                             Json.Encode.string
                                 ([ elmTypeToString False value.info.tipe
-                                 , value.info.comment
-                                 , "__" ++ exposedIdentifierToString value.identifier ++ "__"
+                                 , value.info.comment |> String.split "\n\n" |> List.head |> Maybe.withDefault value.info.comment
+                                 , "_" ++ exposedIdentifierToString value.identifier ++ "_"
                                  ]
                                     |> String.join "\n\n"
                                 )
