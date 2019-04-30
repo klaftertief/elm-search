@@ -624,6 +624,8 @@ encodeSlackBlock block =
                         Value value ->
                             Json.Encode.string
                                 ([ "<https://package.elm-lang.org|`"
+                                    ++ value.info.name
+                                    ++ " : "
                                     ++ (elmTypeToText False value.info.tipe
                                             |> String.replace "&" "&amp;"
                                             |> String.replace "|" "&#124;"
