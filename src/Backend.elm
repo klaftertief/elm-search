@@ -99,6 +99,36 @@ update msg model =
                         )
                     )
 
+                Just (Route.Slack (Just queryString)) ->
+                    let
+                        ( topBlocks, otherBlocks ) =
+                            Search.search (Query.fromString queryString) model.index
+                                |> List.filter (Tuple.first >> (\d -> d < 0.2))
+                                |> List.sortBy Tuple.first
+                                |> List.partition (Tuple.first >> (\d -> d == 0))
+                    in
+                    ( model
+                    , response
+                        (Json.Encode.object
+                            [ ( "response_type", Json.Encode.string "in_channel" )
+                            , ( "text", Json.Encode.string "This is elm-search" )
+                            , ( "blocks"
+                              , (topBlocks ++ List.take 10 otherBlocks)
+                                    |> Json.Encode.list (Tuple.second >> Index.encodeSlackBlock)
+                              )
+                            ]
+                        )
+                    )
+
+                Just (Route.Slack Nothing) ->
+                    ( model
+                    , response
+                        (Json.Encode.object
+                            [ ( "text", Json.Encode.string "No query provided" )
+                            ]
+                        )
+                    )
+
                 Just Route.Home ->
                     ( model
                     , response

@@ -13,6 +13,7 @@ import Url.Parser.Query
 type Route
     = Home
     | Search (Maybe String)
+    | Slack (Maybe String)
     | Packages
     | Package Index.PackageIdentifier
     | ExposedNames
@@ -23,6 +24,7 @@ parser =
     Url.Parser.oneOf
         [ Url.Parser.map Home Url.Parser.top
         , Url.Parser.map Search (Url.Parser.s "search" <?> Url.Parser.Query.string "q")
+        , Url.Parser.map Slack (Url.Parser.s "slack" <?> Url.Parser.Query.string "q")
         , Url.Parser.map Packages (Url.Parser.s "packages")
         , Url.Parser.map Package (Url.Parser.s "packages" </> Index.packageIdentifierUrlParser)
         , Url.Parser.map ExposedNames (Url.Parser.s "exposed-names")
@@ -57,6 +59,16 @@ toString route =
 
         Search maybeQuery ->
             Url.Builder.absolute [ "search" ]
+                (case maybeQuery of
+                    Just query ->
+                        [ Url.Builder.string "q" query ]
+
+                    Nothing ->
+                        []
+                )
+
+        Slack maybeQuery ->
+            Url.Builder.absolute [ "slack" ]
                 (case maybeQuery of
                     Just query ->
                         [ Url.Builder.string "q" query ]

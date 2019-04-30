@@ -11,7 +11,7 @@ module Elm.Search.Index exposing
     , packageIdentifierToString, moduleIdentifierToString, exposedIdentifierToString
     , encodePackageIdentifier, encodeModuleIdentifier, encodeExposedIdentifier
     , packageIdentifierUrlParser
-    , Block(..), toBlocks, blockDecoder, encodeBlock
+    , Block(..), toBlocks, blockDecoder, encodeBlock, encodeSlackBlock
     , elmTypeToText
     , PackageData
     )
@@ -33,7 +33,7 @@ module Elm.Search.Index exposing
 @docs encodePackageIdentifier, encodeModuleIdentifier, encodeExposedIdentifier
 @docs packageIdentifierUrlParser
 
-@docs Block, toBlocks, blockDecoder, encodeBlock
+@docs Block, toBlocks, blockDecoder, encodeBlock, encodeSlackBlock
 
 
 ## TEMP
@@ -597,6 +597,33 @@ encodeBlock block =
                 [ ( "identifier", encodeExposedIdentifier binop.identifier )
                 , ( "binop", encodeBinop binop.info )
                 ]
+
+
+encodeSlackBlock : Block -> Json.Encode.Value
+encodeSlackBlock block =
+    Json.Encode.object
+        [ ( "type", Json.Encode.string "section" )
+        , ( "text"
+          , case block of
+                Package package ->
+                    Json.Encode.string (packageIdentifierToString package.identifier)
+
+                Module module_ ->
+                    Json.Encode.string (moduleIdentifierToString module_.identifier)
+
+                Union union ->
+                    Json.Encode.string (exposedIdentifierToString union.identifier)
+
+                Alias alias_ ->
+                    Json.Encode.string (exposedIdentifierToString alias_.identifier)
+
+                Value value ->
+                    Json.Encode.string (exposedIdentifierToString value.identifier)
+
+                Binop binop ->
+                    Json.Encode.string (exposedIdentifierToString binop.identifier)
+          )
+        ]
 
 
 encodeModule : Elm.Docs.Module -> Json.Encode.Value

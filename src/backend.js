@@ -1,6 +1,7 @@
 const Backend = require("./Backend.elm").Elm.Backend;
 const compression = require("compression");
 const express = require("express");
+const bodyParser = require("body-parser");
 const cors = require("cors");
 const { Client } = require("pg");
 
@@ -18,8 +19,8 @@ client.connect();
 
 const query = {
   text:
-    // 'SELECT "id", "name", "info", "readme", "docs" FROM "packages" LIMIT 10000'
-    'SELECT "id", "name", "info", "readme", "docs" FROM "public"."packages"  WHERE ("name" ILIKE \'elm/%\') ORDER BY "id" ASC LIMIT 10000'
+    'SELECT "id", "name", "info", "readme", "docs" FROM "packages" LIMIT 10000'
+  // 'SELECT "id", "name", "info", "readme", "docs" FROM "public"."packages"  WHERE ("name" ILIKE \'elm/%\') ORDER BY "id" ASC LIMIT 10000'
 };
 
 client.query(query, (err, res) => {
@@ -49,19 +50,14 @@ api.get("/*", function(req, res) {
   search.ports.request.send(url);
 });
 
+api.use(bodyParser.urlencoded({ extended: true }));
+
 api.post("/slack", function(req, res) {
-  const url = `${req.protocol}://${req.hostname}${req.url}`;
+  const url = `${req.protocol}://${req.hostname}/slack?q=${req.body.text}`;
 
   function send(data) {
     search.ports.response.unsubscribe(send);
-    res.json({
-      text: "It's 80 degrees right now.",
-      attachments: [
-        {
-          text: "Partly cloudy today and tomorrow"
-        }
-      ]
-    });
+    res.json(data);
   }
   search.ports.response.subscribe(send);
 
