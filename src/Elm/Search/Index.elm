@@ -622,7 +622,7 @@ encodeSlackBlock block =
 
                         Value value ->
                             Json.Encode.string
-                                ([ "<" ++ elmTypeToString False value.info.tipe ++ "|#>"
+                                ([ "<https://package.elm-lang.org|`" ++ elmTypeToString False value.info.tipe ++ "`>"
                                  , value.info.comment |> String.split "\n\n" |> List.head |> Maybe.withDefault value.info.comment
                                  , "_" ++ exposedIdentifierToString value.identifier ++ "_"
                                  ]
