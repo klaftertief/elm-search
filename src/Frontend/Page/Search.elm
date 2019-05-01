@@ -335,6 +335,11 @@ markdownBlockToHtml block =
 markdownInlineToHtml : Markdown.Inline.Inline i -> Html msg
 markdownInlineToHtml inline =
     case inline of
+        Markdown.Inline.CodeInline code ->
+            Html.code
+                [ Html.Attributes.class "inline-code" ]
+                [ Html.text code ]
+
         _ ->
             Markdown.Inline.defaultHtml (Just markdownInlineToHtml) inline
 

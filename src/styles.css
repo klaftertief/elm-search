@@ -103,7 +103,7 @@ header {
   color: #ccc;
 }
 
-.search-result-item-comment p code {
+.inline-code {
   color: #24292e;
   background: #ffffff;
   padding: 0.25rem;
