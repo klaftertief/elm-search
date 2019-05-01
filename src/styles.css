@@ -64,12 +64,12 @@ header {
 }
 
 .search-result-item {
-  width: calc(66% + 1.5rem);
+  width: calc(66% + 0.5rem);
   max-width: calc(760px + 1.5rem);
   padding: 1rem 1rem 1rem 2.5rem;
   margin-bottom: 1.5rem;
   border-left: 2px solid transparent;
-  cursor: pointer;
+  cursor: zoom-in;
 }
 
 .search-result-item:hover {
@@ -85,6 +85,7 @@ header {
 .search-result-item.selected {
   border-left-color: #1184ce;
   background-color: #1184ce11;
+  cursor: zoom-out;
 }
 
 .search-result-item.selected:focus {
@@ -97,15 +98,21 @@ header {
 .search-result-item-header pre {
   margin: 0 0 1.5rem 0;
 }
+
 .search-result-item-identifier {
   color: #ccc;
+}
+
+.search-result-item-comment p code {
+  color: #24292e;
+  background: #ffffff;
+  padding: 0.25rem;
 }
 
 /* Syntax Highlighting */
 
 pre.elmsh {
-  padding: 10px;
-  margin: 0;
+  padding: 1rem;
   text-align: left;
   overflow: auto;
 }
