@@ -20,6 +20,7 @@ import Html.Events
 import Html.Lazy
 import Http
 import Json.Decode
+import Logo
 import Markdown.Block
 import Markdown.Inline
 import Route
@@ -131,7 +132,10 @@ viewContent : Model -> Html Msg
 viewContent (Model model) =
     Html.div [ Html.Attributes.class "page-search" ]
         [ Html.header []
-            [ Html.form [ Html.Events.onSubmit TriggeredSearch ]
+            [ Html.a
+                [ Route.href Route.Home ]
+                [ Logo.view ]
+            , Html.form [ Html.Events.onSubmit TriggeredSearch ]
                 [ Html.input
                     [ Html.Attributes.placeholder "(a -> b) -> Maybe a -> Maybe b"
                     , Html.Attributes.value (model.searchInput |> Maybe.withDefault "")

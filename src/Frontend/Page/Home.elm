@@ -12,6 +12,7 @@ import Frontend.Session as Session exposing (Session)
 import Html exposing (Html)
 import Html.Attributes
 import Html.Events
+import Logo
 import Route
 
 
@@ -62,7 +63,8 @@ view model =
 viewContent : Model -> Html Msg
 viewContent (Model model) =
     Html.div [ Html.Attributes.class "page-home" ]
-        [ Html.h1 [] [ Html.text "Elm Search" ]
+        [ Html.div [] [ Logo.viewWithSize 96 ]
+        , Html.h1 [] [ Html.text "Elm Search" ]
         , Html.form [ Html.Events.onSubmit TriggeredSearch ]
             [ Html.input
                 [ Html.Attributes.placeholder "(a -> b) -> Maybe a -> Maybe b"

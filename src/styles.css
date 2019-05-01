@@ -15,7 +15,6 @@ body {
 h1 {
   font-size: 2rem;
   font-weight: normal;
-  margin-top: 0;
 }
 
 input {
@@ -23,6 +22,7 @@ input {
   width: 66%;
   max-width: 760px;
   font-size: 1rem;
+  line-height: 1.5;
   padding: 0.75rem 1rem;
   font-family: Iosevka, monospace;
   border: 1px solid #ccc;
@@ -54,9 +54,22 @@ p {
 }
 
 header {
-  padding: 1.5rem 1.5rem 1.5rem 6rem;
+  padding: 1.5rem;
   background-color: #f9f9f9;
   border-bottom: 1px solid #ccc;
+  display: flex;
+  align-items: center;
+}
+
+header svg {
+  width: 2.5rem;
+  height: 2.5rem;
+  margin-right: 2rem;
+  display: block;
+}
+
+header form {
+  flex: 1;
 }
 
 .search-result {
