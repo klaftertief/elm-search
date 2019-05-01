@@ -8,7 +8,7 @@ body {
   font-size: 18px;
   line-height: 1.5;
   background-color: #fff;
-  counter-reset: #111;
+  color: #111;
   font-family: Trebuchet MS, sans-serif;
 }
 
