@@ -72,15 +72,23 @@ header {
   cursor: pointer;
 }
 
-.search-result-item:hover,
+.search-result-item:hover {
+  border-left-color: #ccc;
+}
+
 .search-result-item:focus {
   outline: none;
   border-left-color: #ccc;
+  border-left-style: dashed;
 }
 
 .search-result-item.selected {
   border-left-color: #1184ce;
   background-color: #1184ce11;
+}
+
+.search-result-item.selected:focus {
+  border-left-color: #1184ce;
 }
 
 .search-result-item-header {
@@ -91,7 +99,6 @@ header {
 }
 .search-result-item-identifier {
   color: #ccc;
-  /* color: #99cc99; */
 }
 
 /* Syntax Highlighting */
