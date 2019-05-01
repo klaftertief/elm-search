@@ -389,7 +389,9 @@ type ExposedIdentifier
 
 exposedIdentifierToString : ExposedIdentifier -> String
 exposedIdentifierToString (ExposedIdentifier id) =
-    String.join "/" [ id.user, id.packageName, id.version, id.moduleName, id.exposedName ]
+    String.join "/" [ id.user, id.packageName, id.version, id.moduleName ]
+        ++ "."
+        ++ id.exposedName
 
 
 encodeExposedIdentifier : ExposedIdentifier -> Json.Encode.Value
