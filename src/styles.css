@@ -8,26 +8,13 @@ body {
   font-size: 18px;
   line-height: 1.5;
   background-color: #fff;
-  color: #111;
+  color: #293c4b;
   font-family: Trebuchet MS, sans-serif;
 }
 
 h1 {
   font-size: 2rem;
   font-weight: normal;
-}
-
-input {
-  display: inline-block;
-  width: 66%;
-  max-width: 760px;
-  font-size: 1rem;
-  line-height: 1.5;
-  padding: 0.75rem 1rem;
-  font-family: Iosevka, monospace;
-  border: 1px solid #ccc;
-  border-radius: 2px;
-  box-shadow: rgba(0, 0, 0, 0.1) 0 2px 0.5rem;
 }
 
 code {
@@ -54,32 +41,55 @@ p {
 }
 
 header {
+  padding: 1rem;
+  background-color: #293c4b;
+}
+form {
   padding: 1.5rem;
-  background-color: #f9f9f9;
-  border-bottom: 1px solid #ccc;
-  display: flex;
-  align-items: center;
 }
-
-header svg {
-  width: 2.5rem;
-  height: 2.5rem;
-  margin-right: 2rem;
+.ghost {
+  position: absolute;
+  left: 1.5rem;
+  bottom: 1.5rem;
+  height: 0;
+  overflow: hidden;
   display: block;
+  font-size: 1.5rem;
+  line-height: 1.5;
+  padding: 0;
+  font-family: Iosevka, monospace;
+  background: transparent;
+  color: transparent;
+  border-bottom: 2px solid #7fd13b;
+}
+input {
+  display: block;
+  width: 100%;
+  font-size: 1.5rem;
+  line-height: 1.5;
+  padding: 0;
+  font-family: Iosevka, monospace;
+  background: transparent;
+  color: #eee;
+  border: none;
+  border-bottom: 2px solid #666;
+}
+input:focus {
+  outline: none;
 }
 
-header form {
-  flex: 1;
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  position: relative;
 }
 
 .search-result {
-  padding: 1.5rem 1.5rem 1.5rem 4.5rem;
+  padding: 3rem 0;
 }
 
 .search-result-item {
-  width: calc(66% + 0.5rem);
-  max-width: calc(760px + 1.5rem);
-  padding: 1rem 1rem 1rem 2.5rem;
+  padding: 1.5rem;
   margin-bottom: 1.5rem;
   border-left: 2px solid transparent;
   cursor: zoom-in;
@@ -92,12 +102,10 @@ header form {
 .search-result-item:focus {
   outline: none;
   border-left-color: #ccc;
-  border-left-style: dashed;
 }
 
 .search-result-item.selected {
   border-left-color: #1184ce;
-  background-color: #1184ce11;
   cursor: zoom-out;
 }
 
@@ -128,6 +136,7 @@ pre.elmsh {
   padding: 1rem;
   text-align: left;
   overflow: auto;
+  background-color: #1184ce11;
 }
 code.elmsh {
   padding: 0;
@@ -143,7 +152,6 @@ code.elmsh {
 
 .elmsh {
   color: #24292e;
-  background: #ffffff;
 }
 .elmsh-hl {
   background: #fffbdd;

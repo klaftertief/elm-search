@@ -132,11 +132,14 @@ viewContent : Model -> Html Msg
 viewContent (Model model) =
     Html.div [ Html.Attributes.class "page-search" ]
         [ Html.header []
-            [ Html.a
-                [ Route.href Route.Home ]
-                [ Logo.view ]
-            , Html.form [ Html.Events.onSubmit TriggeredSearch ]
-                [ Html.input
+            [ Html.form
+                [ Html.Attributes.class "container"
+                , Html.Events.onSubmit TriggeredSearch
+                ]
+                [ Html.span
+                    [ Html.Attributes.class "ghost" ]
+                    [ Html.text (model.searchInput |> Maybe.withDefault " ") ]
+                , Html.input
                     [ Html.Attributes.placeholder "(a -> b) -> Maybe a -> Maybe b"
                     , Html.Attributes.value (model.searchInput |> Maybe.withDefault "")
                     , Html.Events.onInput EnteredSearchInput
@@ -277,7 +280,7 @@ wrapBlock :
 wrapBlock id focusedId { code, identifier, comment } =
     Html.div
         ([ Html.Attributes.id id
-         , Html.Attributes.class "search-result-item"
+         , Html.Attributes.class "search-result-item container"
          , Html.Attributes.tabindex 0
          ]
             ++ (if Just id == focusedId then
