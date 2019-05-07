@@ -63,7 +63,7 @@ view model =
 viewContent : Model -> Html Msg
 viewContent (Model model) =
     Html.div [ Html.Attributes.class "page-home" ]
-        [ Html.div [] [ Logo.viewWithSize 96 ]
+        [ Html.div [] [ Logo.viewWithSize 128 ]
         , Html.h1 [] [ Html.text "Elm Search" ]
         , Html.form [ Html.Events.onSubmit TriggeredSearch ]
             [ Html.input

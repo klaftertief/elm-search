@@ -18,15 +18,14 @@ viewWithSize s =
     svg
         [ width size
         , height size
-        , viewBox "2 2 132 132"
+        , viewBox "0 0 192 192"
         , Svg.Attributes.style "overflow: visible;"
         ]
         [ g
             [ stroke "#fff"
             , strokeWidth "2"
             , strokeLinejoin "round"
-
-            --, transform "rotate(90 64 64)"
+            , transform "translate(96 96)"
             ]
             parts
         ]
@@ -34,13 +33,13 @@ viewWithSize s =
 
 parts : List (Svg msg)
 parts =
-    [ largeBlueTriangle (Transformation (3 * quarterHypothenuse - 128) (3 * quarterHypothenuse) -90)
-    , largeGreyTriangle (Transformation 0 0 0)
-    , mediumBlueTriangle (Transformation quarterHypothenuse quarterHypothenuse -135)
-    , smallOrangeTriangle (Transformation halfHypothenuse quarterHypothenuse -45)
-    , smallOrangeTriangle (Transformation halfHypothenuse 0 45)
-    , greenSquare (Transformation halfHypothenuse quarterHypothenuse -45)
-    , greenDiamond (Transformation halfHypothenuse quarterHypothenuse 45) False
+    [ largeBlueTriangle (Transformation 0 0 45)
+    , largeGreyTriangle (Transformation -halfHypothenuse -halfHypothenuse 315)
+    , greenDiamond (Transformation 0 -halfHypothenuse 45) False
+    , greenSquare (Transformation 0 quarterHypothenuse -45)
+    , smallOrangeTriangle (Transformation quarterHypothenuse 0 135)
+    , smallOrangeTriangle (Transformation 0 halfHypothenuse 225)
+    , mediumBlueTriangle (Transformation halfHypothenuse 0 135)
     ]
 
 
