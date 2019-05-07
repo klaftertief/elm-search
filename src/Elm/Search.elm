@@ -71,6 +71,12 @@ blockScore q b =
             if name == Index.exposedIdentifierToString block.identifier then
                 0
 
+            else if name == block.info.name then
+                0
+
+            else if String.endsWith name (Index.exposedIdentifierToString block.identifier) then
+                0.01
+
             else if String.contains name (Index.exposedIdentifierToString block.identifier) then
                 0.1
 
