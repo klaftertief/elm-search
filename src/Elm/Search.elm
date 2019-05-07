@@ -28,42 +28,60 @@ blockScore q b =
     case ( q, b ) of
         -- BY NAME
         ( Query.ByName name, Index.Package block ) ->
-            if String.contains name (Index.packageIdentifierToString block.identifier) then
+            if name == Index.packageIdentifierToString block.identifier then
+                0
+
+            else if String.contains name (Index.packageIdentifierToString block.identifier) then
                 0.01
 
             else
                 1
 
         ( Query.ByName name, Index.Module block ) ->
-            if String.contains name (Index.moduleIdentifierToString block.identifier) then
+            if name == Index.moduleIdentifierToString block.identifier then
+                0
+
+            else if String.contains name (Index.moduleIdentifierToString block.identifier) then
                 0.01
 
             else
                 1
 
         ( Query.ByName name, Index.Union block ) ->
-            if String.contains name (Index.exposedIdentifierToString block.identifier) then
+            if name == Index.exposedIdentifierToString block.identifier then
+                0
+
+            else if String.contains name (Index.exposedIdentifierToString block.identifier) then
                 0.1
 
             else
                 1
 
         ( Query.ByName name, Index.Alias block ) ->
-            if String.contains name (Index.exposedIdentifierToString block.identifier) then
+            if name == Index.exposedIdentifierToString block.identifier then
+                0
+
+            else if String.contains name (Index.exposedIdentifierToString block.identifier) then
                 0.1
 
             else
                 1
 
         ( Query.ByName name, Index.Value block ) ->
-            if String.contains name (Index.exposedIdentifierToString block.identifier) then
+            if name == Index.exposedIdentifierToString block.identifier then
+                0
+
+            else if String.contains name (Index.exposedIdentifierToString block.identifier) then
                 0.1
 
             else
                 1
 
         ( Query.ByName name, Index.Binop block ) ->
-            if String.contains name (Index.exposedIdentifierToString block.identifier) then
+            if name == Index.exposedIdentifierToString block.identifier then
+                0
+
+            else if String.contains name (Index.exposedIdentifierToString block.identifier) then
                 0.1
 
             else
