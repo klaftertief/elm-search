@@ -2,10 +2,13 @@
   box-sizing: border-box;
 }
 
+html {
+  font-size: 18px;
+}
 body {
   margin: 0;
   padding: 0;
-  font-size: 18px;
+  font-size: 1rem;
   line-height: 1.5;
   background-color: #fff;
   color: #293c4b;
@@ -26,14 +29,28 @@ p {
   margin: 1.5rem 0;
 }
 
+a {
+  color: #ea157a;
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+
 .page-home {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding: 1rem 1rem 20vh 1rem;
+  padding: 1rem;
   min-height: 100vh;
   text-align: center;
   background-color: #f9f9f9;
+}
+.page-home header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
 }
 
 .help {
@@ -43,6 +60,11 @@ p {
 header {
   padding: 1rem;
   background-color: #293c4b;
+}
+.logo {
+  position: absolute;
+  top: 32px;
+  left: 1.5rem;
 }
 form {
   padding: 1.5rem;
@@ -109,10 +131,6 @@ input:focus {
   cursor: zoom-out;
 }
 
-.search-result-item.selected:focus {
-  border-left-color: #1184ce;
-}
-
 .search-result-item-header {
   color: #1184ce;
 }
@@ -126,8 +144,11 @@ input:focus {
 
 .inline-code {
   color: #24292e;
-  background: #ffffff;
+  background-color: #1184ce11;
   padding: 0.25rem;
+}
+a .inline-code {
+  color: inherit;
 }
 
 /* Syntax Highlighting */

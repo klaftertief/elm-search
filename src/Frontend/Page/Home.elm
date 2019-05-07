@@ -63,18 +63,27 @@ view model =
 viewContent : Model -> Html Msg
 viewContent (Model model) =
     Html.div [ Html.Attributes.class "page-home" ]
-        [ Html.div [] [ Logo.viewWithSize 128 ]
-        , Html.h1 [] [ Html.text "Elm Search" ]
-        , Html.form [ Html.Events.onSubmit TriggeredSearch ]
-            [ Html.input
-                [ Html.Attributes.placeholder "(a -> b) -> Maybe a -> Maybe b"
-                , Html.Attributes.value model.searchInput
-                , Html.Events.onInput EnteredSearchInput
+        [ Html.header []
+            [ Html.form
+                [ Html.Attributes.class "container"
+                , Html.Events.onSubmit TriggeredSearch
                 ]
-                []
-            , Html.p [ Html.Attributes.class "help" ]
-                [ Html.text "Search Elm packages by name or approximate type signature." ]
+                [ Html.span
+                    [ Html.Attributes.class "ghost" ]
+                    [ Html.text model.searchInput ]
+                , Html.input
+                    [ Html.Attributes.placeholder "(a -> b) -> Maybe a -> Maybe b"
+                    , Html.Attributes.value model.searchInput
+                    , Html.Attributes.autofocus True
+                    , Html.Events.onInput EnteredSearchInput
+                    ]
+                    []
+                ]
             ]
+        , Html.div [] [ Logo.viewWithSize 128 ]
+        , Html.h1 [] [ Html.text "Elm Search" ]
+        , Html.p [ Html.Attributes.class "help" ]
+            [ Html.text "Search Elm packages by name or approximate type signature." ]
         ]
 
 

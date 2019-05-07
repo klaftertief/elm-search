@@ -132,7 +132,12 @@ viewContent : Model -> Html Msg
 viewContent (Model model) =
     Html.div [ Html.Attributes.class "page-search" ]
         [ Html.header []
-            [ Html.form
+            [ Html.a
+                [ Html.Attributes.class "logo"
+                , Route.href Route.Home
+                ]
+                [ Logo.viewWithSize 64 ]
+            , Html.form
                 [ Html.Attributes.class "container"
                 , Html.Events.onSubmit TriggeredSearch
                 ]
@@ -142,6 +147,7 @@ viewContent (Model model) =
                 , Html.input
                     [ Html.Attributes.placeholder "(a -> b) -> Maybe a -> Maybe b"
                     , Html.Attributes.value (model.searchInput |> Maybe.withDefault "")
+                    , Html.Attributes.autofocus True
                     , Html.Events.onInput EnteredSearchInput
                     ]
                     []
