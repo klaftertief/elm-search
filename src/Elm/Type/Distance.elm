@@ -6,38 +6,35 @@ import List.Extra
 
 
 distance : Type -> Type -> Float
-distance needle hay =
-    case ( needle, hay ) of
-        -- Lambda Type Type
-        ( Lambda fromN toN, Lambda fromH toH ) ->
-            (distance fromN fromH + distance toN toH) / 2
+distance from to =
+    case ( from, to ) of
+        ( Lambda from1 to1, Lambda from2 to2 ) ->
+            (distance from1 from2 + distance to1 to2) / 2
 
-        -- Var String
-        ( Var nameN, Var nameH ) ->
-            distanceName nameN nameH
+        ( Var fromName, Var toName ) ->
+            varDistance fromName toName
 
-        -- Special cases for comparisons like `number` - `Float`
-        ( Var varName, Type typeName [] ) ->
-            distanceVarType varName typeName
+        ( Var varName, Type "Maybe.Maybe" [ Var wrappedVarName ] ) ->
+            varDistance varName wrappedVarName
 
-        ( Type typeName [], Var varName ) ->
-            distanceVarType varName typeName
+        ( Type "Maybe.Maybe" [ _, Var wrappedVarName ], Var varName ) ->
+            varDistance varName wrappedVarName
 
-        -- Hack for special cases like `a` - `Maybe a`
-        -- TODO: make proper comparison
-        ( Var nameN, Type canonicalH argsH ) ->
-            distanceApply ( "", [ Var nameN ] ) ( canonicalH, argsH )
+        ( Var varName, Type "Result.Result" [ _, Var wrappedVarName ] ) ->
+            varDistance varName wrappedVarName
 
-        ( Type canonicalN argsN, Var nameH ) ->
-            distanceApply ( "", [ Var nameH ] ) ( canonicalN, argsN )
+        ( Type "Result.Result" [ Var wrappedVarName ], Var varName ) ->
+            varDistance varName wrappedVarName
 
-        -- `Apply Name (List Type)`
-        -- `Foo.Bar a b` ~> `Apply { home = "Foo", name = "Bar" } ([Var "a", Var "b"])`
+        ( Var varName, Type typeName typeArgs ) ->
+            varTypeDistance varName ( typeName, typeArgs )
+
+        ( Type typeName typeArgs, Var varName ) ->
+            varTypeDistance varName ( typeName, typeArgs )
+
         ( Type canonicalN argsN, Type canonicalH argsH ) ->
             distanceApply ( canonicalN, argsN ) ( canonicalH, argsH )
 
-        -- Tuple (List Type)
-        -- `(a,b)` ~> `Tuple ([Var "a",Var "b"])`
         ( Tuple argsN, Tuple argsH ) ->
             distanceList argsN argsH
 
@@ -84,8 +81,8 @@ distanceList needle hay =
             |> Maybe.withDefault maxPenalty
 
 
-distanceName : String -> String -> Float
-distanceName needle hay =
+varDistance : String -> String -> Float
+varDistance needle hay =
     if needle == hay then
         noPenalty
 
@@ -93,11 +90,50 @@ distanceName needle hay =
         maxPenalty
 
 
+varTypeDistance : String -> ( String, List Type ) -> Float
+varTypeDistance varName ( typeName, typeArgs ) =
+    case Dict.get varName reservedVars of
+        Just typeList ->
+            typeList
+                |> List.map (distance (Type typeName typeArgs))
+                |> List.minimum
+                |> Maybe.withDefault maxPenalty
+
+        Nothing ->
+            maxPenalty
+
+
+reservedVars : Dict String (List Type)
+reservedVars =
+    Dict.empty
+        |> Dict.insert "number"
+            [ Type "Basics.Float" []
+            , Type "Basics.Int" []
+            ]
+        |> Dict.insert "comparable"
+            [ Type "Basics.Float" []
+            , Type "Basics.Int" []
+            , Type "Basics.Char" []
+            , Type "Basics.String" []
+            , Tuple [ Var "comparable" ]
+            , Tuple [ Var "comparable", Var "comparable" ]
+            , Tuple [ Var "comparable", Var "comparable", Var "comparable" ]
+            ]
+        |> Dict.insert "appendable"
+            [ Type "Basics.String" []
+            , Type "List.List" [ Var "a" ]
+            ]
+
+
 distanceCanonical : String -> String -> Float
 distanceCanonical needle hay =
-    -- TODO: Also take `.home` into account.
-    --distanceName needle.name hay.name
     if needle == hay then
+        noPenalty
+
+    else if String.endsWith needle hay then
+        noPenalty
+
+    else if String.endsWith hay needle then
         noPenalty
 
     else if String.contains needle hay then
@@ -105,23 +141,6 @@ distanceCanonical needle hay =
 
     else
         maxPenalty
-
-
-distanceVarType : String -> String -> Float
-distanceVarType varName typeName =
-    -- let
-    --     maybeReservedVarTypeList =
-    --         Dict.get varName reserverdVars
-    -- in
-    -- case maybeReservedVarTypeList of
-    --     Just typeList ->
-    --         if List.any ((==) applyName.name) typeList then
-    --             lowPenalty
-    --         else
-    --             maxPenalty
-    --     Nothing ->
-    --         mediumPenalty
-    maxPenalty
 
 
 distanceApply : ( String, List Type ) -> ( String, List Type ) -> Float
