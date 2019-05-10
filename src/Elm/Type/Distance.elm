@@ -51,31 +51,17 @@ distanceList needle hay =
     let
         needleLength =
             List.length needle
-
-        hayLength =
-            List.length hay
-
-        sharedLength =
-            min needleLength hayLength
-
-        maxLength =
-            max needleLength hayLength
-
-        diffLength =
-            maxLength - sharedLength
     in
-    if diffLength > 1 then
+    if needleLength /= List.length hay then
         maxPenalty
 
     else
-        -- TODO: optimize, maybe add penalty for permutations
         List.Extra.permutations needle
             |> List.map
                 (\curr ->
                     List.map2 distance curr hay
                         |> List.sum
-                        |> (+) (toFloat diffLength * maxPenalty)
-                        |> (\a -> (/) a (toFloat maxLength))
+                        |> (\a -> (/) a (toFloat needleLength))
                 )
             |> List.minimum
             |> Maybe.withDefault maxPenalty
