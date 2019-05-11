@@ -1,4 +1,4 @@
-module Elm.Type.Distance exposing (distance)
+module Elm.Type.Distance exposing (distance, distanceList)
 
 import Dict exposing (Dict)
 import Elm.Type as Type exposing (Type(..))
