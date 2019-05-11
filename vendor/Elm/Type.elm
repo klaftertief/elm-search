@@ -1,6 +1,6 @@
 module Elm.Type exposing
     ( Type(..), decoder
-    , arrow, parse, spaces, tipe
+    , arrow, parse, spaces, tipe, tipeTerm
     )
 
 {-| This is specifically for handling the types that appear in

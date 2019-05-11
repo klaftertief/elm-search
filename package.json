@@ -13,6 +13,7 @@
   },
   "homepage": "https://github.com/klaftertief/elm-search#readme",
   "scripts": {
+    "test": "elm-test --compiler ./node_modules/.bin/elm ",
     "start-frontend": "parcel watch src/index.html",
     "start-download": "parcel watch src/download.js --target node",
     "start-backend": "parcel watch src/backend.js --target node",
