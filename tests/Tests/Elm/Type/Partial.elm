@@ -20,6 +20,44 @@ suite =
              , ( "-> T"
                , Partial.LambdaTo (Partial.Type "T" [])
                )
+             , ( "-> T -> T"
+               , Partial.LambdaTo
+                    (Partial.Lambda
+                        (Partial.Type "T" [])
+                        (Partial.Type "T" [])
+                    )
+               )
+             , ( "T -> T"
+               , Partial.Lambda
+                    (Partial.Type "T" [])
+                    (Partial.Type "T" [])
+               )
+             , ( "a -> a"
+               , Partial.Lambda
+                    (Partial.Var "a")
+                    (Partial.Var "a")
+               )
+             , ( "(a -> a)"
+               , Partial.Lambda
+                    (Partial.Var "a")
+                    (Partial.Var "a")
+               )
+             , ( "(a -> a) -> a"
+               , Partial.Lambda
+                    (Partial.Lambda
+                        (Partial.Var "a")
+                        (Partial.Var "a")
+                    )
+                    (Partial.Var "a")
+               )
+             , ( "a -> (a -> a)"
+               , Partial.Lambda
+                    (Partial.Var "a")
+                    (Partial.Lambda
+                        (Partial.Var "a")
+                        (Partial.Var "a")
+                    )
+               )
              ]
                 |> List.map testParse
             )
