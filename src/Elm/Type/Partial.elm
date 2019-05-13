@@ -9,7 +9,8 @@ import Set
 
 
 type Type
-    = Lambda Type Type
+    = Arrow
+    | Lambda Type Type
     | LambdaFrom Type
     | LambdaTo Type
     | Var String
@@ -36,26 +37,41 @@ term =
             oneOf
                 [ backtrackable typeclassVar
                 , term1
+                , map (\_ -> Arrow) arrow
                 ]
                 |> andThen
                     (\t ->
-                        oneOf
-                            [ succeed (Lambda t)
-                                |. symbol "->"
-                                |. spaces
-                                |= orPartial term
-                            , succeed (Lambda t)
-                                |. symbol "->"
-                                |. spaces
-                                |= orPartial term
-                            , succeed (Lambda t)
-                                |. symbol "-"
-                                |. spaces
-                                |= orPartial (problem "only want partial here")
-                            , succeed t
-                            ]
+                        case t of
+                            Arrow ->
+                                oneOf
+                                    [ succeed LambdaTo
+                                        |. spaces
+                                        |= orPartial term
+                                    ]
+
+                            _ ->
+                                oneOf
+                                    [ succeed (Lambda t)
+                                        |. arrow
+                                        |. spaces
+                                        |= orPartial term
+                                    , succeed (LambdaFrom t)
+                                        |. arrow
+                                        |. spaces
+                                        |. end
+                                    , succeed (Lambda t)
+                                        |. symbol "-"
+                                        |. spaces
+                                        |= orPartial (problem "only want partial here")
+                                    , succeed t
+                                    ]
                     )
         )
+
+
+arrow : Parser ()
+arrow =
+    symbol "->"
 
 
 orPartial p =
