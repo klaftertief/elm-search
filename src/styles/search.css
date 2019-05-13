@@ -142,7 +142,7 @@ code {
     margin: 0;
     padding: 0 1rem 1rem 1rem;
     overflow-y: hidden;
-    overflow-x: scroll;
+    overflow-x: auto;
     -webkit-overflow-scrolling: touch;
 }
 .chunkAnnotation a {
