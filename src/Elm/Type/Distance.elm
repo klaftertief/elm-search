@@ -1,4 +1,9 @@
-module Elm.Type.Distance exposing (distance, distanceList)
+module Elm.Type.Distance exposing
+    ( distance
+    , distanceList
+    , varDistance
+    , varTypeDistance
+    )
 
 import Dict exposing (Dict)
 import Elm.Type as Type exposing (Type(..))
@@ -17,10 +22,10 @@ distance from to =
         ( Var varName, Type "Maybe.Maybe" [ Var wrappedVarName ] ) ->
             varDistance varName wrappedVarName
 
-        ( Type "Maybe.Maybe" [ _, Var wrappedVarName ], Var varName ) ->
+        ( Type "Maybe.Maybe" [ Var wrappedVarName ], Var varName ) ->
             varDistance varName wrappedVarName
 
-        ( Var varName, Type "Result.Result" [ _, Var wrappedVarName ] ) ->
+        ( Var varName, Type "Result.Result" [ Var wrappedVarName ] ) ->
             varDistance varName wrappedVarName
 
         ( Type "Result.Result" [ Var wrappedVarName ], Var varName ) ->
