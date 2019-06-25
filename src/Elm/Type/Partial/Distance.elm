@@ -10,7 +10,7 @@ import List.Extra
 distance : Partial.Type -> Type -> Float
 distance from to =
     case ( from, to ) of
-        -- PARTIALS
+        -- PARTIAL
         ( Partial.LambdaFrom partialFrom, Type.Lambda lambdaFrom _ ) ->
             distance partialFrom lambdaFrom
 
@@ -23,7 +23,7 @@ distance from to =
         ( Partial.VariableType _ variableTypeArgs, Type.Type _ typeArgs ) ->
             distanceList variableTypeArgs typeArgs
 
-        -- NORMALS
+        -- CONCRETE
         ( Partial.Lambda from1 to1, Type.Lambda from2 to2 ) ->
             (distance from1 from2 + distance to1 to2) / 2
 
