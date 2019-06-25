@@ -144,7 +144,10 @@ blockScore q b =
             1
 
         ( Query.ByType tipe, Index.Union block ) ->
-            1
+            block.info.tags
+                |> List.map (\( name, types ) -> TypeDistance.distance tipe (Elm.Type.Type name types))
+                |> List.minimum
+                |> Maybe.withDefault 1
 
         ( Query.ByType tipe, Index.Alias block ) ->
             TypeDistance.distance tipe block.info.tipe
