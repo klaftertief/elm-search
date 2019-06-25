@@ -7,6 +7,7 @@ import Elm.Search.Query as Query exposing (Query)
 import Elm.Search.Score as Score exposing (Score)
 import Elm.Type exposing (Type)
 import Elm.Type.Distance as TypeDistance
+import Elm.Type.Partial.Distance as PartialTypeDistance
 
 
 search : List Query -> Index -> List ( Float, Block )
@@ -158,5 +159,24 @@ blockScore q b =
         ( Query.ByType tipe, Index.Binop block ) ->
             TypeDistance.distance tipe block.info.tipe
 
-        _ ->
+        -- BY PARTIAL TYPE
+        ( Query.ByPartialType tipe, Index.Package block ) ->
             1
+
+        ( Query.ByPartialType tipe, Index.Module block ) ->
+            1
+
+        ( Query.ByPartialType tipe, Index.Union block ) ->
+            block.info.tags
+                |> List.map (\( name, types ) -> PartialTypeDistance.distance tipe (Elm.Type.Type name types))
+                |> List.minimum
+                |> Maybe.withDefault 1
+
+        ( Query.ByPartialType tipe, Index.Alias block ) ->
+            PartialTypeDistance.distance tipe block.info.tipe
+
+        ( Query.ByPartialType tipe, Index.Value block ) ->
+            PartialTypeDistance.distance tipe block.info.tipe
+
+        ( Query.ByPartialType tipe, Index.Binop block ) ->
+            PartialTypeDistance.distance tipe block.info.tipe

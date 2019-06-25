@@ -51,12 +51,15 @@ distance from to =
         ( Partial.Var varName, Type.Type typeName typeArgs ) ->
             Distance.varTypeDistance varName ( typeName, typeArgs )
 
-        -- ( Partial.Type typeName typeArgs, Type.Var varName ) ->
-        --     Distance.varTypeDistance varName ( typeName, typeArgs )
-        -- ( Partial.TypeQual typeQual typeName typeArgs, Type.Var varName ) ->
-        --     Distance.varTypeDistance varName ( typeQual ++ "." ++ typeName, typeArgs )
-        -- ( Partial.Type fromName fromArgs, Type.Type toName toArgs ) ->
-        --     distanceApply ( canonicalN, argsN ) ( canonicalH, argsH )
+        ( Partial.Type typeName typeArgs, Type.Var varName ) ->
+            varTypeDistance varName ( typeName, typeArgs )
+
+        ( Partial.TypeQual typeQual typeName typeArgs, Type.Var varName ) ->
+            varTypeDistance varName ( typeQual ++ "." ++ typeName, typeArgs )
+
+        ( Partial.Type fromName fromArgs, Type.Type toName toArgs ) ->
+            distanceApply ( fromName, fromArgs ) ( toName, toArgs )
+
         ( Partial.Pair fromFirst fromSecond, Type.Tuple [ toFirst, toSecond ] ) ->
             distanceList [ fromFirst, fromSecond ] [ toFirst, toSecond ]
 
@@ -86,6 +89,78 @@ distanceList from to =
                 )
             |> List.minimum
             |> Maybe.withDefault maxPenalty
+
+
+distanceApply : ( String, List Partial.Type ) -> ( String, List Type ) -> Float
+distanceApply ( canonicalN, argsN ) ( canonicalH, argsH ) =
+    case ( argsN, argsH ) of
+        ( [], [] ) ->
+            distanceCanonical canonicalN canonicalH
+
+        ( [], hd :: tl ) ->
+            --distanceCanonical canonicalN canonicalH
+            -- TODO: should we do this only for some specific types like `Maybe` and `Result`?
+            -- TODO: check if this is a nice implementation (with regard to `min` and `+ lowPenalty`)
+            min maxPenalty <|
+                distance (Partial.Type canonicalN argsN)
+                    (Maybe.withDefault hd (List.head (List.reverse tl)))
+                    + lowPenalty
+
+        _ ->
+            (distanceCanonical canonicalN canonicalH + distanceList argsN argsH) / 2
+
+
+distanceCanonical : String -> String -> Float
+distanceCanonical needle hay =
+    if needle == hay then
+        noPenalty
+
+    else if String.endsWith needle hay then
+        noPenalty
+
+    else if String.endsWith hay needle then
+        noPenalty
+
+    else if String.contains needle hay then
+        mediumPenalty
+
+    else
+        maxPenalty
+
+
+varTypeDistance : String -> ( String, List Partial.Type ) -> Float
+varTypeDistance varName ( typeName, typeArgs ) =
+    case Dict.get varName Distance.internalTypeClasses of
+        Just typeList ->
+            typeList
+                |> List.map (distance (Partial.Type typeName typeArgs))
+                |> List.minimum
+                |> Maybe.withDefault maxPenalty
+
+        Nothing ->
+            maxPenalty
+
+
+internalTypeClasses : Dict String (List Partial.Type)
+internalTypeClasses =
+    Dict.empty
+        |> Dict.insert "number"
+            [ Partial.TypeQual "Basics" "Float" []
+            , Partial.TypeQual "Basics" "Int" []
+            ]
+        |> Dict.insert "comparable"
+            [ Partial.TypeQual "Basics" "Float" []
+            , Partial.TypeQual "Basics" "Int" []
+            , Partial.TypeQual "Basics" "Char" []
+            , Partial.TypeQual "Basics" "String" []
+            , Partial.Var "comparable"
+            , Partial.Pair (Partial.Var "comparable") (Partial.Var "comparable")
+            , Partial.Triple (Partial.Var "comparable") (Partial.Var "comparable") (Partial.Var "comparable")
+            ]
+        |> Dict.insert "appendable"
+            [ Partial.TypeQual "Basics" "String" []
+            , Partial.TypeQual "List" "List" [ Partial.Var "a" ]
+            ]
 
 
 noPenalty : Float

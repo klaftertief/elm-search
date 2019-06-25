@@ -2,16 +2,13 @@ module Elm.Search.Query exposing (Query(..), fromString)
 
 import Char
 import Elm.Type exposing (Type)
+import Elm.Type.Partial as Partial
 import Json.Encode
-
-
-type PartialType
-    = PartialType
 
 
 type Query
     = ByType Type
-    | ByPartialType PartialType
+    | ByPartialType Partial.Type
     | ByName String
     | ByText String
 
@@ -19,8 +16,9 @@ type Query
 fromString : String -> List Query
 fromString string =
     List.filterMap identity
-        [ typeFromString string |> Maybe.map ByType
-        , partialTypeFromString string |> Maybe.map ByPartialType
+        -- [ typeFromString string |> Maybe.map ByType
+        -- , partialTypeFromString string |> Maybe.map ByPartialType
+        [ partialTypeFromString string |> Maybe.map ByPartialType
         , nameFromString string |> Maybe.map ByName
         , textFromString string |> Maybe.map ByText
         ]
@@ -31,9 +29,9 @@ typeFromString =
     Elm.Type.parse >> Result.toMaybe
 
 
-partialTypeFromString : String -> Maybe PartialType
-partialTypeFromString _ =
-    Nothing
+partialTypeFromString : String -> Maybe Partial.Type
+partialTypeFromString =
+    Partial.parse >> Result.toMaybe
 
 
 nameFromString : String -> Maybe String

@@ -1,6 +1,7 @@
 module Elm.Type.Distance exposing
     ( distance
     , distanceList
+    , internalTypeClasses
     , varDistance
     , varTypeDistance
     )
