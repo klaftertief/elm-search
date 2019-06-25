@@ -83,7 +83,7 @@ varDistance needle hay =
 
 varTypeDistance : String -> ( String, List Type ) -> Float
 varTypeDistance varName ( typeName, typeArgs ) =
-    case Dict.get varName reservedVars of
+    case Dict.get varName internalTypeClasses of
         Just typeList ->
             typeList
                 |> List.map (distance (Type typeName typeArgs))
@@ -94,8 +94,20 @@ varTypeDistance varName ( typeName, typeArgs ) =
             maxPenalty
 
 
-reservedVars : Dict String (List Type)
-reservedVars =
+
+{-
+
+   (a -> b) -> f a -> f b
+   (x -> y) -> m x -> m y
+   Int -> String -> String
+
+   Foo x
+
+-}
+
+
+internalTypeClasses : Dict String (List Type)
+internalTypeClasses =
     Dict.empty
         |> Dict.insert "number"
             [ Type "Basics.Float" []
