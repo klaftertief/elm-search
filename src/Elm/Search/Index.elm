@@ -634,7 +634,8 @@ encodeSlackBlock block =
                                             |> String.replace ">" "&gt;"
                                        )
                                     ++ "`>"
-                                 , value.info.comment |> String.split "\n\n" |> List.head |> Maybe.withDefault value.info.comment
+
+                                 --  , value.info.comment |> String.split "\n\n" |> List.head |> Maybe.withDefault value.info.comment
                                  , "_" ++ exposedIdentifierToString value.identifier ++ "_"
                                  ]
                                     |> String.join "\n\n"
