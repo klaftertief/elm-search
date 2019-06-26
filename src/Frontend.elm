@@ -98,7 +98,7 @@ changeRouteTo maybeRoute model =
             Home.init session
                 |> updateWith Home HomeMsg model
 
-        Just (Route.Search maybeQuery) ->
+        Just (Route.Search maybeQuery _) ->
             Search.init session maybeQuery
                 |> updateWith Search SearchMsg model
 

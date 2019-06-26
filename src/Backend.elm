@@ -69,8 +69,20 @@ update msg model =
                         |> Maybe.andThen Route.fromUrl
             in
             case maybeRoute of
-                Just (Route.Search (Just queryString)) ->
+                Just (Route.Search (Just queryString) maybeLimit) ->
                     let
+                        limit =
+                            Maybe.map
+                                (\l ->
+                                    if l == 0 then
+                                        99999
+
+                                    else
+                                        l
+                                )
+                                maybeLimit
+                                |> Maybe.withDefault 10
+
                         ( topBlocks, otherBlocks ) =
                             Search.search (Query.fromString queryString) model.index
                                 |> List.filter (Tuple.first >> (\d -> d < 0.2))
@@ -82,14 +94,16 @@ update msg model =
                         (Json.Encode.object
                             [ ( "url", Json.Encode.string url )
                             , ( "response"
-                              , (topBlocks ++ List.take 10 otherBlocks)
+                                --   , (topBlocks ++ List.take limit otherBlocks)
+                                --   , topBlocks
+                              , (topBlocks ++ otherBlocks)
                                     |> Json.Encode.list (Tuple.second >> Index.encodeBlock)
                               )
                             ]
                         )
                     )
 
-                Just (Route.Search Nothing) ->
+                Just (Route.Search Nothing _) ->
                     ( model
                     , response
                         (Json.Encode.object

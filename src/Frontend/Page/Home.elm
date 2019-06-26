@@ -49,7 +49,7 @@ update msg (Model model) =
         TriggeredSearch ->
             ( Model model
             , Route.pushUrl (Session.navKey model.session)
-                (Route.Search <| Just model.searchInput)
+                (Route.Search (Just model.searchInput) Nothing)
             )
 
 

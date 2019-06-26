@@ -12,6 +12,7 @@ import Dict exposing (Dict)
 import Elm.Constraint
 import Elm.Package
 import Elm.Project
+import Elm.Search.Index as Index
 import Elm.Version
 import Frontend.Session as Session exposing (Session)
 import Html exposing (Html)
@@ -27,12 +28,13 @@ type Model
     = Model
         { session : Session
         , packages : List Elm.Project.PackageInfo
-        , arities : List Int
+        , andThens : List Index.Block
         }
 
 
 type Msg
     = GotPackages (Result Http.Error (List Elm.Project.PackageInfo))
+    | GotSearchResult (Result Http.Error (List Index.Block))
 
 
 init : Session -> ( Model, Cmd Msg )
@@ -40,12 +42,18 @@ init session =
     ( Model
         { session = session
         , packages = []
-        , arities = []
+        , andThens = []
         }
-    , Http.get
-        { url = "/api/packages"
-        , expect = Http.expectJson GotPackages packagesDecoder
-        }
+    , Cmd.batch
+        [ Http.get
+            { url = "/api/packages"
+            , expect = Http.expectJson GotPackages packagesDecoder
+            }
+        , Http.get
+            { url = "/api/search?l=0&q=(a -> f b) -> f a -> f b"
+            , expect = Http.expectJson GotSearchResult searchResultDecoder
+            }
+        ]
     )
 
 
@@ -67,6 +75,13 @@ packagesDecoder =
         )
 
 
+searchResultDecoder : Json.Decode.Decoder (List Index.Block)
+searchResultDecoder =
+    Json.Decode.field "response" (Json.Decode.list Json.Decode.value)
+        |> Json.Decode.map (List.map (Json.Decode.decodeValue Index.blockDecoder >> Result.toMaybe))
+        |> Json.Decode.map (List.filterMap identity)
+
+
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg (Model model) =
     case msg of
@@ -86,6 +101,22 @@ update msg (Model model) =
             , Cmd.none
             )
 
+        GotSearchResult (Ok blocks) ->
+            ( Model
+                { model
+                    | andThens = blocks
+                }
+            , Cmd.none
+            )
+
+        GotSearchResult (Err _) ->
+            ( Model
+                { model
+                    | andThens = []
+                }
+            , Cmd.none
+            )
+
 
 view : Model -> { title : String, body : Html Msg }
 view model =
@@ -95,8 +126,11 @@ view model =
 
 
 viewContent : Model -> Html Msg
-viewContent (Model { packages }) =
+viewContent (Model model) =
     let
+        packages =
+            model.packages
+
         numberOfPackages =
             List.length packages
 
@@ -143,6 +177,15 @@ viewContent (Model { packages }) =
                                        )
                             )
                     )
+                |> frequencies
+                |> Dict.toList
+
+        andThenValues =
+            List.filterMap andThenValueBlock model.andThens
+
+        andThenNameFrequencies =
+            andThenValues
+                |> List.map (.info >> .name)
                 |> frequencies
                 |> Dict.toList
     in
@@ -239,6 +282,38 @@ viewContent (Model { packages }) =
                                 (List.sortBy Tuple.second upperBoundsDependencyFrequencies |> List.reverse)
                             )
                         ]
+                    , Html.p []
+                        [ Html.text "There are "
+                        , Html.strong [] [ Html.text (List.length andThenValues |> String.fromInt) ]
+                        , Html.text " functions with an "
+                        , Html.strong [] [ Html.text "andThen" ]
+                        , Html.text "-like type signature."
+                        ]
+                    , Html.ul []
+                        (List.map
+                            (\value ->
+                                Html.li []
+                                    [ Html.strong [] [ Html.text (Index.exposedIdentifierToString value.identifier) ]
+                                    , Html.text ": "
+                                    , Html.code [] [ Html.text (Index.elmTypeToText False value.info.tipe) ]
+                                    ]
+                            )
+                            andThenValues
+                        )
+                    , Html.p []
+                        [ Html.text "The distribution of andThen-like names is "
+                        , Html.ul []
+                            (List.map
+                                (\( name, count ) ->
+                                    Html.li []
+                                        [ Html.strong [] [ Html.text name ]
+                                        , Html.text " -> "
+                                        , Html.strong [] [ Html.text (String.fromInt count) ]
+                                        ]
+                                )
+                                (List.sortBy Tuple.second andThenNameFrequencies |> List.reverse)
+                            )
+                        ]
                     ]
                 ]
             ]
@@ -288,3 +363,17 @@ exposedCount exposed =
             list
                 |> List.map (Tuple.second >> List.length)
                 |> List.sum
+
+
+andThenValueBlock : Index.Block -> Maybe Index.ValueBlock
+andThenValueBlock block =
+    case block of
+        Index.Value v ->
+            if v.info.name == "filterMap" then
+                Nothing
+
+            else
+                Just v
+
+        _ ->
+            Nothing

@@ -89,7 +89,7 @@ update msg (Model model) =
                         --     , expect = Http.expectJson GotSearchResult searchResultDecoder
                         --     }
                         [ Route.pushUrl (Session.navKey model.session)
-                            (Route.Search <| Just query)
+                            (Route.Search (Just query) Nothing)
                         ]
 
                 Nothing ->
