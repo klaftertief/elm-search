@@ -164,24 +164,11 @@ viewContent (Model model) =
                 |> frequencies
                 |> Dict.toList
 
-        upperBoundsDependencyFrequencies =
-            packages
-                |> List.concatMap
-                    (.deps
-                        >> List.map
-                            (\( name, constraint ) ->
-                                Elm.Package.toString name
-                                    ++ "/"
-                                    ++ (Elm.Constraint.upperBound constraint
-                                            |> Elm.Version.toString
-                                       )
-                            )
-                    )
-                |> frequencies
-                |> Dict.toList
-
         andThenValues =
             List.filterMap andThenValueBlock model.andThens
+
+        andThenValuesCount =
+            List.length andThenValues
 
         andThenNameFrequencies =
             andThenValues
@@ -206,109 +193,91 @@ viewContent (Model model) =
             [ Html.div
                 [ Html.Attributes.class "container"
                 ]
-                [ Html.p []
+                [ Html.h2 [] [ Html.text "Packages" ]
+                , Html.p []
                     [ Html.text "There are in total "
                     , Html.strong [] [ Html.text (String.fromInt numberOfPackages) ]
                     , Html.text " packages by "
                     , Html.strong [] [ Html.text (String.fromInt numberOfUsers) ]
                     , Html.text " users."
                     ]
-                , Html.p []
-                    [ Html.text "The distribution of major versions is "
-                    , Html.ul []
+                , Html.div []
+                    [ Html.h3 [] [ Html.text "Major Versions" ]
+                    , Html.ul [ Html.Attributes.class "bars" ]
                         (List.map
                             (\( number, count ) ->
-                                Html.li []
-                                    [ Html.strong [] [ Html.text (String.fromInt number) ]
-                                    , Html.text " -> "
-                                    , Html.strong [] [ Html.text (String.fromInt count) ]
+                                Html.li
+                                    [ bar numberOfPackages count ]
+                                    [ Html.text (String.fromInt number)
                                     ]
                             )
                             (List.sortBy Tuple.second majorVersionFrequencies |> List.reverse)
                         )
-                    , Html.p []
-                        [ Html.text "The distribution of number of exposed modules is "
-                        , Html.ul []
+                    , Html.div []
+                        [ Html.h3 [] [ Html.text "Number of exposed modules" ]
+                        , Html.ul [ Html.Attributes.class "bars" ]
                             (List.map
                                 (\( number, count ) ->
-                                    Html.li []
+                                    Html.li
+                                        [ bar numberOfPackages count ]
                                         [ Html.strong [] [ Html.text (String.fromInt number) ]
-                                        , Html.text " -> "
-                                        , Html.strong [] [ Html.text (String.fromInt count) ]
                                         ]
                                 )
                                 (List.sortBy Tuple.second exposedModulesFrequencies |> List.reverse)
                             )
                         ]
-                    , Html.p []
-                        [ Html.text "The distribution of number of dependencies is "
-                        , Html.ul []
+                    , Html.div []
+                        [ Html.h3 [] [ Html.text "Number of dependencies" ]
+                        , Html.ul [ Html.Attributes.class "bars" ]
                             (List.map
                                 (\( number, count ) ->
-                                    Html.li []
+                                    Html.li [ bar numberOfPackages count ]
                                         [ Html.strong [] [ Html.text (String.fromInt number) ]
-                                        , Html.text " -> "
-                                        , Html.strong [] [ Html.text (String.fromInt count) ]
                                         ]
                                 )
                                 (List.sortBy Tuple.second dependencyCountFrequencies |> List.reverse)
                             )
                         ]
-                    , Html.p []
-                        [ Html.text "The distribution of dependencies is "
-                        , Html.ul []
+                    , Html.div []
+                        [ Html.h3 [] [ Html.text "Distribution of dependencies" ]
+                        , Html.ul [ Html.Attributes.class "bars" ]
                             (List.map
                                 (\( name, count ) ->
-                                    Html.li []
+                                    Html.li [ bar numberOfPackages count ]
                                         [ Html.strong [] [ Html.text name ]
-                                        , Html.text " -> "
-                                        , Html.strong [] [ Html.text (String.fromInt count) ]
                                         ]
                                 )
                                 (List.sortBy Tuple.second dependencyFrequencies |> List.reverse)
                             )
                         ]
-                    , Html.p []
-                        [ Html.text "The distribution of dependencies with upper bounds is "
-                        , Html.ul []
-                            (List.map
-                                (\( name, count ) ->
-                                    Html.li []
-                                        [ Html.strong [] [ Html.text name ]
-                                        , Html.text " -> "
-                                        , Html.strong [] [ Html.text (String.fromInt count) ]
-                                        ]
-                                )
-                                (List.sortBy Tuple.second upperBoundsDependencyFrequencies |> List.reverse)
-                            )
-                        ]
+                    , Html.h2 [] [ Html.text "Type Classes" ]
                     , Html.p []
                         [ Html.text "There are "
-                        , Html.strong [] [ Html.text (List.length andThenValues |> String.fromInt) ]
+                        , Html.strong [] [ Html.text (andThenValuesCount |> String.fromInt) ]
                         , Html.text " functions with an "
                         , Html.strong [] [ Html.text "andThen" ]
                         , Html.text "-like type signature."
                         ]
-                    , Html.ul []
-                        (List.map
+                    , Html.dl []
+                        (List.concatMap
                             (\value ->
-                                Html.li []
-                                    [ Html.strong [] [ Html.text (Index.exposedIdentifierToString value.identifier) ]
-                                    , Html.text ": "
-                                    , Html.code [] [ Html.text (Index.elmTypeToText False value.info.tipe) ]
+                                [ Html.dt []
+                                    [ Html.text (Index.exposedIdentifierToString value.identifier)
                                     ]
+                                , Html.dd []
+                                    [ Html.code [] [ Html.text (Index.elmTypeToText False value.info.tipe) ]
+                                    ]
+                                ]
                             )
                             andThenValues
                         )
-                    , Html.p []
-                        [ Html.text "The distribution of andThen-like names is "
-                        , Html.ul []
+                    , Html.div []
+                        [ Html.h3 [] [ Html.text "Distribution of andThen-like names" ]
+                        , Html.ul [ Html.Attributes.class "bars" ]
                             (List.map
                                 (\( name, count ) ->
-                                    Html.li []
+                                    Html.li [ bar andThenValuesCount count ]
                                         [ Html.strong [] [ Html.text name ]
-                                        , Html.text " -> "
-                                        , Html.strong [] [ Html.text (String.fromInt count) ]
                                         ]
                                 )
                                 (List.sortBy Tuple.second andThenNameFrequencies |> List.reverse)
@@ -318,6 +287,12 @@ viewContent (Model model) =
                 ]
             ]
         ]
+
+
+bar : Int -> Int -> Html.Attribute msg
+bar total v =
+    Html.Attributes.style "background-size"
+        (String.fromFloat ((toFloat v / toFloat total) * 100) ++ "% 100%")
 
 
 subscriptions : Model -> Sub Msg

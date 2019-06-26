@@ -213,3 +213,22 @@ code.elmsh {
 .elmsh7 {
   color: #795da3;
 }
+
+.bars {
+  list-style: none;
+  margin: 1.5rem 0;
+  padding: 0;
+}
+.bars li {
+  color: #000;
+  font-weight: bold;
+  background-color: #1184ce11;
+  background-image: linear-gradient(to right, #7fd13b, #7fd13b);
+  margin: 0.25rem 0;
+  padding: 0.5rem;
+  background-repeat: no-repeat;
+}
+
+dt {
+  font-weight: bold;
+}
