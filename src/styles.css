@@ -60,6 +60,13 @@ a:hover {
 header {
   padding: 1rem;
   background-color: #293c4b;
+  color: #eee;
+}
+header h2 {
+  font-size: 1.5rem;
+  line-height: 1.5;
+  padding: 1.5rem 0;
+  margin: 0;
 }
 .logo {
   position: absolute;
@@ -114,7 +121,7 @@ input:focus {
   padding: 1.5rem;
   margin-bottom: 1.5rem;
   border-left: 2px solid transparent;
-  cursor: zoom-in;
+  cursor: pointer;
 }
 
 .search-result-item:hover {
@@ -128,7 +135,6 @@ input:focus {
 
 .search-result-item.selected {
   border-left-color: #1184ce;
-  cursor: zoom-out;
 }
 
 .search-result-item-header {
