@@ -18,7 +18,7 @@
     "start-download": "parcel watch src/download.js --target node",
     "start-backend": "parcel watch src/backend.js --target node",
     "start-server": "nodemon dist/backend.js",
-    "build": "parcel build src/backend.js --target node && parcel build src/index.html",
+    "build": "parcel build src/backend.js --target node --bundle-node-modules && parcel build src/index.html",
     "backend": "node dist/backend.js"
   },
   "heroku-run-build-script": true,
@@ -37,6 +37,7 @@
     "cors": "^2.8.5",
     "express": "^4.16.4",
     "pg": "^7.10.0",
+    "pg-native": "^3.0.0",
     "xhr2": "^0.1.4"
   }
 }

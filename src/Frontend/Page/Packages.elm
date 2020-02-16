@@ -256,7 +256,8 @@ viewContent (Model model) =
                         , Html.strong [] [ Html.text (andThenValuesCount |> String.fromInt) ]
                         , Html.text " functions with an "
                         , Html.strong [] [ Html.text "andThen" ]
-                        , Html.text "-like type signature."
+                        , Html.text "-like type signature: "
+                        , Html.strong [] [ Html.code [] [ Html.text "(a -> f b) -> f a -> f b" ] ]
                         ]
                     , Html.dl []
                         (List.concatMap
