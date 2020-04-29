@@ -1,6 +1,7 @@
 sudo: false
 
 language: elm
+node_js: '10'
 
 cache:
   directories:
