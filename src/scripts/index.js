@@ -1,35 +1,38 @@
 #!/usr/bin/env node
 
-if (process.argv.length !== 5)
-  throw new Error("USAGE: ./index.js COMPILED_SETUP_APP CACHE_DIR OUTPUT_APP");
+if (process.argv.length !== 4)
+    throw new Error("USAGE: ./index.js CACHE_DIR OUTPUT_APP");
 
-const [, , compiledSetupApp, cacheDirectory, outputApp] = process.argv;
+const [, , cacheDirectory, outputApp] = process.argv;
 
 XMLHttpRequest = require("xhr2");
-const fs = require("fs");
-const path = require("path");
-const compiledElm = path.relative(__dirname, compiledSetupApp);
-const app = require(compiledElm).Elm.Setup.init();
+
+import * as fs from "fs";
+import * as path from "path";
+
+import {Elm} from "./Setup.elm";
+
+const app = Elm.Setup.init();
 
 function pathInCache(moduleName) {
-  return path.join(cacheDirectory, moduleName + ".elm");
+    return path.join(cacheDirectory, moduleName + ".elm");
 }
 
 function createFile(filePath, data) {
-  fs.writeFile(filePath, data, "utf8", err => {
-    if (err) throw new Error(err);
-    else console.log(`>> created ${filePath}`);
-  });
+    fs.writeFile(filePath, data, "utf8", err => {
+        if (err) throw new Error(err);
+        else console.log(`>> created ${filePath}`);
+    });
 }
 
 app.ports.lookup.subscribe(msg => {
-  fs.access(pathInCache(msg.moduleName), err => {
-    if (err) app.ports.onMissing.send(msg.metadata);
-  });
+    fs.access(pathInCache(msg.moduleName), err => {
+        if (err) app.ports.onMissing.send(msg.metadata);
+    });
 });
 
 app.ports.put.subscribe(msg => {
-  createFile(pathInCache(msg.moduleName), msg.code);
+    createFile(pathInCache(msg.moduleName), msg.code);
 });
 
 app.ports.writeOutput.subscribe(code => createFile(outputApp, code));

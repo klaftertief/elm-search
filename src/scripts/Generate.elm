@@ -5,12 +5,12 @@ import Docs.Package as Package
 
 main_ : List String -> String
 main_ moduleNames =
-    String.join "\n" <|
+    String.join "\n\n" <|
         "module Main exposing (..)"
             :: List.map (\name -> "import " ++ name) moduleNames
             ++ [ "import Web"
                , "main = Web.program "
-                    ++ chunkedList (\name -> name ++ ".package") moduleNames
+                    ++ list (\name -> name ++ ".package") moduleNames
                ]
 
 
@@ -20,7 +20,7 @@ package moduleName { metadata, modules } =
         { defs, inline } =
             fromPackage metadata modules
     in
-    String.join "\n" <|
+    String.join "\n\n" <|
         [ "module " ++ moduleName ++ " exposing(package)"
         , "import Docs.Type exposing(..)"
         , "package = " ++ inline
@@ -59,15 +59,12 @@ fromModule { name, elmVersion, entries } =
                     { entry
                         | docs =
                             entry.docs
-                                |> String.split "\n\n"
-                                |> List.head
-                                |> Maybe.withDefault ""
                     }
                 )
                 entries
     in
     { def =
-        ( entryListDefName, chunkedList Debug.toString entriesWithFirstDocParagraph )
+        ( entryListDefName, list Debug.toString entriesWithFirstDocParagraph )
     , inline =
         record
             [ ( "name", "\"" ++ name ++ "\"" )
@@ -79,7 +76,7 @@ fromModule { name, elmVersion, entries } =
 
 list : (a -> String) -> List a -> String
 list f values =
-    "[" ++ String.join ", " (List.map f values) ++ "]"
+    "[" ++ String.join "\n\n    , " (List.map f values) ++ "]"
 
 
 record : List ( String, String ) -> String
@@ -106,32 +103,3 @@ replaceUnsafe char =
 
     else
         char
-
-
-{-| This should be unnecessary with 0.19
-<https://github.com/elm-lang/elm-compiler/issues/1521>
--}
-chunkedList : (a -> String) -> List a -> String
-chunkedList func values =
-    if List.isEmpty values then
-        "[]"
-
-    else
-        chunkedListHelp func values []
-
-
-chunkSize : Int
-chunkSize =
-    25
-
-
-chunkedListHelp : (a -> String) -> List a -> List String -> String
-chunkedListHelp func values acc =
-    case List.take chunkSize values of
-        [] ->
-            "(" ++ String.join " ++ " acc ++ ")"
-
-        chunk ->
-            chunkedListHelp func
-                (List.drop chunkSize values)
-                (list func chunk :: acc)
