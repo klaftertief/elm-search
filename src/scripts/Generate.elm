@@ -1,17 +1,85 @@
 module Generate exposing (lowerName, main_, package)
 
 import Docs.Package as Package
+import Elm.Syntax.Declaration as Declaration
+import Elm.Syntax.Exposing as Exposing
+import Elm.Syntax.Expression as Expression
+import Elm.Syntax.File as File
+import Elm.Syntax.Module as Module
+import Elm.Syntax.Node as Node exposing (Node)
+import Elm.Syntax.Range as Range
+import Elm.Writer as Writer
+
+
+node =
+    Node.Node Range.emptyRange
 
 
 main_ : List String -> String
 main_ moduleNames =
-    String.join "\n\n" <|
-        "module Main exposing (..)"
-            :: List.map (\name -> "import " ++ name) moduleNames
-            ++ [ "import Web"
-               , "main = Web.program "
-                    ++ list (\name -> name ++ ".package") moduleNames
-               ]
+    { moduleDefinition =
+        node
+            (Module.NormalModule
+                { moduleName = node [ "Main" ]
+                , exposingList = node (Exposing.All Range.emptyRange)
+                }
+            )
+    , imports =
+        node
+            { moduleName = node [ "Web" ]
+            , moduleAlias = Nothing
+            , exposingList = Nothing
+            }
+            :: List.map
+                (\moduleName ->
+                    node
+                        { moduleName = node [ moduleName ]
+                        , moduleAlias = Nothing
+                        , exposingList = Nothing
+                        }
+                )
+                moduleNames
+    , declarations =
+        [ node
+            (Declaration.FunctionDeclaration
+                { documentation = Nothing
+                , signature = Nothing
+                , declaration =
+                    node
+                        { name = node "main"
+                        , arguments = []
+                        , expression =
+                            node
+                                (Expression.Application
+                                    [ node (Expression.FunctionOrValue [ "Web" ] "program")
+                                    , node
+                                        (Expression.ListExpr
+                                            (List.map
+                                                (\moduleName ->
+                                                    node (Expression.FunctionOrValue [ moduleName ] "package")
+                                                )
+                                                moduleNames
+                                            )
+                                        )
+                                    ]
+                                )
+                        }
+                }
+            )
+        ]
+    , comments = []
+    }
+        |> Writer.writeFile
+        |> Writer.write
+
+
+
+--"module Main exposing (..)"
+--    :: List.map (\name -> "import " ++ name) moduleNames
+--    ++ [ "import Web"
+--       , "main = Web.program "
+--            ++ list (\name -> name ++ ".package") moduleNames
+--       ]
 
 
 package : String -> Package.Package -> String
@@ -52,19 +120,9 @@ fromModule { name, elmVersion, entries } =
     let
         entryListDefName =
             "v_" ++ lowerName name
-
-        entriesWithFirstDocParagraph =
-            List.map
-                (\entry ->
-                    { entry
-                        | docs =
-                            entry.docs
-                    }
-                )
-                entries
     in
     { def =
-        ( entryListDefName, list Debug.toString entriesWithFirstDocParagraph )
+        ( entryListDefName, list Debug.toString entries )
     , inline =
         record
             [ ( "name", "\"" ++ name ++ "\"" )

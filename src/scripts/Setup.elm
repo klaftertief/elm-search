@@ -6,8 +6,6 @@ import Docs.Package.Cache as Cache
 import Generate
 import Http
 import Json.Decode as Decode
-import Set
-import Task
 
 
 type alias Model =
@@ -16,9 +14,9 @@ type alias Model =
 
 
 type Msg
-    = All (List Package.Metadata)
+    = All (Result Http.Error (List Package.Metadata))
     | CacheMiss Package.Metadata
-    | Response Package.Package
+    | Response (Result Http.Error Package.Package)
 
 
 main : Program () Model Msg
@@ -39,25 +37,30 @@ init _ =
         getAllPackages =
             Decode.list Package.remoteMetadataDecoder
                 |> Http.get "https://package.elm-lang.org/search.json"
-                |> Http.toTask
+                |> Http.send All
     in
     ( Model elmVersion
     , getAllPackages
-        |> Task.attempt (ensureOk All)
     )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        All partials ->
+        All (Ok partials) ->
             ( model, planFileWrites partials )
+
+        All (Err err) ->
+            ( model, Cmd.none )
 
         CacheMiss metadata ->
             ( model, fetchDocs model.elmVersion metadata )
 
-        Response package ->
+        Response (Ok package) ->
             ( model, cacheModule package )
+
+        Response (Err err) ->
+            ( model, Cmd.none )
 
 
 
@@ -93,7 +96,7 @@ fetchDocs elmVersion metadata =
                 Package.decode elmVersion metadata
         in
         Http.get url decoder
-            |> Http.send (ensureOk Response)
+            |> Http.send Response
 
 
 cacheModule : Package.Package -> Cmd msg
@@ -120,16 +123,6 @@ replaceUnsafe char =
 
     else
         char
-
-
-ensureOk : (a -> b) -> Result x a -> b
-ensureOk func result =
-    case result of
-        Ok value ->
-            func value
-
-        Err e ->
-            Debug.todo (Debug.toString e)
 
 
 subscriptions : Model -> Sub Msg
