@@ -21,7 +21,7 @@ function pathInCache(moduleName) {
 function createFile(filePath, data) {
     fs.writeFile(filePath, data, "utf8", err => {
         if (err) throw new Error(err);
-        else console.log(`>> created ${filePath}`);
+        // else console.log(`>> created ${filePath}`);
     });
 }
 
@@ -36,3 +36,5 @@ app.ports.put.subscribe(msg => {
 });
 
 app.ports.writeOutput.subscribe(code => createFile(outputApp, code));
+
+app.ports.log.subscribe(msg => console.log(msg));

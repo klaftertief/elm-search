@@ -16,7 +16,7 @@ type alias Model =
 type Msg
     = All (Result Http.Error (List Package.Metadata))
     | CacheMiss Package.Metadata
-    | Response (Result Http.Error Package.Package)
+    | Response String (Result Http.Error Package.Package)
 
 
 main : Program () Model Msg
@@ -56,11 +56,23 @@ update msg model =
         CacheMiss metadata ->
             ( model, fetchDocs model.elmVersion metadata )
 
-        Response (Ok package) ->
+        Response _ (Ok package) ->
             ( model, cacheModule package )
 
-        Response (Err err) ->
-            ( model, Cmd.none )
+        Response _ (Err (Http.BadPayload err { url })) ->
+            ( model, log (url ++ ": " ++ err) )
+
+        Response _ (Err (Http.BadStatus { url })) ->
+            ( model, log ("Bad Status: " ++ url) )
+
+        Response _ (Err (Http.BadUrl url)) ->
+            ( model, log ("Bad Url: " ++ url) )
+
+        Response url (Err Http.Timeout) ->
+            ( model, log ("Timeout: " ++ url) )
+
+        Response url (Err Http.NetworkError) ->
+            ( model, log ("NetworkError: " ++ url) )
 
 
 
@@ -96,7 +108,7 @@ fetchDocs elmVersion metadata =
                 Package.decode elmVersion metadata
         in
         Http.get url decoder
-            |> Http.send Response
+            |> Http.send (Response url)
 
 
 cacheModule : Package.Package -> Cmd msg
@@ -135,3 +147,6 @@ subscriptions model =
 
 
 port writeOutput : String -> Cmd msg
+
+
+port log : String -> Cmd msg

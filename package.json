@@ -16,7 +16,7 @@
     "node": ">=12"
   },
   "scripts": {
-    "build:setup": "parcel watch ./src/scripts/index.js",
+    "build:setup": "parcel build ./src/scripts/index.js",
     "build:web": "parcel serve ./src/html/index.html --open"
   },
   "devDependencies": {

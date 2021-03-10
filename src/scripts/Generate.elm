@@ -1,6 +1,7 @@
 module Generate exposing (lowerName, main_, package)
 
 import Docs.Package as Package
+import Docs.Type
 import Elm.Syntax.Declaration as Declaration
 import Elm.Syntax.Exposing as Exposing
 import Elm.Syntax.Expression as Expression
@@ -122,24 +123,96 @@ fromModule { name, elmVersion, entries } =
             "v_" ++ lowerName name
     in
     { def =
-        ( entryListDefName, list Debug.toString entries )
+        ( entryListDefName, list entryToString entries )
     , inline =
         record
             [ ( "name", "\"" ++ name ++ "\"" )
-            , ( "elmVersion", Debug.toString elmVersion )
+            , ( "elmVersion"
+              , case elmVersion of
+                    Just version ->
+                        "Just " ++ string version
+
+                    Nothing ->
+                        "Nothing"
+              )
             , ( "entries", entryListDefName )
             ]
     }
 
 
+entryToString entry =
+    record
+        [ ( "name", string entry.name )
+        , ( "docs", multilineString entry.docs )
+        , ( "tipe", typeToString entry.tipe )
+        ]
+
+
+typeToString : Docs.Type.Type -> String
+typeToString t =
+    case t of
+        Docs.Type.Function types type_ ->
+            "Function "
+                ++ list typeToString types
+                ++ " ("
+                ++ typeToString type_
+                ++ ")"
+
+        Docs.Type.Var var ->
+            "Var " ++ string var
+
+        Docs.Type.Apply { home, name } types ->
+            "Apply "
+                ++ record [ ( "home", string home ), ( "name", string name ) ]
+                ++ " "
+                ++ list typeToString types
+
+        Docs.Type.Tuple types ->
+            "Tuple " ++ list typeToString types
+
+        Docs.Type.Record fields maybeExt ->
+            "Record "
+                ++ list (\( name, type_ ) -> "(" ++ string name ++ ", " ++ typeToString type_ ++ ")") fields
+                ++ " "
+                ++ (case maybeExt of
+                        Just ext ->
+                            "(Just " ++ string ext ++ ")"
+
+                        Nothing ->
+                            "Nothing"
+                   )
+
+
+string s =
+    "\"" ++ s ++ "\""
+
+
+multilineString s =
+    "\"\"\""
+        ++ (s
+                |> String.replace "\\" "\\\\"
+                |> String.replace "\"" "\\\""
+           )
+        ++ "\"\"\""
+
+
 list : (a -> String) -> List a -> String
 list f values =
-    "[" ++ String.join "\n\n    , " (List.map f values) ++ "]"
+    "[" ++ String.join "\n    , " (List.map f values) ++ "]"
 
 
 record : List ( String, String ) -> String
 record fields =
     "{ "
+        ++ String.join "\n    , " (List.map assignment fields)
+        ++ " }"
+
+
+extensibleRecord : String -> List ( String, String ) -> String
+extensibleRecord ext fields =
+    "{ "
+        ++ ext
+        ++ " | "
         ++ String.join ", " (List.map assignment fields)
         ++ " }"
 
