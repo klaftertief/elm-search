@@ -125,7 +125,7 @@ viewSearchResults { filter, result } =
         (viewQuery :: viewChunks)
 
 
-viewChunk : Chunk -> Html Msg
+viewChunk : Chunk -> Html msg
 viewChunk chunk =
     div [ class "searchChunk" ]
         [ div [ class "chunkAnnotation" ]

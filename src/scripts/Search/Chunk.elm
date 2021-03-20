@@ -41,7 +41,7 @@ toChunk package moduleName elmVersion { name, docs, tipe } =
     { context = Context package.metadata.user package.metadata.name package.metadata.version moduleName name
     , tipe = tipe
     , tipeNormalized = Type.normalize tipe
-    , docs = List.head (docs |> String.trim |> String.split "\n\n" |> List.filter (not << String.isEmpty))
+    , docs = Just docs
     , elmVersion = elmVersion
     }
 
