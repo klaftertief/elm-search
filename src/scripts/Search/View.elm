@@ -127,22 +127,26 @@ viewSearchResults { filter, result } =
 
 viewChunk : Chunk -> Html msg
 viewChunk chunk =
-    div [ class "searchChunk" ]
-        [ div [ class "chunkAnnotation" ]
+    div [ class "m-4 border bg-gray-100 border-gray-200 rounded shadow-sm overflow-hidden" ]
+        [ div [ class "p-4 overflow-x-auto" ]
             [ annotationBlock (annotation chunk) ]
-        , div [ class "chunkDocumentation" ]
+        , div
+            [ class "flex justify-between p-4 pt-0" ]
+            [ a
+                [ class ""
+                , href (Chunk.pathToPackage chunk.context)
+                ]
+                [ text (Chunk.identifierHome chunk.context) ]
+            , a
+                [ class ""
+                , href (Chunk.pathToModule chunk.context)
+                ]
+                [ text chunk.context.moduleName ]
+            ]
+        , div
+            [ class "hidden p-4" ]
             [ Maybe.map Markdown.block chunk.docs
                 |> Maybe.withDefault (text "---")
-            ]
-        , div [ class "chunkMeta" ]
-            [ div [ class "chunkPath" ]
-                [ a [ href (Chunk.pathToPackage chunk.context) ]
-                    [ text (Chunk.identifierHome chunk.context) ]
-                ]
-            , div [ class "chunkModule" ]
-                [ a [ href (Chunk.pathToModule chunk.context) ]
-                    [ text chunk.context.moduleName ]
-                ]
             ]
         ]
 
@@ -156,11 +160,23 @@ annotation : Chunk -> List (List (Html msg))
 annotation chunk =
     case chunk.tipe of
         Type.Function args result ->
-            if String.length chunk.context.name + 3 + typeLength Other chunk.tipe > 64 then
-                [ annotationName chunk ] :: longFunctionAnnotation args result
+            if String.length chunk.context.name + 3 + typeLength Other chunk.tipe > 128 then
+                [ [ Html.span
+                        [ class "sticky left-0 bg-gray-100"
+                        ]
+                        (annotationName chunk :: Code.padded Code.colon)
+                  ]
+                ]
+                    ++ longFunctionAnnotation args result
 
             else
-                [ annotationName chunk :: Code.padded Code.colon ++ viewType Other chunk.tipe ]
+                [ [ Html.span
+                        [ class "sticky left-0 bg-gray-100"
+                        ]
+                        (annotationName chunk :: Code.padded Code.colon)
+                  ]
+                    ++ viewType Other chunk.tipe
+                ]
 
         _ ->
             [ annotationName chunk :: Code.padded Code.colon ++ viewType Other chunk.tipe ]
@@ -168,7 +184,9 @@ annotation chunk =
 
 annotationName : Chunk -> Html msg
 annotationName { context } =
-    a [ href (Chunk.pathToValue context) ]
+    a
+        [ href (Chunk.pathToValue context)
+        ]
         [ text context.name ]
 
 
@@ -179,7 +197,7 @@ longFunctionAnnotation args result =
             List.map (viewType Func) (args ++ [ result ])
 
         starters =
-            [ text "    ", Code.colon, text "  " ]
+            [ text "    " ]
                 :: List.repeat (List.length args) [ text "    ", Code.arrow, Code.space ]
     in
     List.map2 (++) starters tipeHtml
