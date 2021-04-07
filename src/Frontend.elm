@@ -2,13 +2,16 @@ module Frontend exposing (app)
 
 import Browser exposing (UrlRequest(..))
 import Browser.Navigation
+import Css
+import Css.Global
 import FeatherIcons
-import Html exposing (Html)
-import Html.Attributes
-import Html.Events
+import Html.Styled as Html exposing (Html)
+import Html.Styled.Attributes as Attributes
+import Html.Styled.Events as Events
 import Lamdera
 import Search.Model
 import Search.View
+import Tailwind.Utilities as Tailwind
 import Types exposing (..)
 import Url
 
@@ -91,22 +94,20 @@ view model =
         , viewSearchForm model
         , viewSearchResult model
         ]
+            |> List.map Html.toUnstyled
     }
 
 
 viewStyles : Html msg
 viewStyles =
-    Html.node "link"
-        [ Html.Attributes.rel "stylesheet"
-        , Html.Attributes.href "/main.css"
-        ]
-        []
+    Css.Global.global Tailwind.globalStyles
 
 
 viewHeading : Html msg
 viewHeading =
     Html.header
-        [ Html.Attributes.class "p-4 flex justify-center"
+        [ Attributes.css
+            [ Tailwind.p_4, Tailwind.flex, Tailwind.justify_center ]
         ]
         [ Html.p []
             [ Html.text "elm-search" ]
@@ -116,24 +117,49 @@ viewHeading =
 viewSearchForm : Model -> Html FrontendMsg
 viewSearchForm model =
     Html.form
-        [ Html.Events.onSubmit SubmittedSearch
-        , Html.Attributes.class "p-4 flex justify-center sticky top-0 bg-white"
+        [ Events.onSubmit SubmittedSearch
+        , Attributes.css
+            [ Tailwind.p_4
+            , Tailwind.flex
+            , Tailwind.justify_center
+            , Tailwind.sticky
+            , Tailwind.top_0
+            , Tailwind.bg_white
+            ]
         ]
         [ Html.input
-            [ Html.Attributes.class "block rounded-l-md bg-gray-200 border-transparent flex-1"
-            , Html.Attributes.class "focus:border-transparent focus:outline-none focus:ring-0 focus:bg-gray-300"
-            , Html.Attributes.type_ "search"
-            , Html.Events.onInput EnteredSearchInput
-            , Html.Attributes.value model.queryString
-            , Html.Attributes.autofocus True
+            [ Attributes.css
+                [ Tailwind.block
+                , Tailwind.rounded_l_md
+                , Tailwind.bg_gray_200
+                , Tailwind.border_transparent
+                , Tailwind.flex_1
+                ]
+            , Attributes.css
+                [ Css.focus
+                    [ Tailwind.border_transparent
+                    , Tailwind.outline_none
+                    , Tailwind.ring_0
+                    , Tailwind.bg_gray_300
+                    ]
+                ]
+            , Attributes.type_ "search"
+            , Events.onInput EnteredSearchInput
+            , Attributes.value model.queryString
+            , Attributes.autofocus True
             ]
             []
         , Html.button
-            [ Html.Attributes.class "px-4 rounded-r-md bg-gray-200"
-            , Html.Attributes.type_ "submit"
+            [ Attributes.css
+                [ Tailwind.px_4
+                , Tailwind.rounded_r_md
+                , Tailwind.bg_gray_200
+                ]
+            , Attributes.type_ "submit"
             ]
             [ FeatherIcons.search
                 |> FeatherIcons.toHtml []
+                |> Html.fromUnstyled
             ]
         ]
 
@@ -141,4 +167,7 @@ viewSearchForm model =
 viewSearchResult : Model -> Html FrontendMsg
 viewSearchResult model =
     Html.div []
-        (List.map Search.View.viewChunk model.searchResult)
+        (List.map
+            Search.View.viewChunk
+            model.searchResult
+        )

@@ -1,151 +1,70 @@
-module Search.View exposing (Context(..), annotation, annotationBlock, annotationName, longFunctionAnnotation, typeLength, viewChunk, viewField, viewLogo, viewSearchBody, viewSearchBranding, viewSearchForm, viewSearchHeader, viewSearchIntro, viewSearchResults, viewType)
+module Search.View exposing
+    ( Context(..)
+    , annotation
+    , annotationBlock
+    , annotationName
+    , longFunctionAnnotation
+    , typeLength
+    , viewChunk
+    , viewField
+    , viewType
+    )
 
 import Docs.Type as Type exposing (Type)
-import Html exposing (..)
-import Html.Attributes exposing (..)
-import Html.Events exposing (..)
-import Logo
+import Html.Styled as Html exposing (..)
+import Html.Styled.Attributes as Attributes exposing (..)
+import Html.Styled.Events as Events
 import Search.Chunk as Chunk exposing (Chunk)
-import Search.Model as Model exposing (..)
 import String
+import Tailwind.Utilities as Tailwind
 import Utils.Code as Code
 import Utils.Markdown as Markdown
 
 
-viewSearchHeader : Model -> Html Msg
-viewSearchHeader search =
-    div [ class "searchHeader" ]
-        [ viewSearchBranding
-        , viewSearchForm search
-        ]
-
-
-viewSearchBranding : Html Msg
-viewSearchBranding =
-    div [ class "searchBranding" ]
-        [ viewLogo
-        , span [ class "searchTitle" ] [ text "Elm Search" ]
-        ]
-
-
-viewLogo : Html msg
-viewLogo =
-    span [ class "searchLogo" ]
-        [ Logo.viewWithSize 64 ]
-
-
-viewSearchForm : Model -> Html Msg
-viewSearchForm { filter, index, result } =
-    let
-        isDisabled =
-            List.isEmpty index.chunks
-    in
-    Html.form
-        [ classList
-            [ ( "searchForm", True )
-            , ( "searchFormDisabled", isDisabled )
-            ]
-        , action "."
-        , onSubmit RunFilter
-        ]
-        [ input
-            [ name "q"
-            , type_ "search"
-            , onInput SetFilterQueryString
-            , value filter.queryString
-            , autofocus True
-            ]
-            []
-        , button
-            [ type_ "submit"
-            , disabled isDisabled
-            ]
-            [ text "Search" ]
-        ]
-
-
-viewSearchBody : Model -> Html Msg
-viewSearchBody model =
-    let
-        searchBody =
-            if String.isEmpty model.filter.lastQuery then
-                viewSearchIntro
-
-            else
-                viewSearchResults model
-    in
-    div [ class "searchBody" ]
-        [ searchBody ]
-
-
-viewSearchIntro : Html Msg
-viewSearchIntro =
-    let
-        exampleQueries =
-            [ "map"
-            , "(a -> b -> b) -> b -> List a -> b"
-            , "Result x a -> (a -> Result x b) -> Result x b"
-            , "String -> Int"
-            ]
-
-        exampleSearchItem query =
-            li []
-                [ a
-                    [ style "cursor" "pointer"
-                    , onClick (SetFilterQueryStringAndRunFilter query)
-                    ]
-                    [ text query ]
-                ]
-    in
-    div [ class "searchIntro" ]
-        [ h1 [] [ text "Welcome to Elm Search" ]
-        , p [] [ text "Search the modules of the latest Elm packages by either function name or by approximate type signature." ]
-        , h2 [] [ text "Example queries" ]
-        , ul [] (List.map exampleSearchItem exampleQueries)
-        ]
-
-
-viewSearchResults : Model -> Html Msg
-viewSearchResults { filter, result } =
-    let
-        viewQuery =
-            div [ class "searchQuery" ]
-                [ text <| "Showing results for: "
-                , b [] [ text filter.lastQuery ]
-                ]
-
-        viewChunks =
-            if not <| List.isEmpty result.chunks then
-                List.map viewChunk result.chunks
-
-            else
-                [ p [] [ text "No Results Found." ] ]
-    in
-    div [ class "searchResult" ]
-        (viewQuery :: viewChunks)
-
-
 viewChunk : Chunk -> Html msg
 viewChunk chunk =
-    div [ class "m-4 border bg-gray-100 border-gray-200 rounded shadow-sm overflow-hidden" ]
-        [ div [ class "p-4 overflow-x-auto" ]
+    div
+        [ Attributes.css
+            [ Tailwind.m_4
+            , Tailwind.border
+            , Tailwind.bg_gray_100
+            , Tailwind.border_gray_200
+            , Tailwind.rounded
+            , Tailwind.shadow_sm
+            , Tailwind.overflow_hidden
+            ]
+        ]
+        [ div
+            [ Attributes.css
+                [ Tailwind.py_4
+                , Tailwind.overflow_x_auto
+                ]
+            ]
             [ annotationBlock (annotation chunk) ]
         , div
-            [ class "flex justify-between p-4 pt-0" ]
+            [ Attributes.css
+                [ Tailwind.flex
+                , Tailwind.justify_between
+                , Tailwind.p_4
+                , Tailwind.pt_0
+                ]
+            ]
             [ a
-                [ class ""
-                , href (Chunk.pathToPackage chunk.context)
+                [ href (Chunk.pathToPackage chunk.context)
                 ]
                 [ text (Chunk.identifierHome chunk.context) ]
             , a
-                [ class ""
-                , href (Chunk.pathToModule chunk.context)
+                [ href (Chunk.pathToModule chunk.context)
                 ]
                 [ text chunk.context.moduleName ]
             ]
         , div
-            [ class "hidden p-4" ]
-            [ Maybe.map Markdown.block chunk.docs
+            [ Attributes.css
+                [ Tailwind.hidden
+                , Tailwind.p_4
+                ]
+            ]
+            [ Maybe.map (Markdown.block >> Html.fromUnstyled) chunk.docs
                 |> Maybe.withDefault (text "---")
             ]
         ]
@@ -162,18 +81,34 @@ annotation chunk =
         Type.Function args result ->
             if String.length chunk.context.name + 3 + typeLength Other chunk.tipe > 128 then
                 [ [ Html.span
-                        [ class "sticky left-0 bg-gray-100"
+                        [ Attributes.css
+                            [ Tailwind.p_4
+                            , Tailwind.pr_0
+                            , Tailwind.sticky
+                            , Tailwind.left_0
+                            , Tailwind.bg_gray_100
+                            ]
                         ]
-                        (annotationName chunk :: Code.padded Code.colon)
+                        (annotationName chunk
+                            :: Code.padded Code.colon
+                        )
                   ]
                 ]
                     ++ longFunctionAnnotation args result
 
             else
                 [ [ Html.span
-                        [ class "sticky left-0 bg-gray-100"
+                        [ Attributes.css
+                            [ Tailwind.p_4
+                            , Tailwind.pr_0
+                            , Tailwind.sticky
+                            , Tailwind.left_0
+                            , Tailwind.bg_gray_100
+                            ]
                         ]
-                        (annotationName chunk :: Code.padded Code.colon)
+                        (annotationName chunk
+                            :: Code.padded Code.colon
+                        )
                   ]
                     ++ viewType Other chunk.tipe
                 ]
@@ -230,7 +165,12 @@ viewType context tipe =
                             identity
 
                 argsHtml =
-                    List.concatMap (\arg -> viewType Func arg ++ Code.padded Code.arrow) args
+                    List.concatMap
+                        (\arg ->
+                            viewType Func arg
+                                ++ Code.padded Code.arrow
+                        )
+                        args
             in
             maybeAddParens (argsHtml ++ viewType Func result)
 

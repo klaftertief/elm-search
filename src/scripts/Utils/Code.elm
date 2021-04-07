@@ -2,8 +2,8 @@ module Utils.Code exposing (addParens, arrow, colon, equals, keyword, padded, sp
 
 -- where
 
-import Html exposing (..)
-import Html.Attributes exposing (..)
+import Html.Styled exposing (..)
+import Html.Styled.Attributes exposing (..)
 
 
 keyword : String -> Html msg
