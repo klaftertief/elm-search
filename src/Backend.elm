@@ -20,7 +20,7 @@ app =
 
 init : ( Model, Cmd BackendMsg )
 init =
-    ( { message = "Hello!" }
+    ( {}
     , Cmd.none
     )
 

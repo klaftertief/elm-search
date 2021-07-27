@@ -28,7 +28,6 @@ app =
 init : Url.Url -> Nav.Key -> ( Model, Cmd FrontendMsg )
 init url key =
     ( { key = key
-      , message = "Welcome to Lamdera! You're looking at the auto-generated base implementation. Check out src/Frontend.elm to start coding!"
       }
     , Cmd.none
     )
@@ -68,12 +67,11 @@ view model =
     { title = ""
     , body =
         [ Html.div [ Attr.style "text-align" "center", Attr.style "padding-top" "40px" ]
-            [ Html.img [ Attr.src "https://lamdera.app/lamdera-logo-black.png", Attr.width 150 ] []
-            , Html.div
-                [ Attr.style "font-family" "sans-serif"
+            [ Html.div
+                [ Attr.style "font-family" "serif"
                 , Attr.style "padding-top" "40px"
                 ]
-                [ Html.text model.message ]
+                [ Html.text "elm-search" ]
             ]
         ]
     }
