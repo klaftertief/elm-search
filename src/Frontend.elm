@@ -3,7 +3,7 @@ module Frontend exposing (..)
 import Browser exposing (UrlRequest(..))
 import Browser.Navigation as Nav
 import Html
-import Html.Attributes as Attr
+import Html.Attributes
 import Lamdera
 import Types exposing (..)
 import Url
@@ -64,13 +64,18 @@ updateFromBackend msg model =
 
 view : Model -> Browser.Document FrontendMsg
 view model =
-    { title = ""
+    { title = "elm-search"
     , body =
-        [ Html.div [ Attr.style "text-align" "center", Attr.style "padding-top" "40px" ]
+        [ Html.node "link"
+            [ Html.Attributes.rel "stylesheet"
+            , Html.Attributes.href "styles.css"
+            ]
+            []
+        , Html.div
+            [ Html.Attributes.class "text-center py-12"
+            ]
             [ Html.div
-                [ Attr.style "font-family" "serif"
-                , Attr.style "padding-top" "40px"
-                ]
+                []
                 [ Html.text "elm-search" ]
             ]
         ]
