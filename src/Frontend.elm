@@ -2,8 +2,14 @@ module Frontend exposing (..)
 
 import Browser exposing (UrlRequest(..))
 import Browser.Navigation as Nav
-import Html
+import Dict
+import Docs
+import Elm.Type
+import Html exposing (Html)
 import Html.Attributes
+import Html.Events
+import Json.Decode
+import Json.Encode
 import Lamdera
 import Types exposing (..)
 import Url
@@ -28,6 +34,7 @@ app =
 init : Url.Url -> Nav.Key -> ( Model, Cmd FrontendMsg )
 init url key =
     ( { key = key
+      , rawSearchQuery = ""
       }
     , Cmd.none
     )
@@ -51,8 +58,10 @@ update msg model =
         UrlChanged url ->
             ( model, Cmd.none )
 
-        NoOpFrontendMsg ->
-            ( model, Cmd.none )
+        EnteredSearchQuery rawSearchQuery ->
+            ( { model | rawSearchQuery = rawSearchQuery }
+            , Cmd.none
+            )
 
 
 updateFromBackend : ToFrontend -> Model -> ( Model, Cmd FrontendMsg )
@@ -66,17 +75,59 @@ view : Model -> Browser.Document FrontendMsg
 view model =
     { title = "elm-search"
     , body =
-        [ Html.node "link"
-            [ Html.Attributes.rel "stylesheet"
-            , Html.Attributes.href "styles.css"
-            ]
-            []
+        [ styles
         , Html.div
-            [ Html.Attributes.class "text-center py-12"
+            [ Html.Attributes.class "text-center pt-8 pb-4 space-y-8 bg-green-100"
             ]
-            [ Html.div
-                []
+            [ Html.h1 []
                 [ Html.text "elm-search" ]
+            , Html.form
+                [ Html.Attributes.class "flex justify-between mx-4 gap-4" ]
+                [ Html.input
+                    [ Html.Attributes.type_ "search"
+                    , Html.Attributes.class "flex-1 bg-gray-100 px-4 py-2 rounded"
+                    , Html.Attributes.class "focus:outline-none focus:ring-4 focus:ring-green-500 focus:ring-opacity-50"
+                    , Html.Attributes.placeholder "e.g. (a -> b) -> List a -> List b"
+                    , Html.Attributes.value model.rawSearchQuery
+                    , Html.Events.onInput EnteredSearchQuery
+                    ]
+                    []
+                , Html.button
+                    [ Html.Attributes.class "bg-green-700 text-white px-4 py-2 rounded"
+                    , Html.Attributes.class "focus:outline-none focus:ring-4 focus:ring-green-500 focus:ring-opacity-50"
+                    ]
+                    [ Html.text "Search" ]
+                ]
+            ]
+        , Html.div
+            [ Html.Attributes.class "p-4" ]
+            [ model.rawSearchQuery
+                |> Json.Encode.string
+                |> Json.Decode.decodeValue Elm.Type.decoder
+                |> Result.map
+                    (\tipe ->
+                        Docs.viewValue
+                            { author = ""
+                            , project = ""
+                            , moduleName = ""
+                            , typeNameDict = Dict.empty
+                            , version = Nothing
+                            }
+                            { name = ""
+                            , comment = ""
+                            , tipe = tipe
+                            }
+                    )
+                |> Result.withDefault (Html.text "invalid type")
             ]
         ]
     }
+
+
+styles : Html msg
+styles =
+    Html.node "link"
+        [ Html.Attributes.rel "stylesheet"
+        , Html.Attributes.href "styles.css"
+        ]
+        []

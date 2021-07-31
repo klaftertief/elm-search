@@ -7,6 +7,7 @@ import Url exposing (Url)
 
 type alias FrontendModel =
     { key : Key
+    , rawSearchQuery : String
     }
 
 
@@ -17,7 +18,7 @@ type alias BackendModel =
 type FrontendMsg
     = UrlClicked UrlRequest
     | UrlChanged Url
-    | NoOpFrontendMsg
+    | EnteredSearchQuery String
 
 
 type ToBackend
