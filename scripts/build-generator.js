@@ -2,9 +2,9 @@ const esbuild = require('esbuild');
 const ElmPlugin = require('esbuild-plugin-elm');
 
 esbuild.build({
-    entryPoints: ['generator/src/generator.js'],
+    entryPoints: ['../generator/src/generator.js'],
     bundle: true,
-    outdir: 'dist',
+    outdir: '../dist',
     platform: 'node',
     plugins: [
         ElmPlugin({optimize: true, debug: false }),

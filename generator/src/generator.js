@@ -1,4 +1,6 @@
-const { Elm } = require("./Main.elm");
+XMLHttpRequest = require('xhr2');
+
+import {Elm} from './Main.elm';
 
 let app = Elm.Main.init();
 
