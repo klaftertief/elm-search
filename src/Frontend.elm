@@ -35,6 +35,7 @@ init : Url.Url -> Nav.Key -> ( Model, Cmd FrontendMsg )
 init url key =
     ( { key = key
       , rawSearchQuery = ""
+      , searchResults = []
       }
     , Cmd.none
     )
@@ -60,15 +61,15 @@ update msg model =
 
         EnteredSearchQuery rawSearchQuery ->
             ( { model | rawSearchQuery = rawSearchQuery }
-            , Cmd.none
+            , Lamdera.sendToBackend (SearchQuerySubmitted rawSearchQuery)
             )
 
 
 updateFromBackend : ToFrontend -> Model -> ( Model, Cmd FrontendMsg )
 updateFromBackend msg model =
     case msg of
-        NoOpToFrontend ->
-            ( model, Cmd.none )
+        SearchResultSent names ->
+            ( { model | searchResults = names }, Cmd.none )
 
 
 view : Model -> Browser.Document FrontendMsg
@@ -120,6 +121,11 @@ view model =
                     )
                 |> Result.withDefault (Html.text "invalid type")
             ]
+        , Html.div
+            [ Html.Attributes.class "p-4" ]
+            (model.searchResults
+                |> List.map (\name -> Html.p [] [ Html.text name ])
+            )
         ]
     }
 

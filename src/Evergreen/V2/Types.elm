@@ -1,12 +1,12 @@
-module Types exposing (..)
+module Evergreen.V2.Types exposing (..)
 
-import Browser exposing (UrlRequest)
-import Browser.Navigation exposing (Key)
-import Url exposing (Url)
+import Browser
+import Browser.Navigation
+import Url
 
 
 type alias FrontendModel =
-    { key : Key
+    { key : Browser.Navigation.Key
     , rawSearchQuery : String
     , searchResults : List String
     }
@@ -17,8 +17,8 @@ type alias BackendModel =
 
 
 type FrontendMsg
-    = UrlClicked UrlRequest
-    | UrlChanged Url
+    = UrlClicked Browser.UrlRequest
+    | UrlChanged Url.Url
     | EnteredSearchQuery String
 
 

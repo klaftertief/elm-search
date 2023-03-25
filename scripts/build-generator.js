@@ -7,6 +7,6 @@ esbuild.build({
     outdir: '../dist',
     platform: 'node',
     plugins: [
-        ElmPlugin({optimize: true, debug: false }),
+        ElmPlugin({optimize: false, debug: true }),
     ],
 }).catch(e => (console.error(e), process.exit(1)))

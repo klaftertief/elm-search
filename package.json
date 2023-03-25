@@ -22,8 +22,12 @@
   "homepage": "https://github.com/klaftertief/elm-search#readme",
   "devDependencies": {
     "autoprefixer": "^10.3.1",
+    "elm": "^0.19.1-5",
+    "elm-format": "^0.8.5",
+    "elm-test": "^0.19.1-revision7",
     "esbuild": "^0.12.17",
     "esbuild-plugin-elm": "0.0.4",
+    "fs-extra": "^10.1.0",
     "postcss": "^8.3.6",
     "tailwindcss": "^2.2.7",
     "xhr2": "^0.2.1"
