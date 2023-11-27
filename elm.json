@@ -2,7 +2,8 @@
     "type": "application",
     "source-directories": [
         "src/scripts",
-        "cache"
+        "cache",
+        "elm-stuff/generated-code/klaftertief/elm-search"
     ],
     "elm-version": "0.19.1",
     "dependencies": {
