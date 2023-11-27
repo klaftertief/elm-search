@@ -2,6 +2,8 @@ name: CI
 
 on:
   push:
+    branches:
+      - "develop"
   workflow_dispatch:
 
 concurrency:
@@ -16,7 +18,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 18
-          cache: 'npm'
+          cache: "npm"
       - name: Cache generated Elm modules
         uses: actions/cache@v3
         with:
@@ -29,8 +31,8 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v2
         with:
-          path: 'dist'
-          name: 'github-pages'
+          path: "dist"
+          name: "github-pages"
   deploy:
     needs: build
     permissions:
