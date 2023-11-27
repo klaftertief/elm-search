@@ -18,6 +18,7 @@ type alias Model =
 
 type Msg
     = All (List Package.Metadata)
+    | CacheCheck String Package.Metadata
     | CacheMiss Package.Metadata
     | Response Package.Package
 
@@ -38,13 +39,12 @@ init _ =
             "0.19.1"
 
         getAllPackages =
-            Decode.list Package.remoteMetadataDecoder
-                |> Http.get "https://package.elm-lang.org/search.json"
-                |> Http.toTask
+            Http.get "https://package.elm-lang.org/search.json"
+                (Decode.list Package.remoteMetadataDecoder)
     in
     ( Model elmVersion
     , getAllPackages
-        |> Task.attempt (ensureOk All)
+        |> Http.send (ensureOk All)
     )
 
 
@@ -53,6 +53,9 @@ update msg model =
     case msg of
         All partials ->
             ( model, planFileWrites partials )
+
+        CacheCheck moduleName metadata ->
+            ( model, Cache.check moduleName metadata )
 
         CacheMiss metadata ->
             ( model, fetchDocs model.elmVersion metadata )
@@ -70,10 +73,19 @@ planFileWrites partials =
     let
         moduleNames =
             List.map safeModuleName partials
+
+        cacheChecks =
+            List.map2 CacheCheck moduleNames partials
+                |> List.indexedMap (\i msg -> delay (toFloat i * 10) msg)
     in
     writeOutput (Generate.main_ moduleNames)
-        :: List.map2 Cache.check moduleNames partials
+        :: cacheChecks
         |> Cmd.batch
+
+
+delay : Float -> msg -> Cmd msg
+delay time msg =
+    Task.perform (always msg) (Process.sleep time)
 
 
 fetchDocs : String -> Package.Metadata -> Cmd Msg
@@ -93,17 +105,8 @@ fetchDocs elmVersion metadata =
             decoder =
                 Package.decode elmVersion metadata
         in
-        Process.sleep 1000
-            |> Task.andThen
-                (\_ ->
-                    Http.get url decoder
-                        |> Http.toTask
-                )
-            |> Task.attempt (ensureOk Response)
-
-
-
---|> Http.send (ensureOk Response)
+        Http.get url decoder
+            |> Http.send (ensureOk Response)
 
 
 cacheModule : Package.Package -> Cmd msg
