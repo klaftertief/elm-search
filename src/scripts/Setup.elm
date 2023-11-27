@@ -6,6 +6,7 @@ import Docs.Package.Cache as Cache
 import Generate
 import Http
 import Json.Decode as Decode
+import Process
 import Set
 import Task
 
@@ -17,6 +18,7 @@ type alias Model =
 
 type Msg
     = All (List Package.Metadata)
+    | CacheCheck String Package.Metadata
     | CacheMiss Package.Metadata
     | Response Package.Package
 
@@ -34,16 +36,15 @@ init : () -> ( Model, Cmd Msg )
 init _ =
     let
         elmVersion =
-            "0.19.0"
+            "0.19.1"
 
         getAllPackages =
-            Decode.list Package.remoteMetadataDecoder
-                |> Http.get "https://package.elm-lang.org/search.json"
-                |> Http.toTask
+            Http.get "https://package.elm-lang.org/search.json"
+                (Decode.list Package.remoteMetadataDecoder)
     in
     ( Model elmVersion
     , getAllPackages
-        |> Task.attempt (ensureOk All)
+        |> Http.send (ensureOk All)
     )
 
 
@@ -52,6 +53,9 @@ update msg model =
     case msg of
         All partials ->
             ( model, planFileWrites partials )
+
+        CacheCheck moduleName metadata ->
+            ( model, Cache.check moduleName metadata )
 
         CacheMiss metadata ->
             ( model, fetchDocs model.elmVersion metadata )
@@ -69,10 +73,19 @@ planFileWrites partials =
     let
         moduleNames =
             List.map safeModuleName partials
+
+        cacheChecks =
+            List.map2 CacheCheck moduleNames partials
+                |> List.indexedMap (\i msg -> delay (toFloat i * 10) msg)
     in
     writeOutput (Generate.main_ moduleNames)
-        :: List.map2 Cache.check moduleNames partials
+        :: cacheChecks
         |> Cmd.batch
+
+
+delay : Float -> msg -> Cmd msg
+delay time msg =
+    Task.perform (always msg) (Process.sleep time)
 
 
 fetchDocs : String -> Package.Metadata -> Cmd Msg
@@ -84,7 +97,7 @@ fetchDocs elmVersion metadata =
         let
             url =
                 String.join "/"
-                    [ "http://package.elm-lang.org/packages"
+                    [ "https://package.elm-lang.org/packages"
                     , Package.identifier metadata
                     , "docs.json"
                     ]
