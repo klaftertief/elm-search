@@ -6,6 +6,7 @@ import Docs.Package.Cache as Cache
 import Generate
 import Http
 import Json.Decode as Decode
+import Process
 import Set
 import Task
 
@@ -92,8 +93,17 @@ fetchDocs elmVersion metadata =
             decoder =
                 Package.decode elmVersion metadata
         in
-        Http.get url decoder
-            |> Http.send (ensureOk Response)
+        Process.sleep 100
+            |> Task.andThen
+                (\_ ->
+                    Http.get url decoder
+                        |> Http.toTask
+                )
+            |> Task.attempt (ensureOk Response)
+
+
+
+--|> Http.send (ensureOk Response)
 
 
 cacheModule : Package.Package -> Cmd msg
