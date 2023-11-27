@@ -93,7 +93,7 @@ fetchDocs elmVersion metadata =
             decoder =
                 Package.decode elmVersion metadata
         in
-        Process.sleep 100
+        Process.sleep 1000
             |> Task.andThen
                 (\_ ->
                     Http.get url decoder
