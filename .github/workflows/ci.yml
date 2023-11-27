@@ -13,7 +13,7 @@ jobs:
         with:
           node-version: 18
           cache: 'npm'
-      - name: Restore cached Primes
+      - name: Restore cache
         id: cache-generated-elm-modules-restore
         uses: actions/cache/restore@v3
         with:
@@ -21,7 +21,8 @@ jobs:
           key: ${{ runner.os }}-generated-elm-modules
       - run: make install
       - run: make clean setup build
-      - name: Save Primes
+      - name: Save cache
+        if: always()
         id: cache-generated-elm-modules-save
         uses: actions/cache/save@v3
         with:
