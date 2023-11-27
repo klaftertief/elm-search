@@ -18,7 +18,7 @@ jobs:
         uses: actions/cache/restore@v3
         with:
           path: cache
-          key: ${{ runner.os }}-generated-elm-modules
+          key: ${{ runner.os }}-generated-elm-docs
       - run: make install
       - run: make clean setup build
       - name: Save cache
