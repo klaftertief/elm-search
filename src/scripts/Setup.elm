@@ -34,7 +34,7 @@ init : () -> ( Model, Cmd Msg )
 init _ =
     let
         elmVersion =
-            "0.19.0"
+            "0.19.1"
 
         getAllPackages =
             Decode.list Package.remoteMetadataDecoder
@@ -84,7 +84,7 @@ fetchDocs elmVersion metadata =
         let
             url =
                 String.join "/"
-                    [ "http://package.elm-lang.org/packages"
+                    [ "https://package.elm-lang.org/packages"
                     , Package.identifier metadata
                     , "docs.json"
                     ]
