@@ -13,18 +13,10 @@ jobs:
         with:
           node-version: 18
           cache: 'npm'
-      - name: Restore cache
-        id: cache-generated-elm-modules-restore
-        uses: actions/cache/restore@v3
+      - name: Cache generated Elm modules
+        uses: actions/cache@v3
         with:
           path: cache
-          key: ${{ runner.os }}-generated-elm-docs
+          key: ${{ runner.os }}-elm-modules
       - run: make install
       - run: make clean setup build
-      - name: Save cache
-        if: always()
-        id: cache-generated-elm-modules-save
-        uses: actions/cache/save@v3
-        with:
-          path: cache
-          key: ${{ steps.cache-generated-elm-modules-restore.outputs.cache-primary-key }}
