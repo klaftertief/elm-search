@@ -10,7 +10,7 @@ main_ moduleNames =
             :: List.map (\name -> "import " ++ name) moduleNames
             ++ [ "import Web"
                , "main = Web.program "
-                    ++ chunkedList (\name -> name ++ ".package") moduleNames
+                    ++ list (\name -> name ++ ".package") moduleNames
                ]
 
 
@@ -67,7 +67,7 @@ fromModule { name, elmVersion, entries } =
                 entries
     in
     { def =
-        ( entryListDefName, chunkedList Debug.toString entriesWithFirstDocParagraph )
+        ( entryListDefName, list Debug.toString entriesWithFirstDocParagraph )
     , inline =
         record
             [ ( "name", "\"" ++ name ++ "\"" )
@@ -79,14 +79,14 @@ fromModule { name, elmVersion, entries } =
 
 list : (a -> String) -> List a -> String
 list f values =
-    "[" ++ String.join ", " (List.map f values) ++ "]"
+    "[" ++ String.join "\n    , " (List.map f values) ++ "\n    ]"
 
 
 record : List ( String, String ) -> String
 record fields =
     "{ "
-        ++ String.join ", " (List.map assignment fields)
-        ++ " }"
+        ++ String.join "\n    , " (List.map assignment fields)
+        ++ "\n    }"
 
 
 assignment : ( String, String ) -> String
@@ -106,32 +106,3 @@ replaceUnsafe char =
 
     else
         char
-
-
-{-| This should be unnecessary with 0.19
-<https://github.com/elm-lang/elm-compiler/issues/1521>
--}
-chunkedList : (a -> String) -> List a -> String
-chunkedList func values =
-    if List.isEmpty values then
-        "[]"
-
-    else
-        chunkedListHelp func values []
-
-
-chunkSize : Int
-chunkSize =
-    25
-
-
-chunkedListHelp : (a -> String) -> List a -> List String -> String
-chunkedListHelp func values acc =
-    case List.take chunkSize values of
-        [] ->
-            "(" ++ String.join " ++ " acc ++ ")"
-
-        chunk ->
-            chunkedListHelp func
-                (List.drop chunkSize values)
-                (list func chunk :: acc)
